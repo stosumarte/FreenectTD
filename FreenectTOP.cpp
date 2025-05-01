@@ -75,10 +75,10 @@ DLLEXPORT void FillTOPPluginInfo(TOP_PluginInfo* info) {
     info->apiVersion       = TOPCPlusPlusAPIVersion;
     info->executeMode      = TOP_ExecuteMode::CPUMem;
     info->customOPInfo.opType->setString("Freenecttop");
-    info->customOPInfo.opLabel->setString("Freenect TOP");
+    info->customOPInfo.opLabel->setString("FreenectTOP");
     info->customOPInfo.opIcon->setString("KNT");
-    info->customOPInfo.authorName->setString("Your Name");
-    info->customOPInfo.authorEmail->setString("you@domain.com");
+    info->customOPInfo.authorName->setString("Matteo (Marte) Tagliabue");
+    info->customOPInfo.authorEmail->setString("");
     info->customOPInfo.minInputs = 0;
     info->customOPInfo.maxInputs = 0;
 }
