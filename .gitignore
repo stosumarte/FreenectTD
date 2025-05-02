@@ -1,0 +1,6 @@
+# .gitignore
+*.log
+.DS_Store
+DerivedData/
+build/
+toe_examples/Backup/
