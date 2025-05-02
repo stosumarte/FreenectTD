@@ -28,7 +28,15 @@ Example .toe project files are provided in this repository, under the "toe_examp
 Currently, RGB and Depth image streaming are supported, as well as tilt control from the TOP's properties panel. No more features (such as microphone or LED control) are currently planned to be implemented.
 
 ### Which devices does FreenectTD support?
-Only 1st gen (Xbox 360) Kinects are supported.
+Only 1st gen Kinects are supported. Model numbers are 1414, 1473 and 1517.
+
+![Kinect for Xbox 360 (1414/1473)](https://github.com/user-attachments/assets/b2e3090d-9e72-45d2-9e9c-8439cfc2b3a8)
+![Kinect for Windows (1517)](https://github.com/user-attachments/assets/cb58beb9-3e5e-49be-8a4a-f5074fd8f723)
+
+
+
+FreenectTD has currently been tested only with a 1414 model (Xbox 360), but it should work regardless since all these models should be compatible with libfreenect.
+
 
 ### Will this ever work on Kinect V2?
 It's not planned, and it would require an almost complete rewrite since it would need to interface with libfreenect2. 
