@@ -183,6 +183,18 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     np.minSliders[0]    = -30.0;
     np.maxSliders[0]    = 30.0;
     manager->appendFloat(np);
+    
+    OP_NumericParameter invertParam;
+    invertParam.name            = "Invertdepth";
+    invertParam.label           = "Invert Depth Map";
+    invertParam.defaultValues[0] = 0.0;
+    invertParam.minValues[0]     = 0.0;
+    invertParam.maxValues[0]     = 1.0;
+    invertParam.minSliders[0]    = 0.0;
+    invertParam.maxSliders[0]    = 1.0;
+    invertParam.clampMins[0]     = true;
+    invertParam.clampMaxes[0]    = true;
+    manager->appendToggle(invertParam);
 }
 
 void FreenectTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void*) {
@@ -288,7 +300,13 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             for (int x = 0; x < WIDTH; ++x) {
                 int idx = (HEIGHT - 1 - y) * WIDTH + x;
                 uint16_t raw = lastDepth[idx];
-                out[y * WIDTH + x] = (raw > 0 && raw < 2047) ? (raw << 5) : 0;
+                bool invert = inputs->getParInt("Invertdepth") != 0;
+                if (raw > 0 && raw < 2047) {
+                    uint16_t scaled = raw << 5;
+                    out[y * WIDTH + x] = invert ? 65535 - scaled : scaled;
+                } else {
+                    out[y * WIDTH + x] = 0;
+                }
             }
         TOP_UploadInfo info;
         info.textureDesc.width       = WIDTH;
