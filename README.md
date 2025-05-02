@@ -1,5 +1,5 @@
 # FreenectTD
-FreenectTD is an open source TouchDesigner implementation of libfreenect's C++ wrapper, aimed at macOS users who don't have a way to use Kinect v1 devices.
+FreenectTD is an open source TouchDesigner implementation of the [libfreenect](https://github.com/OpenKinect/libfreenect) C++ wrapper, aimed at macOS users who don't have a way to use Kinect v1 devices.
 
 ## Installing
 FreenectTD relies on libfreenect and libusb to run. 
@@ -25,11 +25,14 @@ Example .toe project files are provided in this repository, under the "toe_examp
 
 ## FAQ
 ### Which features does FreenectTD support?
-Currently, RGB and Depth image streaming are supported, as well as tilt control from the OP's properties panel. No more features are currently planned to be implemented.
-### Which devices are supported?
-Only 1st gen. (Xbox 360) Kinects are supported.
-### Will this ever work on [insert later Kinect gen.]?
-It's not planned, and it would require an almost complete rewrite since it would need to interface with libfreenect2. Feel free to fork this project and implement it on other versions, though.
+Currently, RGB and Depth image streaming are supported, as well as tilt control from the TOP's properties panel. No more features (such as microphone or LED control) are currently planned to be implemented.
+
+### Which devices does FreenectTD support?
+Only 1st gen (Xbox 360) Kinects are supported.
+
+### Will this ever work on Kinect V2?
+It's not planned, and it would require an almost complete rewrite since it would need to interface with libfreenect2. 
+Feel free to fork this project and implement it on other versions, though.
 
 ## Credits
 A very big thank you goes to libfreenect developers, who made a great work by creating a way to unofficially interface with Kinect devices on macOS and Linux.
