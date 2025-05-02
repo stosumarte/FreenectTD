@@ -1,5 +1,5 @@
 # FreenectTD
-FreenectTD is an open source TouchDesigner implementation of the [libfreenect](https://github.com/OpenKinect/libfreenect) C++ wrapper, aimed at macOS users who don't have a way to use Kinect v1 devices.
+FreenectTD is an open source TouchDesigner implementation of the [libfreenect](https://github.com/OpenKinect/libfreenect) C++ wrapper, aimed at macOS users who don't have a way to use the official Kinect OPs in TouchDesigner.
 
 ## Installing
 FreenectTD relies on libfreenect and libusb to run. 
