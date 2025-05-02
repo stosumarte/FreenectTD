@@ -18,7 +18,7 @@ Now, you should be able to run TouchDesigner and find FreenectTOP under the "Cus
 ## Usage
 By default, FreenectTOP outputs RGB data. To get a depth map, you must use a Render Select TOP and reference index 1 instead of index 0.
 
-## Examples
+### Examples
 Example .toe project files are provided in this repository, under the "toe_examples" directory.
 
 <img width="872" alt="image" src="https://github.com/user-attachments/assets/f23b02f7-640a-4a77-b22b-a8668c5dd161" />
