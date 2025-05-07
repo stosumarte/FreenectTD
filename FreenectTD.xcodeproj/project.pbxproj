@@ -7,16 +7,36 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8111526E2DCB994A00727B55 /* libfreenect.h in Resources */ = {isa = PBXBuildFile; fileRef = 8111526D2DCB994A00727B55 /* libfreenect.h */; };
+		811152702DCB995B00727B55 /* libusb.h in Resources */ = {isa = PBXBuildFile; fileRef = 8111526F2DCB995B00727B55 /* libusb.h */; };
+		811152842DCB9D7600727B55 /* libfreenect.0.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 811152802DCB9D7200727B55 /* libfreenect.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		811152852DCB9D7600727B55 /* libusb.0.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 811152812DCB9D7200727B55 /* libusb.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		811152862DCB9D7A00727B55 /* libfreenect.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 811152802DCB9D7200727B55 /* libfreenect.0.dylib */; };
+		811152872DCB9D7A00727B55 /* libusb.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 811152812DCB9D7200727B55 /* libusb.0.dylib */; };
 		818A9C1F2DC36A23000B85E5 /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
-		818A9C232DC36EDE000B85E5 /* libfreenect.0.7.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 818A9C222DC36EDE000B85E5 /* libfreenect.0.7.5.dylib */; };
-		818A9C252DC36FE2000B85E5 /* libusb-1.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 818A9C242DC36FE2000B85E5 /* libusb-1.0.0.dylib */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		811152662DCB979100727B55 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				811152842DCB9D7600727B55 /* libfreenect.0.dylib in CopyFiles */,
+				811152852DCB9D7600727B55 /* libusb.0.dylib in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		8111526D2DCB994A00727B55 /* libfreenect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = libfreenect.h; path = ../../../../../opt/homebrew/Cellar/libfreenect/0.7.5/include/libfreenect/libfreenect.h; sourceTree = "<group>"; };
+		8111526F2DCB995B00727B55 /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = libusb.h; path = "../../../../../opt/homebrew/Cellar/libusb/1.0.28/include/libusb-1.0/libusb.h"; sourceTree = "<group>"; };
+		811152802DCB9D7200727B55 /* libfreenect.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libfreenect.0.dylib; sourceTree = "<group>"; };
+		811152812DCB9D7200727B55 /* libusb.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libusb.0.dylib; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
-		818A9C222DC36EDE000B85E5 /* libfreenect.0.7.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreenect.0.7.5.dylib; path = ../../../../../opt/homebrew/Cellar/libfreenect/0.7.5/lib/libfreenect.0.7.5.dylib; sourceTree = "<group>"; };
-		818A9C242DC36FE2000B85E5 /* libusb-1.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libusb-1.0.0.dylib"; path = "../../../../../opt/homebrew/Cellar/libusb/1.0.28/lib/libusb-1.0.0.dylib"; sourceTree = "<group>"; };
 		81E3B9622DC3687500B0413C /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -25,8 +45,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				818A9C252DC36FE2000B85E5 /* libusb-1.0.0.dylib in Frameworks */,
-				818A9C232DC36EDE000B85E5 /* libfreenect.0.7.5.dylib in Frameworks */,
+				811152862DCB9D7A00727B55 /* libfreenect.0.dylib in Frameworks */,
+				811152872DCB9D7A00727B55 /* libusb.0.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -36,8 +56,8 @@
 		818A9C212DC36EDE000B85E5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				818A9C242DC36FE2000B85E5 /* libusb-1.0.0.dylib */,
-				818A9C222DC36EDE000B85E5 /* libfreenect.0.7.5.dylib */,
+				811152802DCB9D7200727B55 /* libfreenect.0.dylib */,
+				811152812DCB9D7200727B55 /* libusb.0.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -45,6 +65,8 @@
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
+				8111526F2DCB995B00727B55 /* libusb.h */,
+				8111526D2DCB994A00727B55 /* libfreenect.h */,
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
 				818A9C212DC36EDE000B85E5 /* Frameworks */,
@@ -70,6 +92,7 @@
 				81E3B95E2DC3687500B0413C /* Sources */,
 				81E3B95F2DC3687500B0413C /* Frameworks */,
 				81E3B9602DC3687500B0413C /* Resources */,
+				811152662DCB979100727B55 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -120,6 +143,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				811152702DCB995B00727B55 /* libusb.h in Resources */,
+				8111526E2DCB994A00727B55 /* libfreenect.h in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -191,6 +216,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "/opt/homebrew/include/libfreenect/**";
 				INSTALL_PATH = "@loader_path";
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACH_O_TYPE = mh_bundle;
@@ -251,6 +277,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = "/opt/homebrew/include/libfreenect/**";
 				INSTALL_PATH = "@loader_path";
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACH_O_TYPE = mh_bundle;
@@ -277,11 +304,15 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
-				LD_RUNPATH_SEARCH_PATHS = /opt/homebrew/lib;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/opt/homebrew/Cellar/libfreenect/0.7.5/lib,
+					"/opt/homebrew/Cellar/libfreenect/**",
+					"/opt/homebrew/Cellar/libusb/**",
 					/opt/homebrew/Cellar/libusb/1.0.28/lib,
+					"$(PROJECT_DIR)/VendorLibs\\ 2",
+					"$(PROJECT_DIR)/VendorLibs\\ 2",
+					"$(PROJECT_DIR)",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MARKETING_VERSION = 0.1.1;
@@ -308,11 +339,15 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
-				LD_RUNPATH_SEARCH_PATHS = /opt/homebrew/lib;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					/opt/homebrew/Cellar/libfreenect/0.7.5/lib,
+					"/opt/homebrew/Cellar/libfreenect/**",
+					"/opt/homebrew/Cellar/libusb/**",
 					/opt/homebrew/Cellar/libusb/1.0.28/lib,
+					"$(PROJECT_DIR)/VendorLibs\\ 2",
+					"$(PROJECT_DIR)/VendorLibs\\ 2",
+					"$(PROJECT_DIR)",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
 				MARKETING_VERSION = 0.1.1;
