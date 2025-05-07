@@ -11,6 +11,11 @@ Once brew is installed, you can install libfreenect and libusb by running `brew 
 
 [Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest), unzip and copy `FreenectTD.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`.
 
+⚠️ macOS may prevent the plugin from loading after download due to security quarantine flags. To fix this, open Terminal and run:
+
+`xattr -d -r com.apple.quarantine ~/Library/Application\ Support/Derivative/TouchDesigner099/Plugins/FreenectTD.plugin`
+
+
 Now, you should be able to run TouchDesigner and find FreenectTOP under the "Custom" OPs panel.
 
 ## Usage
