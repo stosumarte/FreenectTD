@@ -1,7 +1,7 @@
 #pragma once
 
 #include "TOP_CPlusPlusBase.h"
-#include <libfreenect.hpp>
+#include "libfreenect.hpp"
 #include <atomic>
 #include <vector>
 #include <mutex>

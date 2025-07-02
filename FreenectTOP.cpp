@@ -5,7 +5,7 @@
 //
 
 #include "FreenectTOP.h"
-#include <libfreenect.hpp>
+#include "libfreenect.hpp"
 #include <sys/time.h>
 #include <cstdio>
 #include <algorithm>
@@ -209,12 +209,48 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             // Display a red screen with an error message
             OP_SmartRef<TOP_Buffer> buf = myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr);
             uint8_t* out = static_cast<uint8_t*>(buf->data);
+
+            // Fill the entire image with solid red
             for (int i = 0; i < WIDTH * HEIGHT; ++i) {
                 out[i * 4 + 0] = 255; // red
                 out[i * 4 + 1] = 0;
                 out[i * 4 + 2] = 0;
                 out[i * 4 + 3] = 255;
             }
+
+            // Draw a white cross in the center
+            // int cx = WIDTH / 2;
+            // int cy = HEIGHT / 2;
+
+            // Draw a thick centred 'X' (45° lines)
+            // ───────────────────────────────────
+            const int thickness = 21;                         // arm width in pixels (must be ≥1)
+            const float slope   = static_cast<float>(HEIGHT) / WIDTH;   // dy/dx for a true 45 deg in this aspect‑ratio
+            const float halfT   = thickness * 0.5f;
+
+            for (int y = 0; y < HEIGHT; ++y)
+            {
+                for (int x = 0; x < WIDTH; ++x)
+                {
+                    // Distance from (x,y) to the two centred diagonals
+                    // 1) y = slope * x
+                    // 2) y = (HEIGHT‑1) - slope * x
+                    float d1 = std::fabs(y - slope * x);
+                    float d2 = std::fabs(y - ((HEIGHT - 1) - slope * x));
+
+                    if (d1 <= halfT || d2 <= halfT)
+                    {
+                        int idx = y * WIDTH + x;
+                        out[idx * 4 + 0] = 255;   // red
+                        out[idx * 4 + 1] = 255;   // green
+                        out[idx * 4 + 2] = 255;   // blue
+                        out[idx * 4 + 3] = 255;   // alpha
+                    }
+                }
+            }
+
+
+            // Upload the color buffer
             TOP_UploadInfo info;
             info.textureDesc.width       = WIDTH;
             info.textureDesc.height      = HEIGHT;
@@ -223,40 +259,30 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             info.colorBufferIndex        = 0;
             output->uploadBuffer(&buf, info, nullptr);
 
+            // Depth buffer: fill with black
             OP_SmartRef<TOP_Buffer> depthBuf = myContext->createOutputBuffer(WIDTH * HEIGHT * 2, TOP_BufferFlags::None, nullptr);
             uint16_t* depthOut = static_cast<uint16_t*>(depthBuf->data);
             for (int i = 0; i < WIDTH * HEIGHT; ++i)
                 depthOut[i] = 0;
+
+            // Draw a white band at the top
+            for (int x = 0; x < WIDTH; ++x) {
+                int idx = (HEIGHT - 1 - 20) * WIDTH + x;  // flip Y to show at top
+                depthOut[idx] = 65535;
+            }
+
             TOP_UploadInfo depthInfo;
             depthInfo.textureDesc.width       = WIDTH;
             depthInfo.textureDesc.height      = HEIGHT;
             depthInfo.textureDesc.texDim      = OP_TexDim::e2D;
             depthInfo.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
             depthInfo.colorBufferIndex        = 1;
-            // Overwrite upper part with white rectangle and write "Kinect Not Connected"
-            const char* errorMsg = "KINECT NOT CONNECTED";
-            int msgLen = static_cast<int>(strlen(errorMsg));
-            int row = 20;
-            for (int i = 0; i < msgLen && i < WIDTH - 1; ++i) {
-                int px = (i + (WIDTH - msgLen) / 2);
-                int py = row;
-                int idx = py * WIDTH + px;
-                out[idx * 4 + 0] = 255;
-                out[idx * 4 + 1] = 255;
-                out[idx * 4 + 2] = 255;
-                out[idx * 4 + 3] = 255;
-            }
-
-            // Overwrite depth top row with a bright band
-            for (int i = 0; i < WIDTH; ++i) {
-                int idx = 20 * WIDTH + i;
-                depthOut[idx] = 65535;
-            }
             output->uploadBuffer(&depthBuf, depthInfo, nullptr);
             return;
         }
         deviceValid = true;
     }
+
     float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     try {
         device->setTiltDegrees(tilt);
@@ -270,17 +296,17 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     std::vector<uint8_t> rgb;
     if (device->getRGB(rgb)) {
         lastRGB = rgb;
-        OP_SmartRef<TOP_Buffer> buf = myContext->createOutputBuffer(WIDTH*HEIGHT*4, TOP_BufferFlags::None, nullptr);
+        OP_SmartRef<TOP_Buffer> buf = myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr);
         uint8_t* out = static_cast<uint8_t*>(buf->data);
         for (int y = 0; y < HEIGHT; ++y)
             for (int x = 0; x < WIDTH; ++x) {
                 int srcY = HEIGHT - 1 - y;
                 int iSrc = (srcY * WIDTH + x) * 3;
                 int iDst = (y * WIDTH + x) * 4;
-                out[iDst+0] = lastRGB[iSrc+0];
-                out[iDst+1] = lastRGB[iSrc+1];
-                out[iDst+2] = lastRGB[iSrc+2];
-                out[iDst+3] = 255;
+                out[iDst + 0] = lastRGB[iSrc + 0];
+                out[iDst + 1] = lastRGB[iSrc + 1];
+                out[iDst + 2] = lastRGB[iSrc + 2];
+                out[iDst + 3] = 255;
             }
         TOP_UploadInfo info;
         info.textureDesc.width       = WIDTH;
@@ -294,7 +320,7 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     std::vector<uint16_t> depth;
     if (device->getDepth(depth)) {
         lastDepth = depth;
-        OP_SmartRef<TOP_Buffer> buf = myContext->createOutputBuffer(WIDTH*HEIGHT*2, TOP_BufferFlags::None, nullptr);
+        OP_SmartRef<TOP_Buffer> buf = myContext->createOutputBuffer(WIDTH * HEIGHT * 2, TOP_BufferFlags::None, nullptr);
         uint16_t* out = static_cast<uint16_t*>(buf->data);
         for (int y = 0; y < HEIGHT; ++y)
             for (int x = 0; x < WIDTH; ++x) {
@@ -319,3 +345,4 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
 }
 
 void FreenectTOP::pulsePressed(const char*, void*) {}
+

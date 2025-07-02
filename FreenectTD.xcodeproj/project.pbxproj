@@ -29,12 +29,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		817837C82DCBB35800F77818 /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = libusb.h; path = "/opt/homebrew/Cellar/libusb/1.0.28/include/libusb-1.0/libusb.h"; sourceTree = "<absolute>"; };
-		817837C92DCBB37200F77818 /* libfreenect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = libfreenect.h; path = /opt/homebrew/Cellar/libfreenect/0.7.5/include/libfreenect/libfreenect.h; sourceTree = "<absolute>"; };
 		81801BDC2DCBB18A00A0FCBD /* libfreenect.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreenect.0.dylib; path = VendorLibs/libfreenect.0.dylib; sourceTree = "<group>"; };
 		81801BDD2DCBB18A00A0FCBD /* libusb.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libusb.0.dylib; path = VendorLibs/libusb.0.dylib; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
+		81A7BA5D2E1461E8006DBA1B /* libfreenect.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libfreenect.hpp; sourceTree = "<group>"; };
+		81A7BA5E2E146217006DBA1B /* libfreenect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libfreenect.h; sourceTree = "<group>"; };
 		81E3B9622DC3687500B0413C /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -63,10 +63,10 @@
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
-				817837C82DCBB35800F77818 /* libusb.h */,
-				817837C92DCBB37200F77818 /* libfreenect.h */,
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
+				81A7BA5D2E1461E8006DBA1B /* libfreenect.hpp */,
+				81A7BA5E2E146217006DBA1B /* libfreenect.h */,
 				818A9C212DC36EDE000B85E5 /* Frameworks */,
 				81E3B9632DC3687500B0413C /* Products */,
 			);
@@ -280,6 +280,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = FreenectTOP;
 				SDKROOT = macosx;
 			};
@@ -291,6 +292,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				EXCLUDED_ARCHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"/opt/homebrew/include/libfreenect/**",
@@ -312,7 +314,8 @@
 					"$(PROJECT_DIR)/VendorLibs",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.2.2;
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = ee.marte.FreenectTD.TOP;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -327,6 +330,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				EXCLUDED_ARCHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"/opt/homebrew/include/libfreenect/**",
@@ -348,7 +352,8 @@
 					"$(PROJECT_DIR)/VendorLibs",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.2.2;
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = ee.marte.FreenectTD.TOP;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
