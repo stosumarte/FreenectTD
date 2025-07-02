@@ -29,8 +29,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		817837C82DCBB35800F77818 /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = libusb.h; path = "/opt/homebrew/Cellar/libusb/1.0.28/include/libusb-1.0/libusb.h"; sourceTree = "<absolute>"; };
-		817837C92DCBB37200F77818 /* libfreenect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = libfreenect.h; path = /opt/homebrew/Cellar/libfreenect/0.7.5/include/libfreenect/libfreenect.h; sourceTree = "<absolute>"; };
+		810E52722E1571070094540F /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libusb.h; sourceTree = "<group>"; };
+		810E52732E1571370094540F /* libfreenect.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libfreenect.hpp; sourceTree = "<group>"; };
 		81801BDC2DCBB18A00A0FCBD /* libfreenect.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreenect.0.dylib; path = VendorLibs/libfreenect.0.dylib; sourceTree = "<group>"; };
 		81801BDD2DCBB18A00A0FCBD /* libusb.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libusb.0.dylib; path = VendorLibs/libusb.0.dylib; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
@@ -63,9 +63,9 @@
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
-				817837C82DCBB35800F77818 /* libusb.h */,
-				817837C92DCBB37200F77818 /* libfreenect.h */,
+				810E52722E1571070094540F /* libusb.h */,
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
+				810E52732E1571370094540F /* libfreenect.hpp */,
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
 				818A9C212DC36EDE000B85E5 /* Frameworks */,
 				81E3B9632DC3687500B0413C /* Products */,
