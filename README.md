@@ -2,14 +2,9 @@
 FreenectTD is an open source TouchDesigner implementation of the [libfreenect](https://github.com/OpenKinect/libfreenect) C++ wrapper, aimed at macOS users who don't have a way to use the official Kinect OPs in TouchDesigner.
 
 ## Installing
-FreenectTD relies on libfreenect and libusb to run. They have both been embedded in the plugin since version 0.2.0, to make installation easier and aid portability.
+FreenectTD relies on libfreenect and libusb to run. They have both been embedded in the plugin since version 0.2.0, to make the installation easier and aid portability.
 
-~~**You must install them with brew before continuing.**
-If you don't have brew, run this command to install it:
-`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-Once brew is installed, you can install libfreenect and libusb by running `brew install libfreenect libusb`.~~
-
-[Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest), unzip and copy `FreenectTD.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`.
+[Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest), unzip and copy `FreenectTD.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘+⇧+.`.
 
 ⚠️ macOS may prevent the plugin from loading after download due to security quarantine flags. To fix this, open Terminal and run:
 
