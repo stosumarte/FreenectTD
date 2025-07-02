@@ -42,8 +42,9 @@ FreenectTD has currently been tested only with a 1414 model (Xbox 360), but it s
 
 
 ### Will this ever work on Kinect V2?
-It's not planned, and it would require an almost complete rewrite since it would need to interface with libfreenect2. 
-Feel free to fork this project and implement it on other versions, though.
+It's not currently planned, and it would require an almost complete rewrite since it would need to interface with libfreenect2. 
+I recently acquired a couple of V2 models though, and another plugin may be coming from me later this year.
+If you feel like it, feel free to fork this repo and build on it!
 
 ## Credits
 A very big thank you goes to libfreenect developers, who made a great work by creating a way to unofficially interface with Kinect devices on macOS and Linux.
