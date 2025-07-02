@@ -5,7 +5,7 @@
 //
 
 #include "FreenectTOP.h"
-#include <libfreenect.hpp>
+#include "libfreenect.hpp"
 #include <sys/time.h>
 #include <cstdio>
 #include <algorithm>
