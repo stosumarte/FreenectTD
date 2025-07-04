@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include/libfreenect
+	
+Name: libfreenect
+Description: Interface to the Microsoft Kinect sensor device.
+Requires.private: libusb-1.0
+Version: 0
+Libs: -L${libdir} -lfreenect
+Cflags: -I${includedir}

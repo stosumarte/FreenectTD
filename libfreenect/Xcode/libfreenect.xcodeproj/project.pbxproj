@@ -1,0 +1,2381 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		1040E5077DCDE0E273BDFBD4 /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 91B4FCF639A842BFA373D8B7 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				82599991144C276ECD40B124 /* Generate CMakeFiles/ALL_BUILD */,
+			);
+			dependencies = (
+				E6C8A4FC7469458792A56B6A /* PBXTargetDependency */,
+				0CFC3711BF2243A299BE48ED /* PBXTargetDependency */,
+				6E51E66622534CC4A8E4B794 /* PBXTargetDependency */,
+				2341834A1093446E90CAFE84 /* PBXTargetDependency */,
+				E0E52AB55F354B29911DEFA6 /* PBXTargetDependency */,
+				808B457437AC487AABDF2C0A /* PBXTargetDependency */,
+				576489C7064F4C28AEFB84C4 /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+		2433D2398F26F1112C02E5DB /* ZERO_CHECK */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 34483CB11FB04E5199D289A0 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildPhases = (
+				A23D8E7CD78DF7EFE350CD3A /* Generate CMakeFiles/ZERO_CHECK */,
+			);
+			dependencies = (
+			);
+			name = ZERO_CHECK;
+			productName = ZERO_CHECK;
+		};
+		32A2B8B2304463B1A1577A3A /* install */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 08614F5F9B864FD5B00C491E /* Build configuration list for PBXAggregateTarget "install" */;
+			buildPhases = (
+				93426DA6A4AC2C2AC9CE883C /* CMake PostBuild Rules */,
+			);
+			dependencies = (
+				6722306A8C2D4777B487E508 /* PBXTargetDependency */,
+			);
+			name = install;
+			productName = install;
+		};
+		BEA7E574A7BE56E8871A8225 /* uninstall */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 8E80814A586A4FE3BF129C87 /* Build configuration list for PBXAggregateTarget "uninstall" */;
+			buildPhases = (
+				741F8B4ACEF2239330A9F089 /* Generate CMakeFiles/uninstall */,
+			);
+			dependencies = (
+				110F26FCB1434291B97D64B1 /* PBXTargetDependency */,
+			);
+			name = uninstall;
+			productName = uninstall;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		007737506DA94FDCB08A1D0C /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = E6B85D9CED8E4633BD0DAD4C /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/CMakeLists.txt */; };
+		04EBEB50ECCF473AA933FBF1 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */ = {isa = PBXBuildFile; fileRef = D08C6F3A308A4EE3A99ADAF0 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */; };
+		06ED61AD7FE742CBB4855EAC /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */ = {isa = PBXBuildFile; fileRef = 7A4DDEA32E8C457F859A6329 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */; };
+		10CEB9E33BCC4D3E9F458358 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */ = {isa = PBXBuildFile; fileRef = 75A89CAC330C403DB3E82288 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */; };
+		19D0A749A5C646AF8205E3C9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */ = {isa = PBXBuildFile; fileRef = A9CC3149D8AE440D9BC8FC0D /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */; };
+		207BE8A1D5A54195A7382111 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */ = {isa = PBXBuildFile; fileRef = E5F1290C732B40FE8DF825AC /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */; };
+		291AFD460182432E99152FC4 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */ = {isa = PBXBuildFile; fileRef = A05121E75BB9477EA0DF9A35 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */; };
+		4E98BB5700504DC89A8C2D24 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/fakenect.c */ = {isa = PBXBuildFile; fileRef = E6B46845FAB34B999E64DF0C /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/fakenect.c */; };
+		52643F994F984906B0EAAFC7 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */ = {isa = PBXBuildFile; fileRef = 5958B00D45164F0198AA0321 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */; };
+		53952EC36BBE41B9BB8A4507 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */ = {isa = PBXBuildFile; fileRef = E99BB25A23CE4940B4840144 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */; };
+		614EC79D44C044929C681844 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */ = {isa = PBXBuildFile; fileRef = 56E418891E604BEC95234EB3 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */; };
+		675E821C62EF42488C583363 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 344BAA1999614C979C7C48C9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/CMakeLists.txt */; };
+		685E8CD58BCE42E3A016040E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */ = {isa = PBXBuildFile; fileRef = E037C3260B8F4F469AC8DB4E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */; };
+		69520513AB3D45B28477CB48 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */ = {isa = PBXBuildFile; fileRef = 440C288E38294028A6A3D3A0 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */; };
+		8DB729CC8247423AA67FA659 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = AD3F7118AB624F4B837F67CD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/CMakeLists.txt */; };
+		A1224536BF064EB980B78969 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 86CBE2B9204C4BD8A4E1FB01 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/CMakeLists.txt */; };
+		A57B411F0E2143019C3791EB /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */ = {isa = PBXBuildFile; fileRef = 8F8225DC129447F99578A881 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */; };
+		AB2241DFFC6F4813A3C786F9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */ = {isa = PBXBuildFile; fileRef = A7D7133C10814B6ABFEA7BEC /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */; };
+		BAB6F58F57714C41911FA2E2 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 3ACC82CEC00E4823BA440085 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/CMakeLists.txt */; };
+		CA156B97AC814B83AA91E3FA /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */ = {isa = PBXBuildFile; fileRef = F72DB78B3607409C86740606 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */; };
+		D4ED61511D344D39A1D15959 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */ = {isa = PBXBuildFile; fileRef = B3CE0087FC66406BB87C0A83 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */; };
+		E00CB2205ADD45CA83547DCA /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */ = {isa = PBXBuildFile; fileRef = 8125441E409048E0885E1CCD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */; };
+		E6FA1E5EBDA04619AB41CCC1 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */ = {isa = PBXBuildFile; fileRef = 4A64DFE090BF4BEC85496749 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */; };
+		E93C6D660F2649D0AACD7808 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/record.c */ = {isa = PBXBuildFile; fileRef = 6928936626B646B88279A6DF /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/record.c */; };
+		ED1580F5BD754FB59C5B69F9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */ = {isa = PBXBuildFile; fileRef = 40C82E0E779341A88C518021 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */; };
+		F13B9DEA025941948263508E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */ = {isa = PBXBuildFile; fileRef = BE2DD1DA751E4EFDACF3088B /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */; };
+		F20FC09BCCE5487FA55256E9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */ = {isa = PBXBuildFile; fileRef = 44D88538903A49048A6200FD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */; };
+		F2AC1FB61EFF4B558210326E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */ = {isa = PBXBuildFile; fileRef = 790965F1621A4951AD042102 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */; };
+		F604A1E06D9B4B829306A51F /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 67B9E05CEC304562A05E1FB7 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/CMakeLists.txt */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildStyle section */
+		4E8234A0EB784596972D09DD /* MinSizeRel */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = MinSizeRel;
+		};
+		B5C28CA8652F42588E46EAD7 /* Release */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Release;
+		};
+		EBBBAC36C5CF4498BF8012E8 /* Debug */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
+		};
+		F1C5442F75F645C2860FA970 /* RelWithDebInfo */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = RelWithDebInfo;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXContainerItemProxy section */
+		0045686655934868A7832326 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2433D2398F26F1112C02E5DB;
+			remoteInfo = ZERO_CHECK;
+		};
+		0485C9D6EB5F45509162C4FF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AC52B3F01A4C691117CFE839;
+			remoteInfo = freenect;
+		};
+		0BFEC97DDACC487B9E9D3031 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1040E5077DCDE0E273BDFBD4;
+			remoteInfo = ALL_BUILD;
+		};
+		0ECC03DBD1C6454E9EC85184 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2433D2398F26F1112C02E5DB;
+			remoteInfo = ZERO_CHECK;
+		};
+		1C84C5E5E6A34335B984FEA7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 47FBC2E2C14DDF4F509050A5;
+			remoteInfo = freenect_sync;
+		};
+		34DD221D5AFA4EF68F124566 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2433D2398F26F1112C02E5DB;
+			remoteInfo = ZERO_CHECK;
+		};
+		4AA0E24AD94D4BDCBF69CA47 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FDD59D97038E272A68B2400A;
+			remoteInfo = "fakenect-record";
+		};
+		612256A652F6428EBADE7B55 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C8B9457D21360F20993877B6;
+			remoteInfo = freenectstatic;
+		};
+		62215EB05C4446EFA8569205 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AC52B3F01A4C691117CFE839;
+			remoteInfo = freenect;
+		};
+		7D60E5B8AF234238B500CBEC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2433D2398F26F1112C02E5DB;
+			remoteInfo = ZERO_CHECK;
+		};
+		803C55079A724EFFA7ECC502 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2433D2398F26F1112C02E5DB;
+			remoteInfo = ZERO_CHECK;
+		};
+		AE7DE519123148149EB320EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AC52B3F01A4C691117CFE839;
+			remoteInfo = freenect;
+		};
+		B38991F60C6C4EF6859ECEDD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 63C074D18BE8BE9C57683E6D;
+			remoteInfo = fakenect;
+		};
+		CA9BB04AF08F4BDCA64045C7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AC52B3F01A4C691117CFE839;
+			remoteInfo = freenect;
+		};
+		E151348DA77147B89C717EBD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 285841D9F5EA17E961F16851;
+			remoteInfo = freenect_sync_static;
+		};
+		E2C104C4B9D24AF0AF275CDC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2433D2398F26F1112C02E5DB;
+			remoteInfo = ZERO_CHECK;
+		};
+		EC73FA74E8F14BE2BE839C68 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2433D2398F26F1112C02E5DB;
+			remoteInfo = ZERO_CHECK;
+		};
+		FAAAB42C7854488B8D239F6B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EFA706EB33234A6DB36BA706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2433D2398F26F1112C02E5DB;
+			remoteInfo = ZERO_CHECK;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		11EDFE688B994E6091B92EB2 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		1EFF2FDCA60C4F32A9D0CAE7 /* freenectstatic */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libfreenect.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		344BAA1999614C979C7C48C9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = fakenect/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		3ACC82CEC00E4823BA440085 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = fakenect/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		40C82E0E779341A88C518021 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = usb_libusb10.c; path = src/usb_libusb10.c; sourceTree = SOURCE_ROOT; };
+		440C288E38294028A6A3D3A0 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = parson.c; path = fakenect/parson.c; sourceTree = SOURCE_ROOT; };
+		44D88538903A49048A6200FD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = flags.c; path = src/flags.c; sourceTree = SOURCE_ROOT; };
+		4A64DFE090BF4BEC85496749 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = tilt.c; path = src/tilt.c; sourceTree = SOURCE_ROOT; };
+		54BF374BEB0440B185781203 /* freenect_sync */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; path = libfreenect_sync.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		56E418891E604BEC95234EB3 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = loader.c; path = src/loader.c; sourceTree = SOURCE_ROOT; };
+		5958B00D45164F0198AA0321 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = registration.c; path = src/registration.c; sourceTree = SOURCE_ROOT; };
+		5A9D59AEC5034786806A3EA4 /* fakenect-record */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = "fakenect-record"; sourceTree = BUILT_PRODUCTS_DIR; };
+		67B9E05CEC304562A05E1FB7 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = wrappers/c_sync/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		6928936626B646B88279A6DF /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/record.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = record.c; path = fakenect/record.c; sourceTree = SOURCE_ROOT; };
+		75A89CAC330C403DB3E82288 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = registration.c; path = src/registration.c; sourceTree = SOURCE_ROOT; };
+		790965F1621A4951AD042102 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = loader.c; path = src/loader.c; sourceTree = SOURCE_ROOT; };
+		7A4DDEA32E8C457F859A6329 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = cameras.c; path = src/cameras.c; sourceTree = SOURCE_ROOT; };
+		80C483DBD969419FB41DAF19 /* fakenect */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; path = libfakenect.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		8125441E409048E0885E1CCD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = core.c; path = src/core.c; sourceTree = SOURCE_ROOT; };
+		86CBE2B9204C4BD8A4E1FB01 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = wrappers/c_sync/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		8F3BD384FF80493A88D3ABB8 /* freenect */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; path = libfreenect.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		8F8225DC129447F99578A881 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = audio.c; path = src/audio.c; sourceTree = SOURCE_ROOT; };
+		A05121E75BB9477EA0DF9A35 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = registration.c; path = src/registration.c; sourceTree = SOURCE_ROOT; };
+		A7D7133C10814B6ABFEA7BEC /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = usb_libusb10.c; path = src/usb_libusb10.c; sourceTree = SOURCE_ROOT; };
+		A9CC3149D8AE440D9BC8FC0D /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = core.c; path = src/core.c; sourceTree = SOURCE_ROOT; };
+		AD3F7118AB624F4B837F67CD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = src/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		B3CE0087FC66406BB87C0A83 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = libfreenect_sync.c; path = wrappers/c_sync/libfreenect_sync.c; sourceTree = SOURCE_ROOT; };
+		B8A336BD6FE147E3A26A0A67 /* freenect_sync_static */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libfreenect_sync.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		BE2DD1DA751E4EFDACF3088B /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = libfreenect_sync.c; path = wrappers/c_sync/libfreenect_sync.c; sourceTree = SOURCE_ROOT; };
+		D08C6F3A308A4EE3A99ADAF0 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = parson.c; path = fakenect/parson.c; sourceTree = SOURCE_ROOT; };
+		E037C3260B8F4F469AC8DB4E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = flags.c; path = src/flags.c; sourceTree = SOURCE_ROOT; };
+		E54F007E6EFA4DA59D3BBB70 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		E5F1290C732B40FE8DF825AC /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = tilt.c; path = src/tilt.c; sourceTree = SOURCE_ROOT; };
+		E6B46845FAB34B999E64DF0C /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/fakenect.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = fakenect.c; path = fakenect/fakenect.c; sourceTree = SOURCE_ROOT; };
+		E6B85D9CED8E4633BD0DAD4C /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = src/CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		E99BB25A23CE4940B4840144 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = audio.c; path = src/audio.c; sourceTree = SOURCE_ROOT; };
+		F72DB78B3607409C86740606 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = cameras.c; path = src/cameras.c; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0457C243799447788518DFD4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		185C036E2720448D84DC68AF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		318763FA6AFC45B9964680CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4660E7AE15D74B0E9CE8039F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC86EAD922FE429F9AF07B55 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DC479A3C7B494A56B12DA298 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2E97011D3C884B5DAD5D60F7 /* freenectstatic */ = {
+			isa = PBXGroup;
+			children = (
+				F247C92D93ED44449B224244 /* Source Files */,
+				AD3F7118AB624F4B837F67CD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/CMakeLists.txt */,
+			);
+			name = freenectstatic;
+			sourceTree = "<group>";
+		};
+		34FB1CBF005642DBB24D1F09 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		38E44DA8156548E89FA15B3C /* freenect */ = {
+			isa = PBXGroup;
+			children = (
+				92D8E35E813F4BA4B9BAA13E /* Source Files */,
+				E6B85D9CED8E4633BD0DAD4C /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/CMakeLists.txt */,
+			);
+			name = freenect;
+			sourceTree = "<group>";
+		};
+		3A727D71383C4C538DBE9BB0 /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				34FB1CBF005642DBB24D1F09 /* CMake Rules */,
+				11EDFE688B994E6091B92EB2 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		3D5F346B745F44299D263293 = {
+			isa = PBXGroup;
+			children = (
+				6961413A0259433EA6EEC66A /* uninstall */,
+				3A727D71383C4C538DBE9BB0 /* ALL_BUILD */,
+				38E44DA8156548E89FA15B3C /* freenect */,
+				2E97011D3C884B5DAD5D60F7 /* freenectstatic */,
+				C944FCCFEA7442FA909F9BEF /* fakenect */,
+				B578329DA69543749D2BCCB6 /* fakenect-record */,
+				3D9DFC2D17884296A6BFFDC8 /* freenect_sync */,
+				CFFC1642216F4F1EAD64FBF0 /* freenect_sync_static */,
+				CA35320F2FF54B06BE258044 /* Products */,
+				517F34D181E74F368FA58411 /* Frameworks */,
+				9E8B5182BDCF4419BB309460 /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		3D9DFC2D17884296A6BFFDC8 /* freenect_sync */ = {
+			isa = PBXGroup;
+			children = (
+				5EEFF0FA11EA46EDBB13354E /* Source Files */,
+				86CBE2B9204C4BD8A4E1FB01 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/CMakeLists.txt */,
+			);
+			name = freenect_sync;
+			sourceTree = "<group>";
+		};
+		46E4F97A10404E9DB3707971 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		517F34D181E74F368FA58411 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		5EEFF0FA11EA46EDBB13354E /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				BE2DD1DA751E4EFDACF3088B /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		6749AA9894194482AB3C3225 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				D08C6F3A308A4EE3A99ADAF0 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */,
+				6928936626B646B88279A6DF /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/record.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		6961413A0259433EA6EEC66A /* uninstall */ = {
+			isa = PBXGroup;
+			children = (
+				46E4F97A10404E9DB3707971 /* CMake Rules */,
+				E54F007E6EFA4DA59D3BBB70 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/CMakeLists.txt */,
+			);
+			name = uninstall;
+			sourceTree = "<group>";
+		};
+		8C1A5AB92C854F0FAA646226 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				B3CE0087FC66406BB87C0A83 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		92D8E35E813F4BA4B9BAA13E /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				E99BB25A23CE4940B4840144 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */,
+				7A4DDEA32E8C457F859A6329 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */,
+				8125441E409048E0885E1CCD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */,
+				44D88538903A49048A6200FD /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */,
+				56E418891E604BEC95234EB3 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */,
+				75A89CAC330C403DB3E82288 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */,
+				E5F1290C732B40FE8DF825AC /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */,
+				40C82E0E779341A88C518021 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		9E8B5182BDCF4419BB309460 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		B578329DA69543749D2BCCB6 /* fakenect-record */ = {
+			isa = PBXGroup;
+			children = (
+				6749AA9894194482AB3C3225 /* Source Files */,
+				3ACC82CEC00E4823BA440085 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/CMakeLists.txt */,
+			);
+			name = "fakenect-record";
+			sourceTree = "<group>";
+		};
+		C944FCCFEA7442FA909F9BEF /* fakenect */ = {
+			isa = PBXGroup;
+			children = (
+				F8D9D6E097FE4A5C9B914916 /* Source Files */,
+				344BAA1999614C979C7C48C9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/CMakeLists.txt */,
+			);
+			name = fakenect;
+			sourceTree = "<group>";
+		};
+		CA35320F2FF54B06BE258044 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				80C483DBD969419FB41DAF19 /* fakenect */,
+				5A9D59AEC5034786806A3EA4 /* fakenect-record */,
+				8F3BD384FF80493A88D3ABB8 /* freenect */,
+				54BF374BEB0440B185781203 /* freenect_sync */,
+				B8A336BD6FE147E3A26A0A67 /* freenect_sync_static */,
+				1EFF2FDCA60C4F32A9D0CAE7 /* freenectstatic */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CFFC1642216F4F1EAD64FBF0 /* freenect_sync_static */ = {
+			isa = PBXGroup;
+			children = (
+				8C1A5AB92C854F0FAA646226 /* Source Files */,
+				67B9E05CEC304562A05E1FB7 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/CMakeLists.txt */,
+			);
+			name = freenect_sync_static;
+			sourceTree = "<group>";
+		};
+		F247C92D93ED44449B224244 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				8F8225DC129447F99578A881 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */,
+				F72DB78B3607409C86740606 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */,
+				A9CC3149D8AE440D9BC8FC0D /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */,
+				E037C3260B8F4F469AC8DB4E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */,
+				790965F1621A4951AD042102 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */,
+				A05121E75BB9477EA0DF9A35 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */,
+				4A64DFE090BF4BEC85496749 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */,
+				A7D7133C10814B6ABFEA7BEC /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		F8D9D6E097FE4A5C9B914916 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				E6B46845FAB34B999E64DF0C /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/fakenect.c */,
+				440C288E38294028A6A3D3A0 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */,
+				5958B00D45164F0198AA0321 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		285841D9F5EA17E961F16851 /* freenect_sync_static */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8BE3343D4A504460BB7EB17A /* Build configuration list for PBXNativeTarget "freenect_sync_static" */;
+			buildPhases = (
+				0445333551544DABB9C582CE /* Sources */,
+				DC479A3C7B494A56B12DA298 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2EC2ECF56D4541498DD55817 /* PBXTargetDependency */,
+				CCFE60065F594DF98FBAA0D7 /* PBXTargetDependency */,
+			);
+			name = freenect_sync_static;
+			productName = freenect_sync_static;
+			productReference = B8A336BD6FE147E3A26A0A67 /* freenect_sync_static */;
+			productType = "com.apple.product-type.library.static";
+		};
+		47FBC2E2C14DDF4F509050A5 /* freenect_sync */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3C4A5D0F359D4235B2B6A6C7 /* Build configuration list for PBXNativeTarget "freenect_sync" */;
+			buildPhases = (
+				8AAF305D3C204EEAB5FBC7EE /* Sources */,
+				185C036E2720448D84DC68AF /* Frameworks */,
+				21B94D66582B5033B0818D24 /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B8AFCA4FFD0E46BBBBA1C432 /* PBXTargetDependency */,
+				8391A0CEE7C44D9FBC8645F9 /* PBXTargetDependency */,
+			);
+			name = freenect_sync;
+			productName = freenect_sync;
+			productReference = 54BF374BEB0440B185781203 /* freenect_sync */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		63C074D18BE8BE9C57683E6D /* fakenect */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2F90C04CC25471EB104FA2F /* Build configuration list for PBXNativeTarget "fakenect" */;
+			buildPhases = (
+				831EE33091D548C6A39F9D90 /* Sources */,
+				BC86EAD922FE429F9AF07B55 /* Frameworks */,
+				CBD323E818B75334BACA1C17 /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C85A357100824904984BE124 /* PBXTargetDependency */,
+			);
+			name = fakenect;
+			productName = fakenect;
+			productReference = 80C483DBD969419FB41DAF19 /* fakenect */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		AC52B3F01A4C691117CFE839 /* freenect */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0D47E89A6AFE4C76885E7C37 /* Build configuration list for PBXNativeTarget "freenect" */;
+			buildPhases = (
+				E28D412997C740A7AC69AE7B /* Sources */,
+				0457C243799447788518DFD4 /* Frameworks */,
+				A2E5CFD961F9BF14C152871D /* CMake PostBuild Rules */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BFB5DBA39CC24516A358C31F /* PBXTargetDependency */,
+			);
+			name = freenect;
+			productName = freenect;
+			productReference = 8F3BD384FF80493A88D3ABB8 /* freenect */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		C8B9457D21360F20993877B6 /* freenectstatic */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E725FD848A5041CEBD818CAF /* Build configuration list for PBXNativeTarget "freenectstatic" */;
+			buildPhases = (
+				4E9ED918B19D448E9D793EE0 /* Sources */,
+				4660E7AE15D74B0E9CE8039F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				42EE17900A10456380FC89E0 /* PBXTargetDependency */,
+			);
+			name = freenectstatic;
+			productName = freenectstatic;
+			productReference = 1EFF2FDCA60C4F32A9D0CAE7 /* freenectstatic */;
+			productType = "com.apple.product-type.library.static";
+		};
+		FDD59D97038E272A68B2400A /* fakenect-record */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9287D0BEB95A4288A6979E1A /* Build configuration list for PBXNativeTarget "fakenect-record" */;
+			buildPhases = (
+				848FEA1A3A5A4CB18267C13C /* Sources */,
+				318763FA6AFC45B9964680CD /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B174DC2B81024486AE04F511 /* PBXTargetDependency */,
+				7E5CB4F13E8248A68F43FCD4 /* PBXTargetDependency */,
+			);
+			name = "fakenect-record";
+			productName = "fakenect-record";
+			productReference = 5A9D59AEC5034786806A3EA4 /* fakenect-record */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		EFA706EB33234A6DB36BA706 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1640;
+			};
+			buildConfigurationList = EF20B3B00D6242CE8A4D999B /* Build configuration list for PBXProject "libfreenect" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				EBBBAC36C5CF4498BF8012E8 /* Debug */,
+				B5C28CA8652F42588E46EAD7 /* Release */,
+				4E8234A0EB784596972D09DD /* MinSizeRel */,
+				F1C5442F75F645C2860FA970 /* RelWithDebInfo */,
+			);
+			compatibilityVersion = "Xcode 3.2";
+			hasScannedForEncodings = 0;
+			mainGroup = 3D5F346B745F44299D263293;
+			projectDirPath = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect;
+			projectRoot = "";
+			targets = (
+				1040E5077DCDE0E273BDFBD4 /* ALL_BUILD */,
+				63C074D18BE8BE9C57683E6D /* fakenect */,
+				FDD59D97038E272A68B2400A /* fakenect-record */,
+				AC52B3F01A4C691117CFE839 /* freenect */,
+				47FBC2E2C14DDF4F509050A5 /* freenect_sync */,
+				285841D9F5EA17E961F16851 /* freenect_sync_static */,
+				C8B9457D21360F20993877B6 /* freenectstatic */,
+				32A2B8B2304463B1A1577A3A /* install */,
+				BEA7E574A7BE56E8871A8225 /* uninstall */,
+				2433D2398F26F1112C02E5DB /* ZERO_CHECK */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		21B94D66582B5033B0818D24 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/c_sync
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug/libfreenect_sync.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug/libfreenect_sync.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug/libfreenect_sync.dylib
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/c_sync
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release/libfreenect_sync.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release/libfreenect_sync.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release/libfreenect_sync.dylib
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/c_sync
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel/libfreenect_sync.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel/libfreenect_sync.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel/libfreenect_sync.dylib
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/c_sync
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo/libfreenect_sync.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo/libfreenect_sync.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo/libfreenect_sync.dylib
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		3C0110FC8322DE7E50886E21 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		3C8B9B9628600475EB03CBF8 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		741F8B4ACEF2239330A9F089 /* Generate CMakeFiles/uninstall */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/uninstall";
+			outputPaths = (
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeFiles/uninstall			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  /opt/homebrew/bin/cmake -P /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/UninstallTarget.cmake
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  /opt/homebrew/bin/cmake -P /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/UninstallTarget.cmake
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  /opt/homebrew/bin/cmake -P /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/UninstallTarget.cmake
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  /opt/homebrew/bin/cmake -P /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/UninstallTarget.cmake
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		82599991144C276ECD40B124 /* Generate CMakeFiles/ALL_BUILD */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ALL_BUILD";
+			outputPaths = (
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeFiles/ALL_BUILD			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  echo Build\\ all\\ projects
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		87AF4882E018677E2624B544 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		93426DA6A4AC2C2AC9CE883C /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  /opt/homebrew/bin/cmake -DBUILD_TYPE=$CONFIGURATION$EFFECTIVE_PLATFORM_NAME -P cmake_install.cmake
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  /opt/homebrew/bin/cmake -DBUILD_TYPE=$CONFIGURATION$EFFECTIVE_PLATFORM_NAME -P cmake_install.cmake
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  /opt/homebrew/bin/cmake -DBUILD_TYPE=$CONFIGURATION$EFFECTIVE_PLATFORM_NAME -P cmake_install.cmake
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  /opt/homebrew/bin/cmake -DBUILD_TYPE=$CONFIGURATION$EFFECTIVE_PLATFORM_NAME -P cmake_install.cmake
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		9B50530E35CC49C82C2FACCF = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		A23D8E7CD78DF7EFE350CD3A /* Generate CMakeFiles/ZERO_CHECK */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ZERO_CHECK";
+			outputPaths = (
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeFiles/ZERO_CHECK			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  make -f /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeScripts/ReRunCMake.make
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  make -f /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeScripts/ReRunCMake.make
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  make -f /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeScripts/ReRunCMake.make
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode
+  make -f /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeScripts/ReRunCMake.make
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		A2E5CFD961F9BF14C152871D /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/src
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug/libfreenect.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug/libfreenect.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug/libfreenect.dylib
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/src
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release/libfreenect.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release/libfreenect.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release/libfreenect.dylib
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/src
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel/libfreenect.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel/libfreenect.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel/libfreenect.dylib
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/src
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo/libfreenect.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo/libfreenect.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo/libfreenect.dylib
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		CBD323E818B75334BACA1C17 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/fakenect
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/Debug/libfakenect.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/Debug/libfakenect.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/Debug/libfakenect.dylib
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/fakenect
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/Release/libfakenect.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/Release/libfakenect.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/Release/libfakenect.dylib
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/fakenect
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/MinSizeRel/libfakenect.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/MinSizeRel/libfakenect.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/MinSizeRel/libfakenect.dylib
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/fakenect
+  /opt/homebrew/bin/cmake -E cmake_symlink_library /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/RelWithDebInfo/libfakenect.0.7.5.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/RelWithDebInfo/libfakenect.0.dylib /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/RelWithDebInfo/libfakenect.dylib
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0445333551544DABB9C582CE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D4ED61511D344D39A1D15959 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4E9ED918B19D448E9D793EE0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A57B411F0E2143019C3791EB /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */,
+				CA156B97AC814B83AA91E3FA /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */,
+				19D0A749A5C646AF8205E3C9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */,
+				685E8CD58BCE42E3A016040E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */,
+				F2AC1FB61EFF4B558210326E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */,
+				291AFD460182432E99152FC4 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */,
+				E6FA1E5EBDA04619AB41CCC1 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */,
+				AB2241DFFC6F4813A3C786F9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		831EE33091D548C6A39F9D90 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4E98BB5700504DC89A8C2D24 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/fakenect.c */,
+				69520513AB3D45B28477CB48 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */,
+				52643F994F984906B0EAAFC7 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		848FEA1A3A5A4CB18267C13C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				04EBEB50ECCF473AA933FBF1 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/parson.c */,
+				E93C6D660F2649D0AACD7808 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/record.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8AAF305D3C204EEAB5FBC7EE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F13B9DEA025941948263508E /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/wrappers/c_sync/libfreenect_sync.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E28D412997C740A7AC69AE7B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				53952EC36BBE41B9BB8A4507 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/audio.c */,
+				06ED61AD7FE742CBB4855EAC /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/cameras.c */,
+				E00CB2205ADD45CA83547DCA /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/core.c */,
+				F20FC09BCCE5487FA55256E9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/flags.c */,
+				614EC79D44C044929C681844 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/loader.c */,
+				10CEB9E33BCC4D3E9F458358 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/registration.c */,
+				207BE8A1D5A54195A7382111 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/tilt.c */,
+				ED1580F5BD754FB59C5B69F9 /* /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src/usb_libusb10.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0CFC3711BF2243A299BE48ED /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C8B9457D21360F20993877B6 /* freenectstatic */;
+			targetProxy = 612256A652F6428EBADE7B55 /* PBXContainerItemProxy */;
+		};
+		110F26FCB1434291B97D64B1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2433D2398F26F1112C02E5DB /* ZERO_CHECK */;
+			targetProxy = 0ECC03DBD1C6454E9EC85184 /* PBXContainerItemProxy */;
+		};
+		2341834A1093446E90CAFE84 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FDD59D97038E272A68B2400A /* fakenect-record */;
+			targetProxy = 4AA0E24AD94D4BDCBF69CA47 /* PBXContainerItemProxy */;
+		};
+		2EC2ECF56D4541498DD55817 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AC52B3F01A4C691117CFE839 /* freenect */;
+			targetProxy = 62215EB05C4446EFA8569205 /* PBXContainerItemProxy */;
+		};
+		42EE17900A10456380FC89E0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2433D2398F26F1112C02E5DB /* ZERO_CHECK */;
+			targetProxy = EC73FA74E8F14BE2BE839C68 /* PBXContainerItemProxy */;
+		};
+		576489C7064F4C28AEFB84C4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2433D2398F26F1112C02E5DB /* ZERO_CHECK */;
+			targetProxy = 0045686655934868A7832326 /* PBXContainerItemProxy */;
+		};
+		6722306A8C2D4777B487E508 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1040E5077DCDE0E273BDFBD4 /* ALL_BUILD */;
+			targetProxy = 0BFEC97DDACC487B9E9D3031 /* PBXContainerItemProxy */;
+		};
+		6E51E66622534CC4A8E4B794 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 63C074D18BE8BE9C57683E6D /* fakenect */;
+			targetProxy = B38991F60C6C4EF6859ECEDD /* PBXContainerItemProxy */;
+		};
+		7E5CB4F13E8248A68F43FCD4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2433D2398F26F1112C02E5DB /* ZERO_CHECK */;
+			targetProxy = 7D60E5B8AF234238B500CBEC /* PBXContainerItemProxy */;
+		};
+		808B457437AC487AABDF2C0A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 285841D9F5EA17E961F16851 /* freenect_sync_static */;
+			targetProxy = E151348DA77147B89C717EBD /* PBXContainerItemProxy */;
+		};
+		8391A0CEE7C44D9FBC8645F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2433D2398F26F1112C02E5DB /* ZERO_CHECK */;
+			targetProxy = 34DD221D5AFA4EF68F124566 /* PBXContainerItemProxy */;
+		};
+		B174DC2B81024486AE04F511 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AC52B3F01A4C691117CFE839 /* freenect */;
+			targetProxy = CA9BB04AF08F4BDCA64045C7 /* PBXContainerItemProxy */;
+		};
+		B8AFCA4FFD0E46BBBBA1C432 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AC52B3F01A4C691117CFE839 /* freenect */;
+			targetProxy = AE7DE519123148149EB320EF /* PBXContainerItemProxy */;
+		};
+		BFB5DBA39CC24516A358C31F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2433D2398F26F1112C02E5DB /* ZERO_CHECK */;
+			targetProxy = E2C104C4B9D24AF0AF275CDC /* PBXContainerItemProxy */;
+		};
+		C85A357100824904984BE124 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2433D2398F26F1112C02E5DB /* ZERO_CHECK */;
+			targetProxy = 803C55079A724EFFA7ECC502 /* PBXContainerItemProxy */;
+		};
+		CCFE60065F594DF98FBAA0D7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2433D2398F26F1112C02E5DB /* ZERO_CHECK */;
+			targetProxy = FAAAB42C7854488B8D239F6B /* PBXContainerItemProxy */;
+		};
+		E0E52AB55F354B29911DEFA6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 47FBC2E2C14DDF4F509050A5 /* freenect_sync */;
+			targetProxy = 1C84C5E5E6A34335B984FEA7 /* PBXContainerItemProxy */;
+		};
+		E6C8A4FC7469458792A56B6A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AC52B3F01A4C691117CFE839 /* freenect */;
+			targetProxy = 0485C9D6EB5F45509162C4FF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		04DA51534F984850ACBFF770 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		0711A1D20A104B3985365ED2 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/bin/MinSizeRel;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/../src,"$(inherited)");
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel,"$(inherited)");
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall          -DNDEBUG ","$(inherited)");
+				OTHER_LDFLAGS = (" -Wl,-search_paths_first -Wl,-headerpad_max_install_names",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel/libfreenect.0.7.5.dylib,"-lm","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "fakenect-record";
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/fakenect-record.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		0A1CEDCE3A644B3CAB579BA2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/bin/Debug;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/../src,"$(inherited)");
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug,"$(inherited)");
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall             -DDEBUG=1 ","$(inherited)");
+				OTHER_LDFLAGS = (" -Wl,-search_paths_first -Wl,-headerpad_max_install_names",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug/libfreenect.0.7.5.dylib,"-lm","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "fakenect-record";
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/fakenect-record.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		0F4DA056F9424F43A17A19DA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		1E305725307342E08EC3A8BE /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		260E93C4D1804927A4D987DB /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/RelWithDebInfo;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",fakenect_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/../src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall         -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfakenect.0.dylib","-lm","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = fakenect.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/fakenect.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		2BFA1AF6C6B3498D945D8A2D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				SDKROOT = "";
+				SYMROOT = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build;
+			};
+			name = Debug;
+		};
+		31CAC5C991C3417091AB64A2 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",freenect_sync_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0","$(inherited)");
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel,"$(inherited)");
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall          -DNDEBUG -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfreenect_sync.0.dylib",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel/libfreenect.0.7.5.dylib,"-lpthread","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect_sync.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect_sync.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		323B8324969D4E0DB18C4297 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",freenect_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall      -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfreenect.0.dylib","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		343F90B58E4F43FBAB5496C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = install;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		3A3E6477B9B64B5AB76F9C51 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		41D514593B614DD198A9E594 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = install;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		461B084822F942C793A09F0A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall             -DDEBUG=1 ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenectstatic.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		4A03D0D298CB49998E21FD0C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = uninstall;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		4E3E019452E04CF3BF8EF3B9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall             -DDEBUG=1 ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect_sync;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect_sync_static.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		4E4A2698EDEF4FB5A5DA4D6E /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = uninstall;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		52C37F9BE1A443C788606FDE /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall         ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect_sync;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect_sync_static.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		55B709F148EF4985AD9CE24A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		5643679338A74439A8882D69 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall         ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenectstatic.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		56BA57402BDF4C809FF7699D /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",freenect_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall         -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfreenect.0.dylib","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		5EA0FD7C2B8A4D3CBBD9C3ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		5EFE8A10E2D142E19E4A0018 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/MinSizeRel;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",fakenect_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/../src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall          -DNDEBUG -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfakenect.0.dylib","-lm","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = fakenect.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/fakenect.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		6852CA78038142AE9656AD85 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",freenect_sync_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0","$(inherited)");
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo,"$(inherited)");
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall         -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfreenect_sync.0.dylib",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo/libfreenect.0.7.5.dylib,"-lpthread","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect_sync.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect_sync.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		6BD65F9FD9914527ADEB0D83 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/bin/Release;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/../src,"$(inherited)");
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release,"$(inherited)");
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall      ","$(inherited)");
+				OTHER_LDFLAGS = (" -Wl,-search_paths_first -Wl,-headerpad_max_install_names",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release/libfreenect.0.7.5.dylib,"-lm","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "fakenect-record";
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/fakenect-record.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		6EA51A28539844C08BE8A76E /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = uninstall;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		6FAF2202F556405C83E1C77F /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall          -DNDEBUG ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect_sync;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect_sync_static.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		738DBE2A7BEB4E02BB62728C /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				SDKROOT = "";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build;
+			};
+			name = MinSizeRel;
+		};
+		772E09B337DF4293B348AD96 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",freenect_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall          -DNDEBUG -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfreenect.0.dylib","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		80556FA9891845C496F223E5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall      ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenectstatic.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		82A7CF7A630742069156AA79 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/Debug;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",fakenect_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/../src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall             -DDEBUG=1 -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfakenect.0.dylib","-lm","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = fakenect.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/fakenect.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		8D33EF3B79A44C409757289C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",freenect_sync_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0","$(inherited)");
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug,"$(inherited)");
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall             -DDEBUG=1 -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfreenect_sync.0.dylib",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug/libfreenect.0.7.5.dylib,"-lpthread","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect_sync.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect_sync.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		8FA7CC921E214315A8386022 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/MinSizeRel;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall          -DNDEBUG ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenectstatic.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		9BB2F9CAD8BE49FA8A4BC0EC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",freenect_sync_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0","$(inherited)");
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release,"$(inherited)");
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall      -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfreenect_sync.0.dylib",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release/libfreenect.0.7.5.dylib,"-lpthread","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect_sync.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect_sync.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		9E03AF75F90B4FC88102EAF6 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/bin/RelWithDebInfo;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/../src,"$(inherited)");
+				INSTALL_PATH = "";
+				LD_RUNPATH_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo,"$(inherited)");
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall         ","$(inherited)");
+				OTHER_LDFLAGS = (" -Wl,-search_paths_first -Wl,-headerpad_max_install_names",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/RelWithDebInfo/libfreenect.0.7.5.dylib,"-lm","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "fakenect-record";
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/fakenect-record.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		A7820ECFCC054747A17AB634 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = install;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		B44BE7B1E40B4F62A63089D9 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		C11976F8905841B7B08F95A1 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		D374A2EB400B47E4BE669A13 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Debug;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",freenect_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall             -DDEBUG=1 -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfreenect.0.dylib","/opt/homebrew/lib/libusb-1.0.dylib","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		E333CC26F77B4ED8876FE8C7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = uninstall;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		EDFAF80097E74E75B858B3D4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/Release;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall      ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freenect_sync;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/freenect_sync_static.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		F94D5AC0EDFE46669274294E /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = install;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		FA6DE205A5D34F0EB0B88BF4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/lib/fakenect/Release;
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = 0.7.5;
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .dylib;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",fakenect_EXPORTS,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/include,"/opt/homebrew/include/libusb-1.0",/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/fakenect/../src,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = DYNAMIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("-Wall      -Wall      -fPIC ","$(inherited)");
+				OTHER_LDFLAGS = (" -dynamiclib -Wl,-headerpad_max_install_names -install_name @rpath/libfakenect.0.dylib","-lm","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = fakenect.0.7.5;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build/fakenect.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		FD4AA7E89123492AB73A3C7B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				SDKROOT = "";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build;
+			};
+			name = Release;
+		};
+		FFCF6FC90B524428A611A6C5 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				SDKROOT = "";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/build;
+			};
+			name = RelWithDebInfo;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		08614F5F9B864FD5B00C491E /* Build configuration list for PBXAggregateTarget "install" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				343F90B58E4F43FBAB5496C7 /* Debug */,
+				A7820ECFCC054747A17AB634 /* Release */,
+				F94D5AC0EDFE46669274294E /* MinSizeRel */,
+				41D514593B614DD198A9E594 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0D47E89A6AFE4C76885E7C37 /* Build configuration list for PBXNativeTarget "freenect" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D374A2EB400B47E4BE669A13 /* Debug */,
+				323B8324969D4E0DB18C4297 /* Release */,
+				772E09B337DF4293B348AD96 /* MinSizeRel */,
+				56BA57402BDF4C809FF7699D /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		34483CB11FB04E5199D289A0 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5EA0FD7C2B8A4D3CBBD9C3ED /* Debug */,
+				04DA51534F984850ACBFF770 /* Release */,
+				3A3E6477B9B64B5AB76F9C51 /* MinSizeRel */,
+				B44BE7B1E40B4F62A63089D9 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3C4A5D0F359D4235B2B6A6C7 /* Build configuration list for PBXNativeTarget "freenect_sync" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8D33EF3B79A44C409757289C /* Debug */,
+				9BB2F9CAD8BE49FA8A4BC0EC /* Release */,
+				31CAC5C991C3417091AB64A2 /* MinSizeRel */,
+				6852CA78038142AE9656AD85 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8BE3343D4A504460BB7EB17A /* Build configuration list for PBXNativeTarget "freenect_sync_static" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4E3E019452E04CF3BF8EF3B9 /* Debug */,
+				EDFAF80097E74E75B858B3D4 /* Release */,
+				6FAF2202F556405C83E1C77F /* MinSizeRel */,
+				52C37F9BE1A443C788606FDE /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8E80814A586A4FE3BF129C87 /* Build configuration list for PBXAggregateTarget "uninstall" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A03D0D298CB49998E21FD0C /* Debug */,
+				E333CC26F77B4ED8876FE8C7 /* Release */,
+				6EA51A28539844C08BE8A76E /* MinSizeRel */,
+				4E4A2698EDEF4FB5A5DA4D6E /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		91B4FCF639A842BFA373D8B7 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0F4DA056F9424F43A17A19DA /* Debug */,
+				55B709F148EF4985AD9CE24A /* Release */,
+				1E305725307342E08EC3A8BE /* MinSizeRel */,
+				C11976F8905841B7B08F95A1 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9287D0BEB95A4288A6979E1A /* Build configuration list for PBXNativeTarget "fakenect-record" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A1CEDCE3A644B3CAB579BA2 /* Debug */,
+				6BD65F9FD9914527ADEB0D83 /* Release */,
+				0711A1D20A104B3985365ED2 /* MinSizeRel */,
+				9E03AF75F90B4FC88102EAF6 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E725FD848A5041CEBD818CAF /* Build configuration list for PBXNativeTarget "freenectstatic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				461B084822F942C793A09F0A /* Debug */,
+				80556FA9891845C496F223E5 /* Release */,
+				8FA7CC921E214315A8386022 /* MinSizeRel */,
+				5643679338A74439A8882D69 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EF20B3B00D6242CE8A4D999B /* Build configuration list for PBXProject "libfreenect" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2BFA1AF6C6B3498D945D8A2D /* Debug */,
+				FD4AA7E89123492AB73A3C7B /* Release */,
+				738DBE2A7BEB4E02BB62728C /* MinSizeRel */,
+				FFCF6FC90B524428A611A6C5 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F2F90C04CC25471EB104FA2F /* Build configuration list for PBXNativeTarget "fakenect" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				82A7CF7A630742069156AA79 /* Debug */,
+				FA6DE205A5D34F0EB0B88BF4 /* Release */,
+				5EFE8A10E2D142E19E4A0018 /* MinSizeRel */,
+				260E93C4D1804927A4D987DB /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = EFA706EB33234A6DB36BA706 /* Project object */;
+}
