@@ -1,0 +1,14 @@
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeFiles/uninstall.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeFiles/install.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeFiles/ALL_BUILD.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/CMakeFiles/ZERO_CHECK.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/src/CMakeFiles/freenect.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/src/CMakeFiles/freenectstatic.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/src/CMakeFiles/install.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/fakenect/CMakeFiles/fakenect.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/fakenect/CMakeFiles/fakenect-record.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/fakenect/CMakeFiles/install.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/c_sync/CMakeFiles/freenect_sync.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/c_sync/CMakeFiles/freenect_sync_static.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/c_sync/CMakeFiles/install.dir
+/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/cpp/CMakeFiles/install.dir
