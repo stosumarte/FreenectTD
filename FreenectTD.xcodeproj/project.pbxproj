@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		81801BDE2DCBB19000A0FCBD /* libfreenect.0.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 81801BDC2DCBB18A00A0FCBD /* libfreenect.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		81801BDF2DCBB19000A0FCBD /* libusb.0.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 81801BDD2DCBB18A00A0FCBD /* libusb.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		81801BE02DCBB19600A0FCBD /* libfreenect.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81801BDC2DCBB18A00A0FCBD /* libfreenect.0.dylib */; };
-		81801BE12DCBB19600A0FCBD /* libusb.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81801BDD2DCBB18A00A0FCBD /* libusb.0.dylib */; };
+		8176246A2E1827660019B55D /* libusb.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 817624692E1827660019B55D /* libusb.dylib */; };
+		8176246B2E1827720019B55D /* libusb.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 817624692E1827660019B55D /* libusb.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		8176246D2E18278E0019B55D /* libfreenect.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8176246C2E18278E0019B55D /* libfreenect.dylib */; };
+		8176246E2E1827940019B55D /* libfreenect.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8176246C2E18278E0019B55D /* libfreenect.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		818A9C1F2DC36A23000B85E5 /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
 /* End PBXBuildFile section */
 
@@ -21,8 +21,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				81801BDE2DCBB19000A0FCBD /* libfreenect.0.dylib in CopyFiles */,
-				81801BDF2DCBB19000A0FCBD /* libusb.0.dylib in CopyFiles */,
+				8176246E2E1827940019B55D /* libfreenect.dylib in CopyFiles */,
+				8176246B2E1827720019B55D /* libusb.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -31,8 +31,8 @@
 /* Begin PBXFileReference section */
 		810E52722E1571070094540F /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libusb.h; sourceTree = "<group>"; };
 		810E52732E1571370094540F /* libfreenect.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libfreenect.hpp; sourceTree = "<group>"; };
-		81801BDC2DCBB18A00A0FCBD /* libfreenect.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreenect.0.dylib; path = VendorLibs/libfreenect.0.dylib; sourceTree = "<group>"; };
-		81801BDD2DCBB18A00A0FCBD /* libusb.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libusb.0.dylib; path = VendorLibs/libusb.0.dylib; sourceTree = "<group>"; };
+		817624692E1827660019B55D /* libusb.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libusb.dylib; path = VendorLibs/libusb.dylib; sourceTree = "<group>"; };
+		8176246C2E18278E0019B55D /* libfreenect.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreenect.dylib; path = VendorLibs/libfreenect.dylib; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
 		81E3B9622DC3687500B0413C /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -43,8 +43,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				81801BE02DCBB19600A0FCBD /* libfreenect.0.dylib in Frameworks */,
-				81801BE12DCBB19600A0FCBD /* libusb.0.dylib in Frameworks */,
+				8176246D2E18278E0019B55D /* libfreenect.dylib in Frameworks */,
+				8176246A2E1827660019B55D /* libusb.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -54,8 +54,8 @@
 		818A9C212DC36EDE000B85E5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				81801BDC2DCBB18A00A0FCBD /* libfreenect.0.dylib */,
-				81801BDD2DCBB18A00A0FCBD /* libusb.0.dylib */,
+				817624692E1827660019B55D /* libusb.dylib */,
+				8176246C2E18278E0019B55D /* libfreenect.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
