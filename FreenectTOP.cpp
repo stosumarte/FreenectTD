@@ -11,9 +11,14 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
+#include <string>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
+#endif
+
+#ifndef FREENECTTOP_VERSION
+#define FREENECTTOP_VERSION "dev"
 #endif
 
 static constexpr int WIDTH = 640;
@@ -174,6 +179,14 @@ FreenectTOP::~FreenectTOP() {
 }
 
 void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
+    // Show version in header
+    OP_StringParameter versionHeader;
+    versionHeader.name  = "Version";
+    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION;
+    versionHeader.label = versionLabel.c_str();
+    manager->appendHeader(versionHeader);
+    
+    // Tilt angle parameter
     OP_NumericParameter np;
     np.name            = "Tilt";
     np.label           = "Tilt Angle";
@@ -184,6 +197,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     np.maxSliders[0]    = 30.0;
     manager->appendFloat(np);
     
+    // Invert depth map toggle
     OP_NumericParameter invertParam;
     invertParam.name            = "Invertdepth";
     invertParam.label           = "Invert Depth Map";
