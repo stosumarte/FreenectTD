@@ -7,22 +7,28 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8176246A2E1827660019B55D /* libusb.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 817624692E1827660019B55D /* libusb.dylib */; };
-		8176246B2E1827720019B55D /* libusb.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 817624692E1827660019B55D /* libusb.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		8176246D2E18278E0019B55D /* libfreenect.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8176246C2E18278E0019B55D /* libfreenect.dylib */; };
-		8176246E2E1827940019B55D /* libfreenect.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8176246C2E18278E0019B55D /* libfreenect.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		816268182E193BC600F1E00B /* libfreenect.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 816268142E193BC600F1E00B /* libfreenect.dylib */; };
+		816268192E193BC600F1E00B /* libusb.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 816268162E193BC600F1E00B /* libusb.dylib */; };
+		8162681A2E193BC600F1E00B /* libfreenect.0.7.5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 816268152E193BC600F1E00B /* libfreenect.0.7.5.dylib */; };
+		8162681B2E193BD800F1E00B /* libfreenect.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 816268142E193BC600F1E00B /* libfreenect.dylib */; };
+		8162681C2E193BD800F1E00B /* libfreenect.0.7.5.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 816268152E193BC600F1E00B /* libfreenect.0.7.5.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		8162681D2E193BD800F1E00B /* libusb.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 816268162E193BC600F1E00B /* libusb.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		816268202E193BFE00F1E00B /* libfreenect.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8162681F2E193BFE00F1E00B /* libfreenect.0.dylib */; };
+		816268212E193C6700F1E00B /* libfreenect.0.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8162681F2E193BFE00F1E00B /* libfreenect.0.dylib */; };
 		818A9C1F2DC36A23000B85E5 /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		811152662DCB979100727B55 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 12;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				8176246E2E1827940019B55D /* libfreenect.dylib in CopyFiles */,
-				8176246B2E1827720019B55D /* libusb.dylib in CopyFiles */,
+				816268212E193C6700F1E00B /* libfreenect.0.dylib in CopyFiles */,
+				8162681B2E193BD800F1E00B /* libfreenect.dylib in CopyFiles */,
+				8162681C2E193BD800F1E00B /* libfreenect.0.7.5.dylib in CopyFiles */,
+				8162681D2E193BD800F1E00B /* libusb.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -31,11 +37,14 @@
 /* Begin PBXFileReference section */
 		810E52722E1571070094540F /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libusb.h; sourceTree = "<group>"; };
 		810E52732E1571370094540F /* libfreenect.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libfreenect.hpp; sourceTree = "<group>"; };
-		817624692E1827660019B55D /* libusb.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libusb.dylib; path = VendorLibs/libusb.dylib; sourceTree = "<group>"; };
-		8176246C2E18278E0019B55D /* libfreenect.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreenect.dylib; path = VendorLibs/libfreenect.dylib; sourceTree = "<group>"; };
+		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
+		816268142E193BC600F1E00B /* libfreenect.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libfreenect.dylib; sourceTree = "<group>"; };
+		816268152E193BC600F1E00B /* libfreenect.0.7.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libfreenect.0.7.5.dylib; sourceTree = "<group>"; };
+		816268162E193BC600F1E00B /* libusb.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libusb.dylib; sourceTree = "<group>"; };
+		8162681E2E193BD800F1E00B /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
+		8162681F2E193BFE00F1E00B /* libfreenect.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libfreenect.0.dylib; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
-		81E3B9622DC3687500B0413C /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,21 +52,25 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8176246D2E18278E0019B55D /* libfreenect.dylib in Frameworks */,
-				8176246A2E1827660019B55D /* libusb.dylib in Frameworks */,
+				816268182E193BC600F1E00B /* libfreenect.dylib in Frameworks */,
+				816268192E193BC600F1E00B /* libusb.dylib in Frameworks */,
+				816268202E193BFE00F1E00B /* libfreenect.0.dylib in Frameworks */,
+				8162681A2E193BC600F1E00B /* libfreenect.0.7.5.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		818A9C212DC36EDE000B85E5 /* Frameworks */ = {
+		816268172E193BC600F1E00B /* VendorLibs */ = {
 			isa = PBXGroup;
 			children = (
-				817624692E1827660019B55D /* libusb.dylib */,
-				8176246C2E18278E0019B55D /* libfreenect.dylib */,
+				8162681F2E193BFE00F1E00B /* libfreenect.0.dylib */,
+				816268142E193BC600F1E00B /* libfreenect.dylib */,
+				816268152E193BC600F1E00B /* libfreenect.0.7.5.dylib */,
+				816268162E193BC600F1E00B /* libusb.dylib */,
 			);
-			name = Frameworks;
+			path = VendorLibs;
 			sourceTree = "<group>";
 		};
 		81E3B9592DC3687500B0413C = {
@@ -67,17 +80,10 @@
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
 				810E52732E1571370094540F /* libfreenect.hpp */,
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
-				818A9C212DC36EDE000B85E5 /* Frameworks */,
-				81E3B9632DC3687500B0413C /* Products */,
+				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
+				816268172E193BC600F1E00B /* VendorLibs */,
+				8162681E2E193BD800F1E00B /* FreenectTD.plugin */,
 			);
-			sourceTree = "<group>";
-		};
-		81E3B9632DC3687500B0413C /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				81E3B9622DC3687500B0413C /* FreenectTD.plugin */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -89,7 +95,6 @@
 			buildPhases = (
 				81E3B95E2DC3687500B0413C /* Sources */,
 				81E3B95F2DC3687500B0413C /* Frameworks */,
-				81E3B9602DC3687500B0413C /* Resources */,
 				811152662DCB979100727B55 /* CopyFiles */,
 			);
 			buildRules = (
@@ -100,7 +105,7 @@
 			packageProductDependencies = (
 			);
 			productName = FreenectTOP;
-			productReference = 81E3B9622DC3687500B0413C /* FreenectTD.plugin */;
+			productReference = 8162681E2E193BD800F1E00B /* FreenectTD.plugin */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
@@ -127,7 +132,7 @@
 			mainGroup = 81E3B9592DC3687500B0413C;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 81E3B9632DC3687500B0413C /* Products */;
+			productRefGroup = 81E3B9592DC3687500B0413C;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -135,16 +140,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXResourcesBuildPhase section */
-		81E3B9602DC3687500B0413C /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		81E3B95E2DC3687500B0413C /* Sources */ = {
@@ -291,11 +286,13 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = (
-					"/opt/homebrew/include/libfreenect/**",
-					"/opt/homebrew/opt/libusb/include/libusb-1.0/**",
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
+					"DEBUG=1",
+					"$(inherited)",
 				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "/opt/homebrew/opt/libusb/include/libusb-1.0";
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTD;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = "";
@@ -303,16 +300,11 @@
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/opt/homebrew/Cellar/libfreenect/**",
 					"/opt/homebrew/Cellar/libusb/**",
-					/opt/homebrew/Cellar/libusb/1.0.28/lib,
-					"$(PROJECT_DIR)/VendorLibs\\ 2",
-					"$(PROJECT_DIR)/VendorLibs\\ 2",
-					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/VendorLibs",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 0.2.2;
+				MARKETING_VERSION = 0.2.3;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = ee.marte.FreenectTD.TOP;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -328,11 +320,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				GCC_PREPROCESSOR_DEFINITIONS = "FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"";
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = (
-					"/opt/homebrew/include/libfreenect/**",
-					"/opt/homebrew/opt/libusb/include/libusb-1.0/**",
-				);
+				HEADER_SEARCH_PATHS = "/opt/homebrew/opt/libusb/include/libusb-1.0";
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTD;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = "";
@@ -340,16 +330,11 @@
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/opt/homebrew/Cellar/libfreenect/**",
 					"/opt/homebrew/Cellar/libusb/**",
-					/opt/homebrew/Cellar/libusb/1.0.28/lib,
-					"$(PROJECT_DIR)/VendorLibs\\ 2",
-					"$(PROJECT_DIR)/VendorLibs\\ 2",
-					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/VendorLibs",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 0.2.2;
+				MARKETING_VERSION = 0.2.3;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = ee.marte.FreenectTD.TOP;
 				PRODUCT_NAME = "$(TARGET_NAME)";

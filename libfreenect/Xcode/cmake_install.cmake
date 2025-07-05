@@ -46,6 +46,7 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/src/cmake_install.cmake")
+  include("/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/examples/cmake_install.cmake")
   include("/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/fakenect/cmake_install.cmake")
   include("/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/c_sync/cmake_install.cmake")
   include("/Users/marte/vjing/FreenectTD/FreenectTD/libfreenect/Xcode/wrappers/cpp/cmake_install.cmake")
