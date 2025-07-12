@@ -5,3 +5,4 @@ DerivedData/
 build/
 toe_examples/Backup/
 VendorLibs/
+libfreenect/
