@@ -107,7 +107,7 @@ void FreenectTOP::cleanupDevice() {
     if (eventThread.joinable()) {
         eventThread.join();
     }
-
+    cleanupDeviceV2(); // Clean up Kinect v2 if needed
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (device) {
         device->stopVideo();
@@ -120,6 +120,69 @@ void FreenectTOP::cleanupDevice() {
         freenectContext = nullptr;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+}
+
+// --- Kinect v2 (libfreenect2) ---
+bool FreenectTOP::initDeviceV2() {
+    std::lock_guard<std::mutex> lock(freenectMutex);
+    if (fn2_ctx) return true; // Already initialized
+    fn2_ctx = new libfreenect2::Freenect2();
+    if (fn2_ctx->enumerateDevices() == 0) {
+        fprintf(stderr, "[FreenectTOP] No Kinect v2 devices found\n");
+        delete fn2_ctx; fn2_ctx = nullptr;
+        return false;
+    }
+    fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
+    fn2_pipeline = new libfreenect2::CpuPacketPipeline();
+    fn2_dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
+    if (!fn2_dev) {
+        fprintf(stderr, "[FreenectTOP] Failed to open Kinect v2 device\n");
+        delete fn2_ctx; fn2_ctx = nullptr;
+        delete fn2_pipeline; fn2_pipeline = nullptr;
+        return false;
+    }
+    int types = libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth;
+    fn2_listener = new libfreenect2::SyncMultiFrameListener(types);
+    fn2_dev->setColorFrameListener(fn2_listener);
+    fn2_dev->setIrAndDepthFrameListener(fn2_listener);
+    if (!fn2_dev->start()) {
+        fprintf(stderr, "[FreenectTOP] Failed to start Kinect v2 streams\n");
+        fn2_dev->close();
+        delete fn2_dev; fn2_dev = nullptr;
+        delete fn2_ctx; fn2_ctx = nullptr;
+        delete fn2_pipeline; fn2_pipeline = nullptr;
+        delete fn2_listener; fn2_listener = nullptr;
+        return false;
+    }
+    fn2_started = true;
+    fn2_lastRGB.resize(1920 * 1080 * 4, 0); // RGBA
+    fn2_lastDepth.resize(512 * 424, 0.0f);
+    return true;
+}
+
+void FreenectTOP::cleanupDeviceV2() {
+    std::lock_guard<std::mutex> lock(freenectMutex);
+    if (fn2_dev) {
+        if (fn2_started) fn2_dev->stop();
+        fn2_dev->close();
+        delete fn2_dev;
+        fn2_dev = nullptr;
+    }
+    if (fn2_listener) {
+        delete fn2_listener;
+        fn2_listener = nullptr;
+    }
+    if (fn2_pipeline) {
+        delete fn2_pipeline;
+        fn2_pipeline = nullptr;
+    }
+    if (fn2_ctx) {
+        delete fn2_ctx;
+        fn2_ctx = nullptr;
+    }
+    fn2_started = false;
+    fn2_lastRGB.clear();
+    fn2_lastDepth.clear();
 }
 
 bool FreenectTOP::initDevice() {
@@ -372,24 +435,98 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             }
         }
     } else {
-        // Kinect v2 stub: just show blue
-        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
-        if (buf) {
-            uint8_t* out = static_cast<uint8_t*>(buf->data);
-            for (int i = 0; i < WIDTH * HEIGHT; ++i) {
-                out[i * 4 + 0] = 0;
-                out[i * 4 + 1] = 0;
-                out[i * 4 + 2] = 255;
-                out[i * 4 + 3] = 255;
+        // Kinect v2 (libfreenect2)
+        bool deviceValid = (fn2_ctx && fn2_dev && fn2_started);
+        if (!deviceValid) {
+            cleanupDeviceV2();
+            if (!initDeviceV2()) {
+                // Show blue screen if v2 not available
+                OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+                if (buf) {
+                    uint8_t* out = static_cast<uint8_t*>(buf->data);
+                    for (int i = 0; i < WIDTH * HEIGHT; ++i) {
+                        out[i * 4 + 0] = 0;
+                        out[i * 4 + 1] = 0;
+                        out[i * 4 + 2] = 255;
+                        out[i * 4 + 3] = 255;
+                    }
+                    TOP_UploadInfo info;
+                    info.textureDesc.width       = WIDTH;
+                    info.textureDesc.height      = HEIGHT;
+                    info.textureDesc.texDim      = OP_TexDim::e2D;
+                    info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
+                    info.colorBufferIndex        = 0;
+                    output->uploadBuffer(&buf, info, nullptr);
+                }
+                return;
             }
-            TOP_UploadInfo info;
-            info.textureDesc.width       = WIDTH;
-            info.textureDesc.height      = HEIGHT;
-            info.textureDesc.texDim      = OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
-            info.colorBufferIndex        = 0;
-            output->uploadBuffer(&buf, info, nullptr);
         }
+        // Wait for new frame
+        libfreenect2::FrameMap frames;
+        if (!fn2_listener->waitForNewFrame(frames, 1000)) {
+            fprintf(stderr, "[FreenectTOP] Kinect v2: timeout waiting for frame\n");
+            return;
+        }
+        libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
+        libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
+        // Color: convert 1920x1080 BGRA to 640x480 RGBA (simple nearest)
+        if (rgb && rgb->data) {
+            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                uint8_t* out = static_cast<uint8_t*>(buf->data);
+                int srcW = 1920, srcH = 1080;
+                for (int y = 0; y < HEIGHT; ++y) {
+                    int srcY = y * srcH / HEIGHT;
+                    for (int x = 0; x < WIDTH; ++x) {
+                        int srcX = x * srcW / WIDTH;
+                        int srcIdx = (srcY * srcW + srcX) * 4;
+                        int dstIdx = (y * WIDTH + x) * 4;
+                        out[dstIdx + 0] = rgb->data[srcIdx + 2]; // R
+                        out[dstIdx + 1] = rgb->data[srcIdx + 1]; // G
+                        out[dstIdx + 2] = rgb->data[srcIdx + 0]; // B
+                        out[dstIdx + 3] = 255;
+                    }
+                }
+                TOP_UploadInfo info;
+                info.textureDesc.width       = WIDTH;
+                info.textureDesc.height      = HEIGHT;
+                info.textureDesc.texDim      = OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
+                info.colorBufferIndex        = 0;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
+        }
+        // Depth: 512x424 float -> 640x480 uint16 (simple nearest, scale to 0-65535 for 0-4.5m)
+        if (depth && depth->data) {
+            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                uint16_t* out = static_cast<uint16_t*>(buf->data);
+                int srcW = 512, srcH = 424;
+                bool invert = inputs->getParInt("Invertdepth") != 0;
+                for (int y = 0; y < HEIGHT; ++y) {
+                    int srcY = y * srcH / HEIGHT;
+                    for (int x = 0; x < WIDTH; ++x) {
+                        int srcX = x * srcW / WIDTH;
+                        int srcIdx = srcY * srcW + srcX;
+                        float d = reinterpret_cast<float*>(depth->data)[srcIdx];
+                        uint16_t val = 0;
+                        if (d > 0.1f && d < 4.5f) {
+                            val = static_cast<uint16_t>(d / 4.5f * 65535.0f);
+                            if (invert) val = 65535 - val;
+                        }
+                        out[y * WIDTH + x] = val;
+                    }
+                }
+                TOP_UploadInfo info;
+                info.textureDesc.width       = WIDTH;
+                info.textureDesc.height      = HEIGHT;
+                info.textureDesc.texDim      = OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex        = 1;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
+        }
+        fn2_listener->release(frames);
     }
 }
 
