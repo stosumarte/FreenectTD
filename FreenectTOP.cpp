@@ -6,6 +6,7 @@
 
 #include "FreenectTOP.h"
 #include "libfreenect.hpp"
+#include "libfreenect2.hpp"
 #include <sys/time.h>
 #include <cstdio>
 #include <algorithm>
@@ -209,6 +210,15 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     invertParam.clampMins[0]     = true;
     invertParam.clampMaxes[0]    = true;
     manager->appendToggle(invertParam);
+    
+    // Device type dropdown
+    OP_StringParameter deviceTypeParam;
+    deviceTypeParam.name = "Devicetype";
+    deviceTypeParam.label = "Device Type";
+    deviceTypeParam.defaultValue = "Kinect v1";
+    const char* deviceTypeNames[] = {"Kinect v1", "Kinect v2"};
+    const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
+    manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
 }
 
 void FreenectTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void*) {
@@ -216,51 +226,162 @@ void FreenectTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void*
 }
 
 void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
-    bool deviceValid = (device != nullptr);
-    if (!device) {
-        cleanupDevice();
-        if (!initDevice()) {
-            // Display a red screen with an error message
-            OP_SmartRef<TOP_Buffer> buf = myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr);
-            uint8_t* out = static_cast<uint8_t*>(buf->data);
+    // Defensive: check for null pointers and valid parameter
+    if (!inputs) {
+        fprintf(stderr, "[FreenectTOP] ERROR: inputs is null!\n");
+        return;
+    }
+    const char* devTypeCStr = inputs->getParString("Devicetype");
+    std::string deviceTypeStr = devTypeCStr ? devTypeCStr : "Kinect v1";
+    int newDeviceType = (deviceTypeStr == "Kinect v2") ? 1 : 0;
+    deviceType = newDeviceType;
 
-            // Fill the entire image with solid red
+    // If device type changed, re-init device
+    if (deviceTypeStr != lastDeviceTypeStr) {
+        cleanupDevice();
+        lastDeviceTypeStr = deviceTypeStr;
+    }
+
+    if (deviceType == 0) {
+        // Kinect v1 (libfreenect)
+        bool deviceValid = (device != nullptr);
+        if (!device) {
+            cleanupDevice();
+            if (!initDevice()) {
+                // Display a red screen with a thick white X (cross), as in the example
+                OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+                if (buf) {
+                    uint8_t* out = static_cast<uint8_t*>(buf->data);
+                    // Fill the entire image with solid red
+                    for (int i = 0; i < WIDTH * HEIGHT; ++i) {
+                        out[i * 4 + 0] = 255; // red
+                        out[i * 4 + 1] = 0;
+                        out[i * 4 + 2] = 0;
+                        out[i * 4 + 3] = 255;
+                    }
+                    // Draw a thick centred 'X' (45° lines)
+                    const int thickness = 31;
+                    const float slope   = static_cast<float>(HEIGHT) / WIDTH;
+                    const float halfT   = thickness * 0.5f;
+                    for (int y = 0; y < HEIGHT; ++y) {
+                        for (int x = 0; x < WIDTH; ++x) {
+                            float d1 = std::fabs(y - slope * x);
+                            float d2 = std::fabs(y - ((HEIGHT - 1) - slope * x));
+                            if (d1 <= halfT || d2 <= halfT) {
+                                int idx = y * WIDTH + x;
+                                out[idx * 4 + 0] = 255;
+                                out[idx * 4 + 1] = 255;
+                                out[idx * 4 + 2] = 255;
+                                out[idx * 4 + 3] = 255;
+                            }
+                        }
+                    }
+                    TOP_UploadInfo info;
+                    info.textureDesc.width       = WIDTH;
+                    info.textureDesc.height      = HEIGHT;
+                    info.textureDesc.texDim      = OP_TexDim::e2D;
+                    info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
+                    info.colorBufferIndex        = 0;
+                    output->uploadBuffer(&buf, info, nullptr);
+                }
+                // Depth buffer: fill with black and draw a white band at the top
+                OP_SmartRef<TOP_Buffer> depthBuf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+                if (depthBuf) {
+                    uint16_t* depthOut = static_cast<uint16_t*>(depthBuf->data);
+                    for (int i = 0; i < WIDTH * HEIGHT; ++i)
+                        depthOut[i] = 0;
+                    for (int x = 0; x < WIDTH; ++x) {
+                        int idx = (HEIGHT - 1 - 20) * WIDTH + x;
+                        depthOut[idx] = 65535;
+                    }
+                    TOP_UploadInfo depthInfo;
+                    depthInfo.textureDesc.width       = WIDTH;
+                    depthInfo.textureDesc.height      = HEIGHT;
+                    depthInfo.textureDesc.texDim      = OP_TexDim::e2D;
+                    depthInfo.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
+                    depthInfo.colorBufferIndex        = 1;
+                    output->uploadBuffer(&depthBuf, depthInfo, nullptr);
+                }
+                return;
+            }
+            deviceValid = true;
+        }
+        if (!device) {
+            fprintf(stderr, "[FreenectTOP] ERROR: device is null after init!\n");
+            return;
+        }
+        float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
+        try {
+            device->setTiltDegrees(tilt);
+        } catch (const std::exception& e) {
+            fprintf(stderr, "[FreenectTOP] Failed to set tilt: %s\n", e.what());
+            cleanupDevice();
+            device = nullptr;
+            return;
+        }
+        std::vector<uint8_t> rgb;
+        if (device->getRGB(rgb)) {
+            lastRGB = rgb;
+            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                uint8_t* out = static_cast<uint8_t*>(buf->data);
+                for (int y = 0; y < HEIGHT; ++y)
+                    for (int x = 0; x < WIDTH; ++x) {
+                        int srcY = HEIGHT - 1 - y;
+                        int iSrc = (srcY * WIDTH + x) * 3;
+                        int iDst = (y * WIDTH + x) * 4;
+                        out[iDst + 0] = lastRGB[iSrc + 0];
+                        out[iDst + 1] = lastRGB[iSrc + 1];
+                        out[iDst + 2] = lastRGB[iSrc + 2];
+                        out[iDst + 3] = 255;
+                    }
+                TOP_UploadInfo info;
+                info.textureDesc.width       = WIDTH;
+                info.textureDesc.height      = HEIGHT;
+                info.textureDesc.texDim      = OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
+                info.colorBufferIndex        = 0;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
+        }
+        std::vector<uint16_t> depth;
+        if (device->getDepth(depth)) {
+            lastDepth = depth;
+            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                uint16_t* out = static_cast<uint16_t*>(buf->data);
+                for (int y = 0; y < HEIGHT; ++y)
+                    for (int x = 0; x < WIDTH; ++x) {
+                        int idx = (HEIGHT - 1 - y) * WIDTH + x;
+                        uint16_t raw = lastDepth[idx];
+                        bool invert = inputs->getParInt("Invertdepth") != 0;
+                        if (raw > 0 && raw < 2047) {
+                            uint16_t scaled = raw << 5;
+                            out[y * WIDTH + x] = invert ? 65535 - scaled : scaled;
+                        } else {
+                            out[y * WIDTH + x] = 0;
+                        }
+                    }
+                TOP_UploadInfo info;
+                info.textureDesc.width       = WIDTH;
+                info.textureDesc.height      = HEIGHT;
+                info.textureDesc.texDim      = OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex        = 1;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
+        }
+    } else {
+        // Kinect v2 stub: just show blue
+        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+        if (buf) {
+            uint8_t* out = static_cast<uint8_t*>(buf->data);
             for (int i = 0; i < WIDTH * HEIGHT; ++i) {
-                out[i * 4 + 0] = 255; // red
+                out[i * 4 + 0] = 0;
                 out[i * 4 + 1] = 0;
-                out[i * 4 + 2] = 0;
+                out[i * 4 + 2] = 255;
                 out[i * 4 + 3] = 255;
             }
-
-            // Draw a thick centred 'X' (45° lines)
-            // ───────────────────────────────────
-            const int thickness = 31;                         // arm width in pixels (must be ≥1)
-            const float slope   = static_cast<float>(HEIGHT) / WIDTH;   // dy/dx for a true 45 deg in this aspect‑ratio
-            const float halfT   = thickness * 0.5f;
-
-            for (int y = 0; y < HEIGHT; ++y)
-            {
-                for (int x = 0; x < WIDTH; ++x)
-                {
-                    // Distance from (x,y) to the two centred diagonals
-                    // 1) y = slope * x
-                    // 2) y = (HEIGHT‑1) - slope * x
-                    float d1 = std::fabs(y - slope * x);
-                    float d2 = std::fabs(y - ((HEIGHT - 1) - slope * x));
-
-                    if (d1 <= halfT || d2 <= halfT)
-                    {
-                        int idx = y * WIDTH + x;
-                        out[idx * 4 + 0] = 255;   // red
-                        out[idx * 4 + 1] = 255;   // green
-                        out[idx * 4 + 2] = 255;   // blue
-                        out[idx * 4 + 3] = 255;   // alpha
-                    }
-                }
-            }
-
-
-            // Upload the color buffer
             TOP_UploadInfo info;
             info.textureDesc.width       = WIDTH;
             info.textureDesc.height      = HEIGHT;
@@ -268,89 +389,7 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex        = 0;
             output->uploadBuffer(&buf, info, nullptr);
-
-            // Depth buffer: fill with black
-            OP_SmartRef<TOP_Buffer> depthBuf = myContext->createOutputBuffer(WIDTH * HEIGHT * 2, TOP_BufferFlags::None, nullptr);
-            uint16_t* depthOut = static_cast<uint16_t*>(depthBuf->data);
-            for (int i = 0; i < WIDTH * HEIGHT; ++i)
-                depthOut[i] = 0;
-
-            // Draw a white band at the top
-            for (int x = 0; x < WIDTH; ++x) {
-                int idx = (HEIGHT - 1 - 20) * WIDTH + x;  // flip Y to show at top
-                depthOut[idx] = 65535;
-            }
-
-            TOP_UploadInfo depthInfo;
-            depthInfo.textureDesc.width       = WIDTH;
-            depthInfo.textureDesc.height      = HEIGHT;
-            depthInfo.textureDesc.texDim      = OP_TexDim::e2D;
-            depthInfo.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
-            depthInfo.colorBufferIndex        = 1;
-            output->uploadBuffer(&depthBuf, depthInfo, nullptr);
-            return;
         }
-        deviceValid = true;
-    }
-
-    float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
-    try {
-        device->setTiltDegrees(tilt);
-    } catch (const std::exception& e) {
-        fprintf(stderr, "[FreenectTOP] Failed to set tilt: %s", e.what());
-        cleanupDevice();
-        device = nullptr;
-        return;
-    }
-
-    std::vector<uint8_t> rgb;
-    if (device->getRGB(rgb)) {
-        lastRGB = rgb;
-        OP_SmartRef<TOP_Buffer> buf = myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr);
-        uint8_t* out = static_cast<uint8_t*>(buf->data);
-        for (int y = 0; y < HEIGHT; ++y)
-            for (int x = 0; x < WIDTH; ++x) {
-                int srcY = HEIGHT - 1 - y;
-                int iSrc = (srcY * WIDTH + x) * 3;
-                int iDst = (y * WIDTH + x) * 4;
-                out[iDst + 0] = lastRGB[iSrc + 0];
-                out[iDst + 1] = lastRGB[iSrc + 1];
-                out[iDst + 2] = lastRGB[iSrc + 2];
-                out[iDst + 3] = 255;
-            }
-        TOP_UploadInfo info;
-        info.textureDesc.width       = WIDTH;
-        info.textureDesc.height      = HEIGHT;
-        info.textureDesc.texDim      = OP_TexDim::e2D;
-        info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
-        info.colorBufferIndex        = 0;
-        output->uploadBuffer(&buf, info, nullptr);
-    }
-
-    std::vector<uint16_t> depth;
-    if (device->getDepth(depth)) {
-        lastDepth = depth;
-        OP_SmartRef<TOP_Buffer> buf = myContext->createOutputBuffer(WIDTH * HEIGHT * 2, TOP_BufferFlags::None, nullptr);
-        uint16_t* out = static_cast<uint16_t*>(buf->data);
-        for (int y = 0; y < HEIGHT; ++y)
-            for (int x = 0; x < WIDTH; ++x) {
-                int idx = (HEIGHT - 1 - y) * WIDTH + x;
-                uint16_t raw = lastDepth[idx];
-                bool invert = inputs->getParInt("Invertdepth") != 0;
-                if (raw > 0 && raw < 2047) {
-                    uint16_t scaled = raw << 5;
-                    out[y * WIDTH + x] = invert ? 65535 - scaled : scaled;
-                } else {
-                    out[y * WIDTH + x] = 0;
-                }
-            }
-        TOP_UploadInfo info;
-        info.textureDesc.width       = WIDTH;
-        info.textureDesc.height      = HEIGHT;
-        info.textureDesc.texDim      = OP_TexDim::e2D;
-        info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
-        info.colorBufferIndex        = 1;
-        output->uploadBuffer(&buf, info, nullptr);
     }
 }
 
