@@ -11,13 +11,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		811152662DCB979100727B55 /* CopyFiles */ = {
+		8112B5A22E23E1140089336F /* Embed Libraries */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 12;
+			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
 			);
+			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -30,6 +31,16 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8112B5962E23E0E70089336F /* Exceptions for "VendorLibs" folder in "FreenectTD" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				libfreenect.0.dylib,
+				libfreenect.dylib,
+				libfreenect2.0.2.dylib,
+				libfreenect2.dylib,
+			);
+			target = 81E3B9612DC3687500B0413C /* FreenectTD */;
+		};
 		815B45EF2E228F4A004836E4 /* Exceptions for "include" folder in "FreenectTD" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -41,14 +52,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		815B46092E229E98004836E4 /* Exceptions for "VendorLibs" folder in "Copy Files" phase from "FreenectTD" target */ = {
+		8112B5A32E23E1140089336F /* Exceptions for "VendorLibs" folder in "Embed Libraries" phase from "FreenectTD" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			attributesByRelativePath = {
 				libfreenect.0.7.5.dylib = (CodeSignOnCopy, );
 				libfreenect2.0.2.0.dylib = (CodeSignOnCopy, );
 				libusb.dylib = (CodeSignOnCopy, );
 			};
-			buildPhase = 811152662DCB979100727B55 /* CopyFiles */;
+			buildPhase = 8112B5A22E23E1140089336F /* Embed Libraries */;
 			membershipExceptions = (
 				libfreenect.0.7.5.dylib,
 				libfreenect.0.dylib,
@@ -65,7 +76,8 @@
 		815B45FA2E229E6A004836E4 /* VendorLibs */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				815B46092E229E98004836E4 /* Exceptions for "VendorLibs" folder in "Copy Files" phase from "FreenectTD" target */,
+				8112B5962E23E0E70089336F /* Exceptions for "VendorLibs" folder in "FreenectTD" target */,
+				8112B5A32E23E1140089336F /* Exceptions for "VendorLibs" folder in "Embed Libraries" phase from "FreenectTD" target */,
 			);
 			path = VendorLibs;
 			sourceTree = "<group>";
@@ -91,6 +103,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8112B5972E23E1140089336F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
@@ -100,6 +119,7 @@
 				8162681E2E193BD800F1E00B /* FreenectTD.plugin */,
 				815B45FA2E229E6A004836E4 /* VendorLibs */,
 				81735C062E228BE300A275AF /* include */,
+				8112B5972E23E1140089336F /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -112,7 +132,7 @@
 			buildPhases = (
 				81E3B95E2DC3687500B0413C /* Sources */,
 				81E3B95F2DC3687500B0413C /* Frameworks */,
-				811152662DCB979100727B55 /* CopyFiles */,
+				8112B5A22E23E1140089336F /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -136,7 +156,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastUpgradeCheck = 1630;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					81E3B9612DC3687500B0413C = {
 						CreatedOnToolsVersion = 16.3;
@@ -208,6 +228,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -275,6 +296,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -307,6 +329,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
 					"DEBUG=1",
@@ -345,6 +368,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = "FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
