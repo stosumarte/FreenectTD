@@ -10,10 +10,8 @@
 	<string>RelativeToWorkspace</string>
 	<key>CustomBuildProductsPath</key>
 	<string>build/Products</string>
-	<key>DerivedDataCustomLocation</key>
-	<string>DerivedData</string>
 	<key>DerivedDataLocationStyle</key>
-	<string>WorkspaceRelativePath</string>
+	<string>Default</string>
 	<key>ShowSharedSchemesAutomaticallyEnabled</key>
 	<true/>
 </dict>

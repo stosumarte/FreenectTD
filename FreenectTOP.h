@@ -73,6 +73,13 @@ private:
     std::vector<uint8_t>               fn2_lastRGB;
     std::vector<float>                 fn2_lastDepth;
 
+    // Add flag for deferred Kinect v2 initialization
+    bool needInitV2;
+
+    // Kinect v2 polling thread and control
+    std::thread fn2_eventThread;
+    std::atomic<bool> fn2_runEvents{false};
+
     bool initDevice();
     void cleanupDevice();
     bool initDeviceV2();
