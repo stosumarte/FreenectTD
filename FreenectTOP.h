@@ -15,6 +15,7 @@
 
 using namespace TD;
 
+// V1 device class
 class MyFreenectDevice : public Freenect::FreenectDevice {
 public:
     MyFreenectDevice(freenect_context* ctx, int index,
@@ -33,6 +34,35 @@ private:
     bool                  hasNewDepth;
 };
 
+// V2 device class - follows the same pattern as MyFreenectDevice
+class MyFreenect2Device {
+public:
+    MyFreenect2Device(libfreenect2::Freenect2Device* device,
+                     std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag);
+    ~MyFreenect2Device();
+    
+    bool start();
+    void stop();
+    
+    bool getRGB(std::vector<uint8_t>& out);
+    bool getDepth(std::vector<float>& out);
+    
+    // Process any pending frames - similar to freenect_process_events
+    void processFrames();
+    
+private:
+    libfreenect2::Freenect2Device* device;
+    libfreenect2::SyncMultiFrameListener* listener;
+    
+    std::atomic<bool>&    rgbReady;
+    std::atomic<bool>&    depthReady;
+    std::vector<uint8_t>  rgbBuffer;
+    std::vector<float>    depthBuffer;
+    std::mutex            mutex;
+    bool                  hasNewRGB;
+    bool                  hasNewDepth;
+};
+
 class FreenectTOP : public TOP_CPlusPlusBase {
 public:
     FreenectTOP(const OP_NodeInfo* info, TOP_Context* context);
@@ -46,16 +76,14 @@ public:
 private:
     const OP_NodeInfo*        myNodeInfo;
     TOP_Context*              myContext;
+    
+    // V1 device members
     freenect_context*         freenectContext;
     MyFreenectDevice*         device;
-
     std::atomic<bool>         firstRGBReady{false};
     std::atomic<bool>         firstDepthReady{false};
-
     std::vector<uint8_t>      lastRGB;
     std::vector<uint16_t>     lastDepth;
-
-    // background event thread control
     std::atomic<bool>         runEvents{false};
     std::thread               eventThread;
 
@@ -63,28 +91,32 @@ private:
     int deviceType = 0;
     std::string lastDeviceTypeStr;
 
-    // v2 (libfreenect2) members
-    libfreenect2::Freenect2*           fn2_ctx = nullptr;
-    libfreenect2::Freenect2Device*     fn2_dev = nullptr;
+    // V2 device members - follow similar pattern to V1
+    libfreenect2::Freenect2*       fn2_ctx = nullptr;
+    MyFreenect2Device*             fn2_device = nullptr;
+    libfreenect2::PacketPipeline*  fn2_pipeline = nullptr;
+    std::string                    fn2_serial;
+    std::atomic<bool>              fn2_rgbReady{false};
+    std::atomic<bool>              fn2_depthReady{false};
+    // Single buffer for Kinect v2
+    std::vector<uint8_t>           fn2_rgbBuffer;
+    std::vector<float>             fn2_depthBuffer;
+    std::atomic<bool>              fn2_runEvents{false};
+    std::thread                    fn2_eventThread;
+
+    // --- Kinect v2 (libfreenect2) runtime members ---
+    libfreenect2::Freenect2Device*      fn2_dev = nullptr;
     libfreenect2::SyncMultiFrameListener* fn2_listener = nullptr;
-    libfreenect2::PacketPipeline*      fn2_pipeline = nullptr;
-    std::string                        fn2_serial;
     bool                               fn2_started = false;
-    std::vector<uint8_t>               fn2_lastRGB;
-    std::vector<float>                 fn2_lastDepth;
+    std::thread                        fn2_thread;
+    std::atomic<bool>                  fn2_runThread{false};
+    std::mutex                         fn2_bufferMutex;
 
-    // Add flag for deferred Kinect v2 initialization
-    bool needInitV2;
-
-    // Kinect v2 polling thread and control
-    std::thread fn2_eventThread;
-    std::atomic<bool> fn2_runEvents{false};
-
+    // Device init/cleanup methods
     bool initDevice();
     void cleanupDevice();
     bool initDeviceV2();
     void cleanupDeviceV2();
     
     std::mutex freenectMutex;
-    
 };

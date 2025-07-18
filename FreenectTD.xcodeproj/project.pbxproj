@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		818A9C1F2DC36A23000B85E5 /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
+		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -187,7 +187,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				818A9C1F2DC36A23000B85E5 /* FreenectTOP.cpp in Sources */,
+				8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
