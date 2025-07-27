@@ -51,150 +51,7 @@ DLLEXPORT void DestroyTOPInstance(TOP_CPlusPlusBase* instance,
 }
 } // extern "C"
 
-// FreenectTOP Implementation -----------------------------------------------
-
-void FreenectTOP::cleanupDevice() {
-    runEvents = false;
-    if (eventThread.joinable()) {
-        eventThread.join();
-    }
-    // Remove Kinect v2 cleanup
-    std::lock_guard<std::mutex> lock(freenectMutex);
-    if (device) {
-        device->stopVideo();
-        device->stopDepth();
-        delete device;
-        device = nullptr;
-    }
-    if (freenectContext) {
-        freenect_shutdown(freenectContext);
-        freenectContext = nullptr;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-}
-
-// --- Kinect v2 (libfreenect2) ---
-bool FreenectTOP::initDeviceV2() {
-    std::lock_guard<std::mutex> lock(freenectMutex);
-    if (fn2_ctx) return true;
-    fn2_ctx = new libfreenect2::Freenect2();
-    if (fn2_ctx->enumerateDevices() == 0) {
-        fprintf(stderr, "[FreenectTOP] No Kinect v2 devices found\n");
-        delete fn2_ctx;
-        fn2_ctx = nullptr;
-        return false;
-    }
-    fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
-    try {
-        fn2_pipeline = new libfreenect2::OpenCLPacketPipeline();
-        fprintf(stderr, "[FreenectTOP] Using OpenCLPacketPipeline for Kinect v2\n");
-    } catch (...) {
-        fn2_pipeline = nullptr;
-    }
-    if (!fn2_pipeline) {
-        fn2_pipeline = new libfreenect2::CpuPacketPipeline();
-        fprintf(stderr, "[FreenectTOP] Falling back to CpuPacketPipeline for Kinect v2\n");
-    }
-    libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
-    if (!dev) {
-        fprintf(stderr, "[FreenectTOP] Failed to open Kinect v2 device\n");
-        delete fn2_ctx;
-        fn2_ctx = nullptr;
-        delete fn2_pipeline;
-        fn2_pipeline = nullptr;
-        return false;
-    }
-    if (!fn2_device) {
-        fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady);
-    }
-    if (!fn2_device->start()) {
-        fprintf(stderr, "[FreenectTOP] Failed to start Kinect v2 device\n");
-        delete fn2_device;
-        fn2_device = nullptr;
-        return false;
-    }
-    return true;
-}
-
-void FreenectTOP::cleanupDeviceV2() {
-    std::lock_guard<std::mutex> lock(freenectMutex);
-    if (fn2_device) {
-        fn2_device->stop();
-        delete fn2_device;
-        fn2_device = nullptr;
-    }
-    if (fn2_ctx) {
-        delete fn2_ctx;
-        fn2_ctx = nullptr;
-    }
-    if (fn2_pipeline) {
-        delete fn2_pipeline;
-        fn2_pipeline = nullptr;
-    }
-}
-
-bool FreenectTOP::initDevice() {
-    std::lock_guard<std::mutex> lock(freenectMutex);
-    if (freenect_init(&freenectContext, nullptr) < 0) {
-        fprintf(stderr, "[FreenectTOP] freenect_init failed\n");
-        return false;
-    }
-    freenect_set_log_level(freenectContext, FREENECT_LOG_WARNING);
-
-    int numDevices = freenect_num_devices(freenectContext);
-    if (numDevices <= 0) {
-        fprintf(stderr, "[FreenectTOP] No devices found\n");
-        freenect_shutdown(freenectContext);
-        freenectContext = nullptr;
-        return false;
-    }
-
-    try {
-        firstRGBReady = false;
-        firstDepthReady = false;
-
-        device = new MyFreenectDevice(freenectContext, 0, firstRGBReady, firstDepthReady);
-        device->startVideo();
-        device->startDepth();
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-        runEvents = true;
-        eventThread = std::thread([this]() {
-            while (runEvents.load()) {
-                std::lock_guard<std::mutex> lock(freenectMutex);
-                if (!freenectContext) break;
-                int err = freenect_process_events(freenectContext);
-                if (err < 0) {
-                    fprintf(stderr, "[FreenectTOP] Error in freenect_process_events (%d)\n", err);
-                    break;
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
-            }
-        });
-    } catch (...) {
-        fprintf(stderr, "[FreenectTOP] Failed to start device\n");
-        cleanupDevice();
-        return false;
-    }
-    return true;
-}
-
-FreenectTOP::FreenectTOP(const OP_NodeInfo* info, TOP_Context* context)
-    : myNodeInfo(info),
-      myContext(context),
-      freenectContext(nullptr),
-      device(nullptr),
-      firstRGBReady(false),
-      firstDepthReady(false),
-      lastRGB(640 * 480 * 3, 0),
-      lastDepth(640 * 480, 0) {
-    initDevice();
-}
-
-FreenectTOP::~FreenectTOP() {
-    cleanupDevice();
-}
-
+// Touchdesigner Parameters
 void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     // Show version in header
     OP_StringParameter versionHeader;
@@ -251,10 +108,161 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
 
 }
 
+// TD - Cook every frame
 void FreenectTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void*) {
     ginfo->cookEveryFrameIfAsked = true;
 }
 
+// Init for Kinect v1 (libfreenect)
+bool FreenectTOP::initDevice() {
+    std::lock_guard<std::mutex> lock(freenectMutex);
+    if (freenect_init(&freenectContext, nullptr) < 0) {
+        fprintf(stderr, "[FreenectTOP] freenect_init failed\n");
+        return false;
+    }
+    freenect_set_log_level(freenectContext, FREENECT_LOG_WARNING);
+
+    int numDevices = freenect_num_devices(freenectContext);
+    if (numDevices <= 0) {
+        fprintf(stderr, "[FreenectTOP] No devices found\n");
+        freenect_shutdown(freenectContext);
+        freenectContext = nullptr;
+        return false;
+    }
+
+    try {
+        firstRGBReady = false;
+        firstDepthReady = false;
+
+        device = new MyFreenectDevice(freenectContext, 0, firstRGBReady, firstDepthReady);
+        device->startVideo();
+        device->startDepth();
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+        runEvents = true;
+        eventThread = std::thread([this]() {
+            while (runEvents.load()) {
+                std::lock_guard<std::mutex> lock(freenectMutex);
+                if (!freenectContext) break;
+                int err = freenect_process_events(freenectContext);
+                if (err < 0) {
+                    fprintf(stderr, "[FreenectTOP] Error in freenect_process_events (%d)\n", err);
+                    break;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+        });
+    } catch (...) {
+        fprintf(stderr, "[FreenectTOP] Failed to start device\n");
+        cleanupDevice();
+        return false;
+    }
+    return true;
+}
+
+// Cleanup for Kinect v1 (libfreenect)
+void FreenectTOP::cleanupDevice() {
+    runEvents = false;
+    if (eventThread.joinable()) {
+        eventThread.join();
+    }
+    // Remove Kinect v2 cleanup
+    std::lock_guard<std::mutex> lock(freenectMutex);
+    if (device) {
+        device->stopVideo();
+        device->stopDepth();
+        delete device;
+        device = nullptr;
+    }
+    if (freenectContext) {
+        freenect_shutdown(freenectContext);
+        freenectContext = nullptr;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
+// Init for Kinect v2 (libfreenect2)
+bool FreenectTOP::initDeviceV2() {
+    std::lock_guard<std::mutex> lock(freenectMutex);
+    if (fn2_ctx) return true;
+    fn2_ctx = new libfreenect2::Freenect2();
+    if (fn2_ctx->enumerateDevices() == 0) {
+        fprintf(stderr, "[FreenectTOP] No Kinect v2 devices found\n");
+        delete fn2_ctx;
+        fn2_ctx = nullptr;
+        return false;
+    }
+    fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
+    try {
+        fn2_pipeline = new libfreenect2::OpenCLPacketPipeline();
+        fprintf(stderr, "[FreenectTOP] Using OpenCLPacketPipeline for Kinect v2\n");
+    } catch (...) {
+        fn2_pipeline = nullptr;
+    }
+    if (!fn2_pipeline) {
+        fn2_pipeline = new libfreenect2::CpuPacketPipeline();
+        fprintf(stderr, "[FreenectTOP] Falling back to CpuPacketPipeline for Kinect v2\n");
+    }
+    libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
+    if (!dev) {
+        fprintf(stderr, "[FreenectTOP] Failed to open Kinect v2 device\n");
+        delete fn2_ctx;
+        fn2_ctx = nullptr;
+        delete fn2_pipeline;
+        fn2_pipeline = nullptr;
+        return false;
+    }
+    if (!fn2_device) {
+        fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady);
+    }
+    if (!fn2_device->start()) {
+        fprintf(stderr, "[FreenectTOP] Failed to start Kinect v2 device\n");
+        delete fn2_device;
+        fn2_device = nullptr;
+        return false;
+    }
+    return true;
+}
+
+// Cleanup for Kinect v2 (libfreenect2)
+void FreenectTOP::cleanupDeviceV2() {
+    std::lock_guard<std::mutex> lock(freenectMutex);
+    if (fn2_device) {
+        fn2_device->stop();
+        delete fn2_device;
+        fn2_device = nullptr;
+    }
+    if (fn2_ctx) {
+        delete fn2_ctx;
+        fn2_ctx = nullptr;
+    }
+    if (fn2_pipeline) {
+        delete fn2_pipeline;
+        fn2_pipeline = nullptr;
+    }
+}
+
+
+FreenectTOP::FreenectTOP(const OP_NodeInfo* info, TOP_Context* context)
+    : myNodeInfo(info),
+      myContext(context),
+      freenectContext(nullptr),
+      device(nullptr),
+      firstRGBReady(false),
+      firstDepthReady(false),
+      lastRGB(640 * 480 * 3, 0),
+      lastDepth(640 * 480, 0) {
+    initDevice();
+}
+
+// Destructor for FreenectTOP
+FreenectTOP::~FreenectTOP() {
+    cleanupDevice();
+    cleanupDeviceV2();
+}
+
+
+// Main execution method
 void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     if (!inputs) {
         fprintf(stderr, "[FreenectTOP] ERROR: inputs is null!\n");
@@ -459,4 +467,5 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     }
 }
 
+// Pulse handler for FreenectTOP - currently does nothing
 void FreenectTOP::pulsePressed(const char*, void*) {}

@@ -1,3 +1,10 @@
+//
+//  FreenectV2.cpp
+//  FreenectTD
+//
+//  Created by marte on 27/07/2025.
+//
+
 #include "FreenectV2.h"
 #include <cstring>
 #include <algorithm>
@@ -5,7 +12,7 @@
 MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
                                      std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag)
     : device(dev), listener(nullptr), rgbReady(rgbFlag), depthReady(depthFlag),
-      rgbBuffer(1920 * 1080 * 4, 0), depthBuffer(512 * 424, 0),
+      rgbBuffer(WIDTH * HEIGHT * 4, 0), depthBuffer(512 * 424, 0),
       hasNewRGB(false), hasNewDepth(false) {
     listener = new libfreenect2::SyncMultiFrameListener(
         libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
@@ -38,8 +45,8 @@ void MyFreenect2Device::processFrames() {
     libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
     {
         std::lock_guard<std::mutex> lock(mutex);
-        if (rgb && rgb->data && rgb->width == 1920 && rgb->height == 1080) {
-            memcpy(rgbBuffer.data(), rgb->data, 1920 * 1080 * 4);
+        if (rgb && rgb->data && rgb->width == WIDTH && rgb->height == HEIGHT) {
+            memcpy(rgbBuffer.data(), rgb->data, WIDTH * HEIGHT * 4);
             hasNewRGB = true;
             rgbReady = true;
         }
