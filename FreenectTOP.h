@@ -47,38 +47,11 @@ private:
     std::string                    fn2_serial;
     std::atomic<bool>              fn2_rgbReady{false};
     std::atomic<bool>              fn2_depthReady{false};
-    std::vector<uint8_t>           fn2_lastRGB;
-    std::vector<float>             fn2_lastDepth;
-    std::atomic<bool>              fn2_runEvents{false};
-    std::thread                    fn2_eventThread;
-
-    // --- Kinect v2 (libfreenect2) background acquisition thread ---
-    std::thread                    fn2_acquireThread;
-    std::atomic<bool>              fn2_acquireRunning{false};
-    std::mutex                     fn2_acquireMutex;
-
-    // --- Kinect v2 (libfreenect2) runtime members ---
-    libfreenect2::Freenect2Device*      fn2_dev = nullptr;
-    libfreenect2::SyncMultiFrameListener* fn2_listener = nullptr;
-    bool                               fn2_started = false;
-    std::thread                        fn2_thread;
-    std::atomic<bool>                  fn2_runThread{false};
-    std::vector<uint8_t>               fn2_rgbFront;
-    std::vector<uint8_t>               fn2_rgbBack;
-    std::vector<float>                 fn2_depthFront;
-    std::vector<float>                 fn2_depthBack;
-    bool                               fn2_hasNewFrame = false;
-    std::mutex                         fn2_bufferMutex;
 
     // Device init/cleanup methods
     bool initDevice();
     void cleanupDevice();
     bool initDeviceV2();
     void cleanupDeviceV2();
-    
     std::mutex freenectMutex;
-
-    // Additional members for Kinect v2 RGB and depth buffer
-    std::vector<uint8_t> fn2_rgbBuffer;
-    std::vector<float> fn2_depthBuffer;
 };

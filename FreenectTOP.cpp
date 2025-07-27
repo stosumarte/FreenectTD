@@ -7,16 +7,16 @@
 #include "FreenectTOP.h"
 #include "FreenectV1.h"
 #include "FreenectV2.h"
-#include "libfreenect.hpp"
-#include <sys/time.h>
-#include <cstdio>
-#include <algorithm>
-#include <chrono>
-#include <thread>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <libfreenect2/registration.h>
+//#include "libfreenect.hpp"
+//#include <sys/time.h>
+//#include <cstdio>
+//#include <algorithm>
+//#include <chrono>
+//#include <thread>
+//#include <string>
+//#include <cstring>
+//#include <vector>
+//#include <libfreenect2/registration.h>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
@@ -25,9 +25,6 @@
 #ifndef FREENECTTOP_VERSION
 #define FREENECTTOP_VERSION "dev"
 #endif
-
-#define WIDTH 1920
-#define HEIGHT 1080
 
 // TouchDesigner Entrypoints ------------------------------------------------
 extern "C" {
@@ -98,8 +95,8 @@ bool FreenectTOP::initDeviceV2() {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
         fprintf(stderr, "[FreenectTOP] Falling back to CpuPacketPipeline for Kinect v2\n");
     }
-    fn2_dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
-    if (!fn2_dev) {
+    libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
+    if (!dev) {
         fprintf(stderr, "[FreenectTOP] Failed to open Kinect v2 device\n");
         delete fn2_ctx;
         fn2_ctx = nullptr;
@@ -107,77 +104,33 @@ bool FreenectTOP::initDeviceV2() {
         fn2_pipeline = nullptr;
         return false;
     }
-    int types = libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth;
-    fn2_listener = new libfreenect2::SyncMultiFrameListener(types);
-    fn2_dev->setColorFrameListener(fn2_listener);
-    fn2_dev->setIrAndDepthFrameListener(fn2_listener);
-    if (!fn2_dev->start()) {
-        fprintf(stderr, "[FreenectTOP] Failed to start Kinect v2 streams\n");
-        fn2_dev->close();
-        delete fn2_dev;
-        fn2_dev = nullptr;
-        delete fn2_ctx;
-        fn2_ctx = nullptr;
-        delete fn2_pipeline;
-        fn2_pipeline = nullptr;
-        delete fn2_listener;
-        fn2_listener = nullptr;
+    if (!fn2_device) {
+        fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady);
+    }
+    if (!fn2_device->start()) {
+        fprintf(stderr, "[FreenectTOP] Failed to start Kinect v2 device\n");
+        delete fn2_device;
+        fn2_device = nullptr;
         return false;
     }
-    fn2_started = true;
-    fn2_rgbBuffer.resize(WIDTH * HEIGHT * 4, 0);
-    fn2_depthBuffer.resize(512 * 424, 0.0f);
-    // Start background acquisition thread
-    fn2_acquireRunning = true;
-    fn2_acquireThread = std::thread([this]() {
-        while (fn2_acquireRunning) {
-            libfreenect2::FrameMap frames;
-            if (fn2_listener && fn2_listener->waitForNewFrame(frames, 100)) {
-                libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
-                libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
-                {
-                    std::lock_guard<std::mutex> lock(fn2_acquireMutex);
-                    if (rgb && rgb->data) {
-                        memcpy(fn2_rgbBuffer.data(), rgb->data, WIDTH * HEIGHT * 4);
-                    }
-                    if (depth && depth->data) {
-                        const float* src = reinterpret_cast<const float*>(depth->data);
-                        std::copy(src, src + 512 * 424, fn2_depthBuffer.begin());
-                    }
-                }
-                fn2_listener->release(frames);
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        }
-    });
     return true;
 }
 
 void FreenectTOP::cleanupDeviceV2() {
-    fn2_acquireRunning = false;
-    if (fn2_acquireThread.joinable()) fn2_acquireThread.join();
     std::lock_guard<std::mutex> lock(freenectMutex);
-    if (fn2_dev) {
-        if (fn2_started) fn2_dev->stop();
-        fn2_dev->close();
-        delete fn2_dev;
-        fn2_dev = nullptr;
-    }
-    if (fn2_listener) {
-        delete fn2_listener;
-        fn2_listener = nullptr;
-    }
-    if (fn2_pipeline) {
-        delete fn2_pipeline;
-        fn2_pipeline = nullptr;
+    if (fn2_device) {
+        fn2_device->stop();
+        delete fn2_device;
+        fn2_device = nullptr;
     }
     if (fn2_ctx) {
         delete fn2_ctx;
         fn2_ctx = nullptr;
     }
-    fn2_started = false;
-    fn2_rgbBuffer.clear();
-    fn2_depthBuffer.clear();
+    if (fn2_pipeline) {
+        delete fn2_pipeline;
+        fn2_pipeline = nullptr;
+    }
 }
 
 bool FreenectTOP::initDevice() {
@@ -283,7 +236,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
     manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
     
-    // Limit resolution to 1280x720 for Kinect V2 (toggle for non-commercial license)
+    // Res dropdown - Limit resolution to 1280x720 for Kinect V2 (for non-commercial license)
     OP_NumericParameter resLimitParam;
     resLimitParam.name = "Resolutionlimit";
     resLimitParam.label = "Resolution Limit";
@@ -421,26 +374,26 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     } else {
         // Kinect v2 (libfreenect2)
         bool v2InitOk = true;
-        if (!fn2_dev) {
+        if (!fn2_device) {
             v2InitOk = initDeviceV2();
             if (!v2InitOk) {
                 fprintf(stderr, "[FreenectTOP] Kinect v2 init failed or no device found\n");
             }
         }
-        if (!fn2_dev || !v2InitOk) {
+        if (!fn2_device || !v2InitOk) {
             // Error screen placeholder
-            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(MyFreenect2Device::WIDTH * MyFreenect2Device::HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
             if (buf) {
                 uint8_t* out = static_cast<uint8_t*>(buf->data);
-                for (int i = 0; i < WIDTH * HEIGHT; ++i) {
+                for (int i = 0; i < MyFreenect2Device::WIDTH * MyFreenect2Device::HEIGHT; ++i) {
                     out[i * 4 + 0] = 0;
                     out[i * 4 + 1] = 0;
                     out[i * 4 + 2] = 255;
                     out[i * 4 + 3] = 255;
                 }
                 TOP_UploadInfo info;
-                info.textureDesc.width = WIDTH;
-                info.textureDesc.height = HEIGHT;
+                info.textureDesc.width = MyFreenect2Device::WIDTH;
+                info.textureDesc.height = MyFreenect2Device::HEIGHT;
                 info.textureDesc.texDim = OP_TexDim::e2D;
                 info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
                 info.colorBufferIndex = 0;
@@ -449,8 +402,9 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             OP_SmartRef<TOP_Buffer> depthBuf = myContext ? myContext->createOutputBuffer(512 * 424 * 2, TOP_BufferFlags::None, nullptr) : nullptr;
             if (depthBuf) {
                 uint16_t* depthOut = static_cast<uint16_t*>(depthBuf->data);
-                for (int i = 0; i < 512 * 424; ++i)
+                for (int i = 0; i < 512 * 424; ++i) {
                     depthOut[i] = 0;
+                }
                 for (int x = 0; x < 512; ++x) {
                     int idx = (424 - 1 - 20) * 512 + x;
                     depthOut[idx] = 65535;
@@ -465,110 +419,43 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             }
             return;
         }
-        // Wait for new frame
-        libfreenect2::FrameMap frames;
-        if (!fn2_listener->waitForNewFrame(frames, 1000)) {
-            fprintf(stderr, "[FreenectTOP] Kinect v2: timeout waiting for frame\n");
-            return;
-        }
-        libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
-        libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
-        // Color: convert 1920x1080 BGRA to 1920x1080 RGBA
-        if (rgb && rgb->data) {
-            std::lock_guard<std::mutex> lock(freenectMutex);
-            int srcW = WIDTH, srcH = HEIGHT;
-            for (int y = 0; y < HEIGHT; ++y) {
-                int srcY = y;
-                for (int x = 0; x < WIDTH; ++x) {
-                    int srcX = x;
-                    int srcIdx = (srcY * srcW + srcX) * 4;
-                    int dstIdx = (y * WIDTH + x) * 4;
-                    fn2_rgbBuffer[dstIdx + 0] = rgb->data[srcIdx + 2]; // R
-                    fn2_rgbBuffer[dstIdx + 1] = rgb->data[srcIdx + 1]; // G
-                    fn2_rgbBuffer[dstIdx + 2] = rgb->data[srcIdx + 0]; // B
-                    fn2_rgbBuffer[dstIdx + 3] = 255;
-                }
-            }
-            if (inputs->getParInt("Resolutionlimit") != 0) {
-                // Downscale Kinect v2 color stream to 1280x720
-                int downscaleWidth = 1280;
-                int downscaleHeight = 720;
-                std::vector<uint8_t> downscaledBuffer(downscaleWidth * downscaleHeight * 4, 0);
-
-                for (int y = 0; y < downscaleHeight; ++y) {
-                    for (int x = 0; x < downscaleWidth; ++x) {
-                        int srcX = x * WIDTH / downscaleWidth;
-                        int srcY = y * HEIGHT / downscaleHeight;
-                        int srcIdx = (srcY * WIDTH + srcX) * 4;
-                        int dstIdx = (y * downscaleWidth + x) * 4;
-                        downscaledBuffer[dstIdx + 0] = fn2_rgbBuffer[srcIdx + 0]; // R
-                        downscaledBuffer[dstIdx + 1] = fn2_rgbBuffer[srcIdx + 1]; // G
-                        downscaledBuffer[dstIdx + 2] = fn2_rgbBuffer[srcIdx + 2]; // B
-                        downscaledBuffer[dstIdx + 3] = fn2_rgbBuffer[srcIdx + 3]; // A
-                    }
-                }
-
-                OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(downscaleWidth * downscaleHeight * 4, TOP_BufferFlags::None, nullptr) : nullptr;
-                if (buf) {
-                    uint8_t* out = static_cast<uint8_t*>(buf->data);
-                    std::memcpy(out, downscaledBuffer.data(), downscaleWidth * downscaleHeight * 4);
-                    TOP_UploadInfo info;
-                    info.textureDesc.width = downscaleWidth;
-                    info.textureDesc.height = downscaleHeight;
-                    info.textureDesc.texDim = OP_TexDim::e2D;
-                    info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
-                    info.colorBufferIndex = 0;
-                    output->uploadBuffer(&buf, info, nullptr);
-                }
-            } else {
-                // Original resolution
-                OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(WIDTH * HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
-                if (buf) {
-                    uint8_t* out = static_cast<uint8_t*>(buf->data);
-                    std::memcpy(out, fn2_rgbBuffer.data(), WIDTH * HEIGHT * 4);
-                    TOP_UploadInfo info;
-                    info.textureDesc.width = WIDTH;
-                    info.textureDesc.height = HEIGHT;
-                    info.textureDesc.texDim = OP_TexDim::e2D;
-                    info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
-                    info.colorBufferIndex = 0;
-                    output->uploadBuffer(&buf, info, nullptr);
-                }
-            }
-        }
-        // Depth: use undistorted depth from registration
-        if (depth && depth->data) {
-            std::lock_guard<std::mutex> lock(freenectMutex);
-            int srcW = 512, srcH = 424;
-            bool invert = inputs->getParInt("Invertdepth") != 0;
-            for (int y = 0; y < srcH; ++y) {
-                for (int x = 0; x < srcW; ++x) {
-                    int srcIdx = y * srcW + x;
-                    float d = reinterpret_cast<float*>(depth->data)[srcIdx];
-                    uint16_t val = 0;
-                    if (d > 0.1f && d < 4.5f) {
-                        val = static_cast<uint16_t>(d / 4.5f * 65535.0f);
-                        if (invert) val = 65535 - val;
-                    }
-                    fn2_depthBuffer[y * srcW + x] = static_cast<float>(val);
-                }
-            }
-            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(srcW * srcH * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+        // --- Ensure v2 device acquires new frames ---
+        fn2_device->processFrames();
+        std::vector<uint8_t> colorFrame;
+        std::vector<uint16_t> depthFrame;
+        bool flip = false; // v2: do not flip by default
+        bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
+        bool invert = (inputs->getParInt("Invertdepth") != 0);
+        bool undistort = true; // always undistort for v2
+        if (fn2_device->getColorFrame(colorFrame, flip, downscale)) {
+            int outW = downscale ? 1280 : MyFreenect2Device::WIDTH;
+            int outH = downscale ? 720 : MyFreenect2Device::HEIGHT;
+            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TOP_BufferFlags::None, nullptr) : nullptr;
             if (buf) {
-                uint16_t* out = static_cast<uint16_t*>(buf->data);
-                for (int i = 0; i < srcW * srcH; ++i) {
-                    out[i] = static_cast<uint16_t>(fn2_depthBuffer[i]);
-                }
+                std::memcpy(buf->data, colorFrame.data(), outW * outH * 4);
                 TOP_UploadInfo info;
-                info.textureDesc.width = srcW;
-                info.textureDesc.height = srcH;
+                info.textureDesc.width = outW;
+                info.textureDesc.height = outH;
+                info.textureDesc.texDim = OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
+                info.colorBufferIndex = 0;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
+        }
+        if (fn2_device->getDepthFrame(depthFrame, invert, undistort)) {
+            int outW = 512, outH = 424;
+            OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                std::memcpy(buf->data, depthFrame.data(), outW * outH * 2);
+                TOP_UploadInfo info;
+                info.textureDesc.width = outW;
+                info.textureDesc.height = outH;
                 info.textureDesc.texDim = OP_TexDim::e2D;
                 info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
                 info.colorBufferIndex = 1;
                 output->uploadBuffer(&buf, info, nullptr);
             }
         }
-        fn2_listener->release(frames);
     }
 }
 

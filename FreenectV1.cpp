@@ -16,6 +16,10 @@ MyFreenectDevice::MyFreenectDevice(freenect_context* ctx, int index,
     setDepthFormat(FREENECT_DEPTH_11BIT);
 }
 
+MyFreenectDevice::~MyFreenectDevice() {
+    stop();
+}
+
 void MyFreenectDevice::VideoCallback(void* rgb, uint32_t) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!rgb) return;
@@ -32,6 +36,17 @@ void MyFreenectDevice::DepthCallback(void* depth, uint32_t) {
     std::copy(ptr, ptr + depthBuffer.size(), depthBuffer.begin());
     hasNewDepth = true;
     depthReady = true;
+}
+
+bool MyFreenectDevice::start() {
+    startVideo();
+    startDepth();
+    return true;
+}
+
+void MyFreenectDevice::stop() {
+    stopVideo();
+    stopDepth();
 }
 
 bool MyFreenectDevice::getRGB(std::vector<uint8_t>& out) {
@@ -53,7 +68,7 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
 bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, bool flip) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewRGB) return false;
-    int width = 640, height = 480;
+    int width = WIDTH, height = HEIGHT;
     out.resize(width * height * 4);
     for (int y = 0; y < height; ++y) {
         int srcY = flip ? (height - 1 - y) : y;
@@ -73,7 +88,7 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, bool flip) {
 bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, bool invert, bool flip) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
-    int width = 640, height = 480;
+    int width = WIDTH, height = HEIGHT;
     out.resize(width * height);
     for (int y = 0; y < height; ++y) {
         int srcY = flip ? (height - 1 - y) : y;
