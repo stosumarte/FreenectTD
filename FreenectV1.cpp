@@ -1,3 +1,10 @@
+//
+//  FreenectV1.cpp
+//  FreenectTD
+//
+//  Created by marte on 27/07/2025.
+//
+
 #include "FreenectV1.h"
 #include <algorithm>
 #include <cstring>
@@ -8,8 +15,8 @@ MyFreenectDevice::MyFreenectDevice(freenect_context* ctx, int index,
     : FreenectDevice(ctx, index),
       rgbReady(rgbFlag),
       depthReady(depthFlag),
-      rgbBuffer(640 * 480 * 3),
-      depthBuffer(640 * 480),
+      rgbBuffer(WIDTH * HEIGHT * 3),
+      depthBuffer(WIDTH * HEIGHT),
       hasNewRGB(false),
       hasNewDepth(false) {
     setVideoFormat(FREENECT_VIDEO_RGB);
