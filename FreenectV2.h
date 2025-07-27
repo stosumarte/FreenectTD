@@ -14,6 +14,8 @@
 
 class MyFreenect2Device {
 public:
+    static constexpr int WIDTH = 1920;
+    static constexpr int HEIGHT = 1080;
     
     MyFreenect2Device(libfreenect2::Freenect2Device* device,
                      std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag);
