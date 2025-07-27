@@ -5,6 +5,8 @@
 //
 
 #include "FreenectTOP.h"
+#include "FreenectV1.h"
+#include "FreenectV2.h"
 #include "libfreenect.hpp"
 #include <sys/time.h>
 #include <cstdio>
@@ -26,123 +28,6 @@
 
 #define WIDTH 1920
 #define HEIGHT 1080
-
-// MyFreenectDevice ---------------------------------------------------------
-MyFreenectDevice::MyFreenectDevice(freenect_context* ctx, int index,
-                                   std::atomic<bool>& rgbFlag,
-                                   std::atomic<bool>& depthFlag)
-    : FreenectDevice(ctx, index),
-      rgbReady(rgbFlag),
-      depthReady(depthFlag),
-      rgbBuffer(640 * 480 * 3), // Kinect v1 default
-      depthBuffer(640 * 480),
-      hasNewRGB(false),
-      hasNewDepth(false) {
-    setVideoFormat(FREENECT_VIDEO_RGB);
-    setDepthFormat(FREENECT_DEPTH_11BIT);
-}
-
-void MyFreenectDevice::VideoCallback(void* rgb, uint32_t) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!rgb) return;
-    auto ptr = static_cast<uint8_t*>(rgb);
-    std::copy(ptr, ptr + rgbBuffer.size(), rgbBuffer.begin());
-    hasNewRGB = true;
-    rgbReady = true;
-}
-
-void MyFreenectDevice::DepthCallback(void* depth, uint32_t) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!depth) return;
-    auto ptr = static_cast<uint16_t*>(depth);
-    std::copy(ptr, ptr + depthBuffer.size(), depthBuffer.begin());
-    hasNewDepth = true;
-    depthReady = true;
-}
-
-bool MyFreenectDevice::getRGB(std::vector<uint8_t>& out) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewRGB) return false;
-    out = rgbBuffer;
-    hasNewRGB = false;
-    return true;
-}
-
-bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewDepth) return false;
-    out = depthBuffer;
-    hasNewDepth = false;
-    return true;
-}
-
-// MyFreenect2Device -------------------------------------------------------
-MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
-                                     std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag)
-    : device(dev), listener(nullptr), rgbReady(rgbFlag), depthReady(depthFlag),
-      rgbBuffer(1920 * 1080 * 4, 0), depthBuffer(512 * 424, 0),
-      hasNewRGB(false), hasNewDepth(false) {
-    listener = new libfreenect2::SyncMultiFrameListener(
-        libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
-    device->setColorFrameListener(listener);
-    device->setIrAndDepthFrameListener(listener);
-}
-
-MyFreenect2Device::~MyFreenect2Device() {
-    stop();
-    if (listener) {
-        delete listener;
-        listener = nullptr;
-    }
-}
-
-bool MyFreenect2Device::start() {
-    if (!device) return false;
-    return device->start();
-}
-
-void MyFreenect2Device::stop() {
-    if (device) device->stop();
-}
-
-void MyFreenect2Device::processFrames() {
-    if (!listener) return;
-    libfreenect2::FrameMap frames;
-    if (!listener->waitForNewFrame(frames, 10)) return;
-    libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
-    libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        if (rgb && rgb->data && rgb->width == 1920 && rgb->height == 1080) {
-            memcpy(rgbBuffer.data(), rgb->data, 1920 * 1080 * 4);
-            hasNewRGB = true;
-            rgbReady = true;
-        }
-        if (depth && depth->data && depth->width == 512 && depth->height == 424) {
-            const float* src = reinterpret_cast<const float*>(depth->data);
-            std::copy(src, src + 512 * 424, depthBuffer.begin());
-            hasNewDepth = true;
-            depthReady = true;
-        }
-    }
-    listener->release(frames);
-}
-
-bool MyFreenect2Device::getRGB(std::vector<uint8_t>& out) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewRGB) return false;
-    out = rgbBuffer;
-    hasNewRGB = false;
-    return true;
-}
-
-bool MyFreenect2Device::getDepth(std::vector<float>& out) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewDepth) return false;
-    out = depthBuffer;
-    hasNewDepth = false;
-    return true;
-}
 
 // TouchDesigner Entrypoints ------------------------------------------------
 extern "C" {
@@ -191,7 +76,6 @@ void FreenectTOP::cleanupDevice() {
     }
 }
 
-// Remove all double-buffering logic and use only single-buffer for v2
 // --- Kinect v2 (libfreenect2) ---
 bool FreenectTOP::initDeviceV2() {
     std::lock_guard<std::mutex> lock(freenectMutex);
@@ -243,10 +127,35 @@ bool FreenectTOP::initDeviceV2() {
     fn2_started = true;
     fn2_rgbBuffer.resize(WIDTH * HEIGHT * 4, 0);
     fn2_depthBuffer.resize(512 * 424, 0.0f);
+    // Start background acquisition thread
+    fn2_acquireRunning = true;
+    fn2_acquireThread = std::thread([this]() {
+        while (fn2_acquireRunning) {
+            libfreenect2::FrameMap frames;
+            if (fn2_listener && fn2_listener->waitForNewFrame(frames, 100)) {
+                libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
+                libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
+                {
+                    std::lock_guard<std::mutex> lock(fn2_acquireMutex);
+                    if (rgb && rgb->data) {
+                        memcpy(fn2_rgbBuffer.data(), rgb->data, WIDTH * HEIGHT * 4);
+                    }
+                    if (depth && depth->data) {
+                        const float* src = reinterpret_cast<const float*>(depth->data);
+                        std::copy(src, src + 512 * 424, fn2_depthBuffer.begin());
+                    }
+                }
+                fn2_listener->release(frames);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+    });
     return true;
 }
 
 void FreenectTOP::cleanupDeviceV2() {
+    fn2_acquireRunning = false;
+    if (fn2_acquireThread.joinable()) fn2_acquireThread.join();
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (fn2_dev) {
         if (fn2_started) fn2_dev->stop();
@@ -410,7 +319,6 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
 
     if (deviceType == 0) {
         int colorWidth = 640, colorHeight = 480, depthWidth = 640, depthHeight = 480;
-        bool deviceValid = (device != nullptr);
         if (!device) {
             cleanupDevice();
             if (!initDevice()) {
@@ -466,7 +374,6 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
                 }
                 return;
             }
-            deviceValid = true;
         }
         if (!device) {
             fprintf(stderr, "[FreenectTOP] ERROR: device is null after init!\n");
@@ -481,22 +388,13 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             device = nullptr;
             return;
         }
-        std::vector<uint8_t> rgb;
-        if (device->getRGB(rgb)) {
-            lastRGB = rgb;
+        bool flip = true; // always flip for v1
+        bool invert = inputs->getParInt("Invertdepth") != 0;
+        std::vector<uint8_t> colorFrame;
+        if (device->getColorFrame(colorFrame, flip)) {
             OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(colorWidth * colorHeight * 4, TOP_BufferFlags::None, nullptr) : nullptr;
             if (buf) {
-                uint8_t* out = static_cast<uint8_t*>(buf->data);
-                for (int y = 0; y < colorHeight; ++y)
-                    for (int x = 0; x < colorWidth; ++x) {
-                        int srcY = colorHeight - 1 - y;
-                        int iSrc = (srcY * colorWidth + x) * 3;
-                        int iDst = (y * colorWidth + x) * 4;
-                        out[iDst + 0] = lastRGB[iSrc + 0];
-                        out[iDst + 1] = lastRGB[iSrc + 1];
-                        out[iDst + 2] = lastRGB[iSrc + 2];
-                        out[iDst + 3] = 255;
-                    }
+                std::memcpy(buf->data, colorFrame.data(), colorWidth * colorHeight * 4);
                 TOP_UploadInfo info;
                 info.textureDesc.width = colorWidth;
                 info.textureDesc.height = colorHeight;
@@ -506,24 +404,11 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
                 output->uploadBuffer(&buf, info, nullptr);
             }
         }
-        std::vector<uint16_t> depth;
-        if (device->getDepth(depth)) {
-            lastDepth = depth;
+        std::vector<uint16_t> depthFrame;
+        if (device->getDepthFrame(depthFrame, invert, flip)) {
             OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TOP_BufferFlags::None, nullptr) : nullptr;
             if (buf) {
-                uint16_t* out = static_cast<uint16_t*>(buf->data);
-                for (int y = 0; y < depthHeight; ++y)
-                    for (int x = 0; x < depthWidth; ++x) {
-                        int idx = (depthHeight - 1 - y) * depthWidth + x;
-                        uint16_t raw = lastDepth[idx];
-                        bool invert = inputs->getParInt("Invertdepth") != 0;
-                        if (raw > 0 && raw < 2047) {
-                            uint16_t scaled = raw << 5;
-                            out[y * depthWidth + x] = invert ? 65535 - scaled : scaled;
-                        } else {
-                            out[y * depthWidth + x] = 0;
-                        }
-                    }
+                std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
                 TOP_UploadInfo info;
                 info.textureDesc.width = depthWidth;
                 info.textureDesc.height = depthHeight;
@@ -535,8 +420,6 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
         }
     } else {
         // Kinect v2 (libfreenect2)
-        static libfreenect2::Registration* registration = nullptr;
-        static libfreenect2::Frame undistorted(512, 424, 4);
         bool v2InitOk = true;
         if (!fn2_dev) {
             v2InitOk = initDeviceV2();
@@ -590,10 +473,6 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
         }
         libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
         libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
-        // Setup registration if needed
-        if (!registration && fn2_dev) {
-            registration = new libfreenect2::Registration(fn2_dev->getIrCameraParams(), fn2_dev->getColorCameraParams());
-        }
         // Color: convert 1920x1080 BGRA to 1920x1080 RGBA
         if (rgb && rgb->data) {
             std::lock_guard<std::mutex> lock(freenectMutex);
@@ -658,15 +537,14 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
             }
         }
         // Depth: use undistorted depth from registration
-        if (depth && depth->data && registration) {
+        if (depth && depth->data) {
             std::lock_guard<std::mutex> lock(freenectMutex);
-            registration->apply(rgb, depth, &undistorted, nullptr);
             int srcW = 512, srcH = 424;
             bool invert = inputs->getParInt("Invertdepth") != 0;
             for (int y = 0; y < srcH; ++y) {
                 for (int x = 0; x < srcW; ++x) {
                     int srcIdx = y * srcW + x;
-                    float d = reinterpret_cast<float*>(undistorted.data)[srcIdx];
+                    float d = reinterpret_cast<float*>(depth->data)[srcIdx];
                     uint16_t val = 0;
                     if (d > 0.1f && d < 4.5f) {
                         val = static_cast<uint16_t>(d / 4.5f * 65535.0f);
