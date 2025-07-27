@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
+		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
+		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +30,10 @@
 		8162681E2E193BD800F1E00B /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
+		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
+		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
+		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
+		81FD1DEB2E36519700900396 /* FreenectV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV2.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -56,7 +62,11 @@
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			attributesByRelativePath = {
 				libfreenect.0.7.5.dylib = (CodeSignOnCopy, );
+				libfreenect.0.dylib = (CodeSignOnCopy, );
+				libfreenect.dylib = (CodeSignOnCopy, );
 				libfreenect2.0.2.0.dylib = (CodeSignOnCopy, );
+				libfreenect2.0.2.dylib = (CodeSignOnCopy, );
+				libfreenect2.dylib = (CodeSignOnCopy, );
 				libusb.dylib = (CodeSignOnCopy, );
 			};
 			buildPhase = 8112B5A22E23E1140089336F /* Embed Libraries */;
@@ -113,8 +123,12 @@
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
-				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
+				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
+				81FD1DEA2E36517700900396 /* FreenectV1.h */,
+				81FD1DE52E3630A700900396 /* FreenectV1.cpp */,
+				81FD1DEB2E36519700900396 /* FreenectV2.h */,
+				81FD1DE72E3630A700900396 /* FreenectV2.cpp */,
 				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
 				8162681E2E193BD800F1E00B /* FreenectTD.plugin */,
 				815B45FA2E229E6A004836E4 /* VendorLibs */,
@@ -188,6 +202,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */,
+				81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */,
+				81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
