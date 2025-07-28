@@ -8,14 +8,17 @@
 #pragma once
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
-#include <atomic>
-#include <vector>
-#include <mutex>
 
 class MyFreenect2Device {
 public:
     static constexpr int WIDTH = 1920;
     static constexpr int HEIGHT = 1080;
+    
+    static constexpr int SCALED_WIDTH = 1280;
+    static constexpr int SCALED_HEIGHT = 720;
+    
+    static constexpr int DEPTH_WIDTH = 512;
+    static constexpr int DEPTH_HEIGHT = 424;
     
     MyFreenect2Device(libfreenect2::Freenect2Device* device,
                      std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag);

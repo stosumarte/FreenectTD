@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstring>
 
+// MyFreenectDevice class constructor
 MyFreenectDevice::MyFreenectDevice(freenect_context* ctx, int index,
                                    std::atomic<bool>& rgbFlag,
                                    std::atomic<bool>& depthFlag)
@@ -23,10 +24,12 @@ MyFreenectDevice::MyFreenectDevice(freenect_context* ctx, int index,
     setDepthFormat(FREENECT_DEPTH_11BIT);
 }
 
+// MyFreenectDevice class destructor
 MyFreenectDevice::~MyFreenectDevice() {
     stop();
 }
 
+// VideoCallback method to handle RGB data
 void MyFreenectDevice::VideoCallback(void* rgb, uint32_t) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!rgb) return;
@@ -36,6 +39,7 @@ void MyFreenectDevice::VideoCallback(void* rgb, uint32_t) {
     rgbReady = true;
 }
 
+// DepthCallback method to handle depth data
 void MyFreenectDevice::DepthCallback(void* depth, uint32_t) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!depth) return;
@@ -45,53 +49,60 @@ void MyFreenectDevice::DepthCallback(void* depth, uint32_t) {
     depthReady = true;
 }
 
+// Start video and depth streams (using libfreenect.hpp API)
 bool MyFreenectDevice::start() {
     startVideo();
     startDepth();
     return true;
 }
 
+// Stop video and depth streams (using libfreenect.hpp API)
 void MyFreenectDevice::stop() {
     stopVideo();
     stopDepth();
 }
 
+
+// Get RGB data
 bool MyFreenectDevice::getRGB(std::vector<uint8_t>& out) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewRGB) return false;
-    out = rgbBuffer;
-    hasNewRGB = false;
+    std::lock_guard<std::mutex> lock(mutex);         // Lock the mutex to ensure thread safety
+    if (!hasNewRGB) return false;                    // Check if new RGB data is available
+    out = rgbBuffer;                                 // Copy the RGB buffer to the output vector
+    hasNewRGB = false;                               // Reset the flag indicating new RGB data
     return true;
 }
 
+// Get depth data
 bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewDepth) return false;
-    out = depthBuffer;
-    hasNewDepth = false;
+    std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
+    if (!hasNewDepth) return false;                 // Check if new depth data is available
+    out = depthBuffer;                              // Copy the depth buffer to the output vector
+    hasNewDepth = false;                            // Reset the flag indicating new depth data
     return true;
 }
 
+// Get color frame and flip it
 bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, bool flip) {
-    std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewRGB) return false;
-    int width = WIDTH, height = HEIGHT;
-    out.resize(width * height * 4);
-    for (int y = 0; y < height; ++y) {
-        int srcY = flip ? (height - 1 - y) : y;
-        for (int x = 0; x < width; ++x) {
-            int srcIdx = (srcY * width + x) * 3;
-            int dstIdx = (y * width + x) * 4;
+    std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
+    if (!hasNewRGB) return false;                   // Check if new RGB data is available
+//  int width = WIDTH, height = HEIGHT;             // Get the dimensions of the RGB frame
+    out.resize(WIDTH * HEIGHT * 4);
+    for (int y = 0; y < HEIGHT; ++y) {
+        int srcY = flip ? (HEIGHT - 1 - y) : y;
+        for (int x = 0; x < WIDTH; ++x) {
+            int srcIdx = (srcY * WIDTH + x) * 3;
+            int dstIdx = (y * WIDTH + x) * 4;
             out[dstIdx + 0] = rgbBuffer[srcIdx + 0];
             out[dstIdx + 1] = rgbBuffer[srcIdx + 1];
             out[dstIdx + 2] = rgbBuffer[srcIdx + 2];
             out[dstIdx + 3] = 255;
         }
     }
-    hasNewRGB = false;
+    hasNewRGB = false;                              // Reset the flag indicating new RGB data
     return true;
 }
 
+// Get depth frame and apply scaling and flipping
 bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, bool invert, bool flip) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;

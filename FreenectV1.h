@@ -7,9 +7,6 @@
 
 #pragma once
 #include "libfreenect.hpp"
-#include <atomic>
-#include <vector>
-#include <mutex>
 
 class MyFreenectDevice : public Freenect::FreenectDevice {
 public:
@@ -36,4 +33,5 @@ private:
     std::mutex            mutex;
     bool                  hasNewRGB;
     bool                  hasNewDepth;
+    
 };

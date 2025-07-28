@@ -26,10 +26,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		811030EB2E36883D001975DE /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
-		8162681E2E193BD800F1E00B /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = FreenectTD.plugin; path = "/Users/marte/vjing/FreenectTD/v1-beta/FreenectTD/build/Debug/FreenectTD.plugin"; sourceTree = "<absolute>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
+		81BC12DF2E379780006C281E /* CPlusPlus_Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPlusPlus_Common.h; sourceTree = "<group>"; };
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
 		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
@@ -126,9 +127,11 @@
 				81FD1DEB2E36519700900396 /* FreenectV2.h */,
 				81FD1DE72E3630A700900396 /* FreenectV2.cpp */,
 				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
+				81BC12DF2E379780006C281E /* CPlusPlus_Common.h */,
 				815B45FA2E229E6A004836E4 /* VendorLibs */,
 				81735C062E228BE300A275AF /* include */,
 				8112B5972E23E1140089336F /* Frameworks */,
+				811030EB2E36883D001975DE /* FreenectTD.plugin */,
 			);
 			sourceTree = "<group>";
 		};
@@ -155,7 +158,7 @@
 			packageProductDependencies = (
 			);
 			productName = FreenectTOP;
-			productReference = 8162681E2E193BD800F1E00B /* FreenectTD.plugin */;
+			productReference = 811030EB2E36883D001975DE /* FreenectTD.plugin */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */

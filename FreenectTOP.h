@@ -1,11 +1,18 @@
+//
+// FreenectTOP.h
+// FreenectTOP
+//
+// Created by marte
+//
+
 #pragma once
 
 #include "TOP_CPlusPlusBase.h"
 #include "libfreenect.hpp"
+#include <thread>
 #include <atomic>
 #include <vector>
 #include <mutex>
-#include <thread>
 
 #include "FreenectV1.h"
 #include "FreenectV2.h"
@@ -36,11 +43,13 @@ private:
     std::atomic<bool>         runEvents{false};
     std::thread               eventThread;
 
-    // Device type: 0 = Kinect v1, 1 = Kinect v2
+    // Device type
+    // 0 = Kinect v1
+    // 1 = Kinect v2
     int deviceType = 0;
     std::string lastDeviceTypeStr;
 
-    // V2 device members - follow similar pattern to V1
+    // V2 device members
     libfreenect2::Freenect2*       fn2_ctx = nullptr;
     MyFreenect2Device*             fn2_device = nullptr;
     libfreenect2::PacketPipeline*  fn2_pipeline = nullptr;
@@ -49,9 +58,13 @@ private:
     std::atomic<bool>              fn2_depthReady{false};
 
     // Device init/cleanup methods
-    bool initDevice();
-    void cleanupDevice();
+    bool initDeviceV1();
+    void cleanupDeviceV1();
     bool initDeviceV2();
     void cleanupDeviceV2();
     std::mutex freenectMutex;
+    
+    // Execution methods for different device versions
+    void executeV1(TOP_Output* output, const OP_Inputs* inputs);
+    void executeV2(TOP_Output* output, const OP_Inputs* inputs);
 };
