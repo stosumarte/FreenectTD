@@ -713,7 +713,7 @@ FREENECTAPI int freenect_get_ir_brightness(freenect_device *dev);
  * Note that this does not change the intensity of the IR projector.
  *
  * @param dev Device to set IR brightness
- * @param brighness Brightness value in range 1 - 50
+ * @param brightness Brightness value in range 1 - 50
  *
  * @return 0 on success, < 0 if error
  */
