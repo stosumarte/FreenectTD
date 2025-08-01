@@ -212,8 +212,10 @@ bool FreenectTOP::initDeviceV2() {
     }
     fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
     try {
-        fn2_pipeline = new libfreenect2::OpenCLPacketPipeline();
-        fprintf(stderr, "[FreenectTOP] Using OpenCLPacketPipeline for Kinect v2\n");
+        //fn2_pipeline = new libfreenect2::OpenCLPacketPipeline();
+        fn2_pipeline = new libfreenect2::CpuPacketPipeline(); // Use CPU pipeline for debugging
+        //fprintf(stderr, "[FreenectTOP] Using OpenCLPacketPipeline for Kinect v2\n");
+        fprintf(stderr, "[FreenectTOP] Using CPU pipeline for Kinect v2\n");
     } catch (...) {
         fn2_pipeline = nullptr;
     }
