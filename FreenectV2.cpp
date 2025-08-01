@@ -8,6 +8,10 @@
 #include "FreenectV2.h"
 #include <cstring>
 #include <algorithm>
+#include <iostream>
+#include <thread>
+#include <opencv.hpp>
+//#import <Accelerate/Accelerate.h>
 
 // MyFreenect2Device class constructor
 MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
@@ -43,9 +47,15 @@ void MyFreenect2Device::stop() {
 
 // Set RGB buffer and mark as ready
 void MyFreenect2Device::processFrames() {
+    static int frameCount = 0;
+    static auto lastTime = std::chrono::steady_clock::now();
     if (!listener) return;
+    if (!listener->hasNewFrame()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2)); // Prevent busy-waiting
+        return;
+    }
     libfreenect2::FrameMap frames;
-    if (!listener->waitForNewFrame(frames, 10)) return;
+    listener->waitForNewFrame(frames, 0); // Immediately get the frame if available
     libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
     libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
     {
@@ -63,6 +73,15 @@ void MyFreenect2Device::processFrames() {
         }
     }
     listener->release(frames);
+    // Logging FPS
+    frameCount++;
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - lastTime).count();
+    if (elapsed >= 1) {
+        std::cout << "[FreenectV2] processFrames FPS: " << frameCount << std::endl;
+        frameCount = 0;
+        lastTime = now;
+    }
 }
 
 // Get RGB data
@@ -83,8 +102,12 @@ bool MyFreenect2Device::getDepth(std::vector<float>& out) {
     return true;
 }
 
-// Get color frame with optional flipping and downscaling
-bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool flip, bool downscale) {
+// Metal shader - Get color frame with optional flipping and downscaling
+//#include <Metal/Metal.h>
+
+
+// CPU ONLY - Get color frame with optional flipping and downscaling
+/* bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool flip, bool downscale) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewRGB) return false;
 
@@ -119,10 +142,84 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool flip, bool
 
     hasNewRGB = false;
     return true;
+} */
+
+// Accelerate Framework - Get color frame with optional flipping and downscaling
+/* bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool flip, bool downscale) {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!hasNewRGB) return false;
+
+    int srcW = WIDTH, srcH = HEIGHT;
+    int dstW = downscale ? SCALED_WIDTH : WIDTH;
+    int dstH = downscale ? SCALED_HEIGHT : HEIGHT;
+    size_t rowBytesSrc = srcW * 4;
+    size_t rowBytesDst = dstW * 4;
+
+    // Allocate output buffer
+    out.assign(dstW * dstH * 4, 0);
+
+    // Input buffer descriptor
+    vImage_Buffer srcBuf;
+    srcBuf.data = rgbBuffer.data();
+    srcBuf.height = static_cast<vImagePixelCount>(srcH);
+    srcBuf.width  = static_cast<vImagePixelCount>(srcW);
+    srcBuf.rowBytes = rowBytesSrc;
+
+    // Intermediate buffer for scaling
+    std::vector<uint8_t> tempBuf(downscale ? dstW * dstH * 4 : 0);
+    vImage_Buffer dstBuf;
+    dstBuf.data = downscale ? tempBuf.data() : srcBuf.data;
+    dstBuf.height = static_cast<vImagePixelCount>(dstH);
+    dstBuf.width  = static_cast<vImagePixelCount>(dstW);
+    dstBuf.rowBytes = rowBytesDst;
+
+    vImage_Error err = vImageScale_ARGB8888(&srcBuf, &dstBuf, nullptr, kvImageHighQualityResampling);
+    if (err != kvImageNoError) return false;
+
+    // Optionally flip vertically
+    if (flip) {
+        err = vImageVerticalReflect_ARGB8888(&dstBuf, &dstBuf, kvImageNoFlags);
+        if (err != kvImageNoError) return false;
+    }
+
+    // Permute channels: BGRA -> RGBA
+    const uint8_t permuteMap[4] = {2, 1, 0, 3};
+    err = vImagePermuteChannels_ARGB8888(&dstBuf, &dstBuf, permuteMap, kvImageNoFlags);
+    if (err != kvImageNoError) return false;
+
+    // Copy to output
+    memcpy(out.data(), dstBuf.data, dstH * rowBytesDst);
+
+    hasNewRGB = false;
+    return true;
+} */
+
+
+// OPENCV - Get color frame with optional flipping and downscaling
+bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool flip, bool downscale) {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!hasNewRGB) return false;
+
+    // Wrap rgbBuffer as BGRA image
+    cv::Mat src(HEIGHT, WIDTH, CV_8UC4, rgbBuffer.data());
+    cv::Mat dst;
+    // Resize if needed
+    if (downscale) {
+        cv::resize(src, dst, cv::Size(SCALED_WIDTH, SCALED_HEIGHT), 0, 0, cv::INTER_LINEAR);
+    } else {
+        dst = src;
+    }
+    // Flip image
+    cv::flip(dst, dst, 0);
+    // Convert BGRA to RGBA
+    cv::cvtColor(dst, dst, cv::COLOR_BGRA2RGBA);
+    // Copy to output vector
+    out.assign(dst.data, dst.data + dst.total() * dst.elemSize());
+    hasNewRGB = false;
+    return true;
 }
 
 // Get depth frame with optional inversion and undistortion
-#include <libfreenect2/registration.h>
 bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, bool invert, bool undistort) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
