@@ -85,7 +85,6 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
 bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, bool flip) {
     std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
     if (!hasNewRGB) return false;                   // Check if new RGB data is available
-//  int width = WIDTH, height = HEIGHT;             // Get the dimensions of the RGB frame
     out.resize(WIDTH * HEIGHT * 4);
     for (int y = 0; y < HEIGHT; ++y) {
         int srcY = flip ? (HEIGHT - 1 - y) : y;

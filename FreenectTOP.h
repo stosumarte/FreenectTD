@@ -8,7 +8,6 @@
 #pragma once
 
 #include "TOP_CPlusPlusBase.h"
-#include "libfreenect.hpp"
 #include <thread>
 #include <atomic>
 #include <vector>
@@ -41,7 +40,7 @@ private:
     std::vector<uint8_t>      lastRGB;
     std::vector<uint16_t>     lastDepth;
     std::atomic<bool>         runEvents{false};
-    std::thread               eventThread;
+    std::thread               eventThreadV1;
 
     // Device type
     // 0 = Kinect v1
@@ -56,6 +55,8 @@ private:
     std::string                    fn2_serial;
     std::atomic<bool>              fn2_rgbReady{false};
     std::atomic<bool>              fn2_depthReady{false};
+    std::atomic<bool>              runV2Events{false};
+    std::thread                    eventThreadV2;
 
     // Device init/cleanup methods
     bool initDeviceV1();
@@ -67,4 +68,8 @@ private:
     // Execution methods for different device versions
     void executeV1(TOP_Output* output, const OP_Inputs* inputs);
     void executeV2(TOP_Output* output, const OP_Inputs* inputs);
+
+    // Add declarations for v2 enumeration thread helpers
+    void startV2EnumThread();
+    void stopV2EnumThread();
 };

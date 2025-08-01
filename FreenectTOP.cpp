@@ -6,8 +6,9 @@
 //
 
 #include "FreenectTOP.h"
-#include "FreenectV1.h"
-#include "FreenectV2.h"
+
+#include <atomic>
+#include <thread>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
@@ -129,7 +130,7 @@ bool FreenectTOP::initDeviceV1() {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         runEvents = true;
-        eventThread = std::thread([this]() {
+        eventThreadV1 = std::thread([this]() {
             while (runEvents.load()) {
                 std::lock_guard<std::mutex> lock(freenectMutex);
                 if (!freenectContext) break;
@@ -152,8 +153,8 @@ bool FreenectTOP::initDeviceV1() {
 // Cleanup for Kinect v1 (libfreenect)
 void FreenectTOP::cleanupDeviceV1() {
     runEvents = false;
-    if (eventThread.joinable()) {
-        eventThread.join();
+    if (eventThreadV1.joinable()) {
+        eventThreadV1.join();
     }
     
     // Remove Kinect v2 cleanup
@@ -171,8 +172,35 @@ void FreenectTOP::cleanupDeviceV1() {
     }
 }
 
+// Add static atomic flag and thread for v2 device search
+static std::atomic<bool> v2DeviceAvailable(false);
+static std::thread v2EnumThread;
+static std::atomic<bool> v2EnumThreadRunning(false);
+
+// Start the background enumeration thread for Kinect v2
+void FreenectTOP::startV2EnumThread() {
+    if (v2EnumThreadRunning.load()) return;
+    v2EnumThreadRunning = true;
+    v2EnumThread = std::thread([]() {
+        while (v2EnumThreadRunning.load()) {
+            libfreenect2::Freenect2 ctx;
+            v2DeviceAvailable = (ctx.enumerateDevices() > 0);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    });
+}
+
+// Stop the background enumeration thread for Kinect v2
+void FreenectTOP::stopV2EnumThread() {
+    v2EnumThreadRunning = false;
+    if (v2EnumThread.joinable()) v2EnumThread.join();
+}
+
 // Init for Kinect v2 (libfreenect2)
+// In FreenectTOP::initDeviceV2()
 bool FreenectTOP::initDeviceV2() {
+    startV2EnumThread();
+    if (!v2DeviceAvailable.load()) return false;
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (fn2_ctx) return true;
     fn2_ctx = new libfreenect2::Freenect2();
@@ -198,8 +226,10 @@ bool FreenectTOP::initDeviceV2() {
         fprintf(stderr, "[FreenectTOP] Failed to open Kinect v2 device\n");
         delete fn2_ctx;
         fn2_ctx = nullptr;
-        delete fn2_pipeline;
-        fn2_pipeline = nullptr;
+        if (fn2_pipeline) {
+            delete fn2_pipeline;
+            fn2_pipeline = nullptr;
+        }
         return false;
     }
     if (!fn2_device) {
@@ -211,24 +241,47 @@ bool FreenectTOP::initDeviceV2() {
         fn2_device = nullptr;
         return false;
     }
+    // **Stop enumeration thread after successful device start**
+    stopV2EnumThread();
+
+    // Start event thread for v2
+    if (!eventThreadV2.joinable()) {
+        runV2Events = true;
+        eventThreadV2 = std::thread([this]() {
+            while (runV2Events.load()) {
+                {
+                    std::lock_guard<std::mutex> lock(freenectMutex);
+                    if (fn2_device) {
+                        fn2_device->processFrames();
+                    }
+                }
+            }
+        });
+    }
     return true;
 }
 
 // Cleanup for Kinect v2 (libfreenect2)
 void FreenectTOP::cleanupDeviceV2() {
+    // Stop event thread for v2
+    runV2Events = false;
+    if (eventThreadV2.joinable()) {
+        eventThreadV2.join();
+    }
     std::lock_guard<std::mutex> lock(freenectMutex);
+    stopV2EnumThread();
     if (fn2_device) {
         fn2_device->stop();
         delete fn2_device;
         fn2_device = nullptr;
     }
-    if (fn2_ctx) {
-        delete fn2_ctx;
-        fn2_ctx = nullptr;
-    }
     if (fn2_pipeline) {
         delete fn2_pipeline;
         fn2_pipeline = nullptr;
+    }
+    if (fn2_ctx) {
+        delete fn2_ctx;
+        fn2_ctx = nullptr;
     }
 }
 
@@ -253,7 +306,7 @@ FreenectTOP::~FreenectTOP() {
 // Execute method for Kinect v1 (libfreenect)
 void FreenectTOP::executeV1(TOP_Output* output, const OP_Inputs* inputs) {
     // Kinect v1 (libfreenect)
-    int colorWidth = 640, colorHeight = 480, depthWidth = 640, depthHeight = 480;
+    int colorWidth = MyFreenectDevice::WIDTH, colorHeight = MyFreenectDevice::HEIGHT, depthWidth = MyFreenectDevice::WIDTH, depthHeight = MyFreenectDevice::HEIGHT;
     if (!device) {      // Device not initialized
         cleanupDeviceV1();
         if (!initDeviceV1()) {
@@ -357,7 +410,7 @@ void FreenectTOP::executeV1(TOP_Output* output, const OP_Inputs* inputs) {
 
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
-    // Kinect v2 (libfreenect2)
+    int colorWidth = MyFreenect2Device::WIDTH, colorHeight = MyFreenect2Device::HEIGHT, depthWidth = MyFreenect2Device::DEPTH_WIDTH, depthHeight = MyFreenect2Device::DEPTH_HEIGHT;
     bool v2InitOk = true;
     if (!fn2_device) {
         v2InitOk = initDeviceV2();
@@ -365,38 +418,40 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
             fprintf(stderr, "[FreenectTOP] Kinect v2 init failed or no device found\n");
         }
     }
+    bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
+    int outW = downscale ? 1280 : colorWidth;
+    int outH = downscale ? 720 : colorHeight;
     if (!fn2_device || !v2InitOk) {
-        // Error screen placeholder
-        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(MyFreenect2Device::WIDTH * MyFreenect2Device::HEIGHT * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             uint8_t* out = static_cast<uint8_t*>(buf->data);
-            for (int i = 0; i < MyFreenect2Device::WIDTH * MyFreenect2Device::HEIGHT; ++i) {
+            for (int i = 0; i < outW * outH; ++i) {
                 out[i * 4 + 0] = 0;
                 out[i * 4 + 1] = 0;
                 out[i * 4 + 2] = 255;
                 out[i * 4 + 3] = 255;
             }
             TOP_UploadInfo info;
-            info.textureDesc.width = MyFreenect2Device::WIDTH;
-            info.textureDesc.height = MyFreenect2Device::HEIGHT;
+            info.textureDesc.width = outW;
+            info.textureDesc.height = outH;
             info.textureDesc.texDim = OP_TexDim::e2D;
             info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
             output->uploadBuffer(&buf, info, nullptr);
         }
-        OP_SmartRef<TOP_Buffer> depthBuf = myContext ? myContext->createOutputBuffer(512 * 424 * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+        OP_SmartRef<TOP_Buffer> depthBuf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TOP_BufferFlags::None, nullptr) : nullptr;
         if (depthBuf) {
             uint16_t* depthOut = static_cast<uint16_t*>(depthBuf->data);
-            for (int i = 0; i < 512 * 424; ++i) {
+            for (int i = 0; i < depthWidth * depthHeight; ++i) {
                 depthOut[i] = 0;
             }
-            for (int x = 0; x < 512; ++x) {
-                int idx = (424 - 1 - 20) * 512 + x;
+            for (int x = 0; x < depthWidth; ++x) {
+                int idx = (depthHeight - 1 - 20) * depthWidth + x;
                 depthOut[idx] = 65535;
             }
             TOP_UploadInfo depthInfo;
-            depthInfo.textureDesc.width = 512;
-            depthInfo.textureDesc.height = 424;
+            depthInfo.textureDesc.width = depthWidth;
+            depthInfo.textureDesc.height = depthHeight;
             depthInfo.textureDesc.texDim = OP_TexDim::e2D;
             depthInfo.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
             depthInfo.colorBufferIndex = 1;
@@ -404,17 +459,14 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
         }
         return;
     }
-    // --- Ensure v2 device acquires new frames ---
-    fn2_device->processFrames();
+    // Profiling getColorFrame
     std::vector<uint8_t> colorFrame;
-    std::vector<uint16_t> depthFrame;
-    bool flip = false; // v2: do not flip by default
-    bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
-    bool invert = (inputs->getParInt("Invertdepth") != 0);
-    bool undistort = true; // always undistort for v2
-    if (fn2_device->getColorFrame(colorFrame, flip, downscale)) {
-        int outW = downscale ? 1280 : MyFreenect2Device::WIDTH;
-        int outH = downscale ? 720 : MyFreenect2Device::HEIGHT;
+    auto t0 = std::chrono::high_resolution_clock::now();
+    bool gotColor = fn2_device->getColorFrame(colorFrame, false, downscale);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto colorFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+    if (gotColor) {
+        // auto t2 = std::chrono::high_resolution_clock::now();
         OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             std::memcpy(buf->data, colorFrame.data(), outW * outH * 4);
@@ -424,21 +476,36 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
             info.textureDesc.texDim = OP_TexDim::e2D;
             info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
+            auto t3 = std::chrono::high_resolution_clock::now();
             output->uploadBuffer(&buf, info, nullptr);
+            auto t4 = std::chrono::high_resolution_clock::now();
+            auto uploadColorTime = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count();
+            fprintf(stderr, "[FreenectTOP] getColorFrame: %lld ms, uploadBuffer(color): %lld ms\n", colorFrameTime, uploadColorTime);
         }
     }
-    if (fn2_device->getDepthFrame(depthFrame, invert, undistort)) {
-        int outW = 512, outH = 424;
-        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+    // Profiling getDepthFrame
+    std::vector<uint16_t> depthFrame;
+    auto t5 = std::chrono::high_resolution_clock::now();
+    bool gotDepth = fn2_device->getDepthFrame(depthFrame, (inputs->getParInt("Invertdepth") != 0), true);
+    auto t6 = std::chrono::high_resolution_clock::now();
+    auto depthFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(t6 - t5).count();
+    if (gotDepth) {
+        // auto t7 = std::chrono::high_resolution_clock::now();
+        int outDW = depthWidth, outDH = depthHeight;
+        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
-            std::memcpy(buf->data, depthFrame.data(), outW * outH * 2);
+            std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
             TOP_UploadInfo info;
-            info.textureDesc.width = outW;
-            info.textureDesc.height = outH;
+            info.textureDesc.width = outDW;
+            info.textureDesc.height = outDH;
             info.textureDesc.texDim = OP_TexDim::e2D;
             info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
+            auto t8 = std::chrono::high_resolution_clock::now();
             output->uploadBuffer(&buf, info, nullptr);
+            auto t9 = std::chrono::high_resolution_clock::now();
+            auto uploadDepthTime = std::chrono::duration_cast<std::chrono::milliseconds>(t9 - t8).count();
+            fprintf(stderr, "[FreenectTOP] getDepthFrame: %lld ms, uploadBuffer(depth): %lld ms\n", depthFrameTime, uploadDepthTime);
         }
     }
 }
@@ -457,14 +524,18 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     // If device type changed, re-init device
     if (deviceTypeStr != lastDeviceTypeStr) {
         cleanupDeviceV1();
+        cleanupDeviceV2();
         lastDeviceTypeStr = deviceTypeStr;
     }
 
     // Device type handling
-    if (deviceType == 0) {
+    if (deviceType == 0) {                  // Kinect v1
         executeV1(output, inputs);
-    } else if (deviceType == 1) {
+    } else if (deviceType == 1) {           // Kinect v2
         executeV2(output, inputs);
+    } else {                                // Invalid device type string (should not happen like EVER)
+        fprintf(stderr, "[FreenectTOP] ERROR: Couldn't get device type - something went REALLY wrong '%s'\n", deviceTypeStr.c_str());
+        return;
     }
 }
 
