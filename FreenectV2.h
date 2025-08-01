@@ -6,9 +6,11 @@
 //
 
 #pragma once
+
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/registration.h>
+#include <libfreenect2/packet_pipeline.h>
 
 class MyFreenect2Device {
 public:

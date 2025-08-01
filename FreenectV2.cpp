@@ -37,7 +37,7 @@ MyFreenect2Device::~MyFreenect2Device() {
 // Start the device streams using libfreenect2 API
 bool MyFreenect2Device::start() {
     if (!device) return false;
-    return device->start();
+    return device->startStreams(true,true);
 }
 
 // Stop the device streams using libfreenect2 API
@@ -55,7 +55,7 @@ void MyFreenect2Device::processFrames() {
         return;
     }
     libfreenect2::FrameMap frames;
-    listener->waitForNewFrame(frames, 0); // Immediately get the frame if available
+    listener->waitForNewFrame(frames, 1000); // Immediately get the frame if available
     libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
     libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
     {
@@ -67,6 +67,10 @@ void MyFreenect2Device::processFrames() {
         }
         if (depth && depth->data && depth->width == DEPTH_WIDTH && depth->height == DEPTH_HEIGHT) {
             const float* src = reinterpret_cast<const float*>(depth->data);
+            // Debug: print first 10 raw depth values from device
+            std::cout << "[processFrames] First 10 raw device depth values: ";
+            for (int i = 0; i < 10; ++i) std::cout << src[i] << " ";
+            std::cout << std::endl;
             std::copy(src, src + DEPTH_WIDTH * DEPTH_HEIGHT, depthBuffer.begin());
             hasNewDepth = true;
             depthReady = true;
@@ -222,9 +226,10 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool flip, bool
 // Get depth frame with optional inversion and undistortion
 bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, bool invert, bool undistort) {
     std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewDepth) return false;
-    int width = 512, height = 424;
+    //if (!hasNewDepth) return false;
+    int width = DEPTH_WIDTH, height = DEPTH_HEIGHT;
     out.resize(width * height);
+    undistort = true; // Enable undistortion by default
     if (undistort && device) {
         static libfreenect2::Registration registration(device->getIrCameraParams(), device->getColorCameraParams());
         static libfreenect2::Frame undistorted(width, height, 4);
