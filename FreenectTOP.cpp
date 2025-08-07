@@ -68,7 +68,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     manager->appendFloat(np);
 
     // Invert depth map toggle
-    OP_NumericParameter invertParam;
+    /*OP_NumericParameter invertParam;
     invertParam.name = "Invertdepth";
     invertParam.label = "Invert Depth Map";
     invertParam.defaultValues[0] = 0.0;
@@ -78,7 +78,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     invertParam.maxSliders[0] = 1.0;
     invertParam.clampMins[0] = true;
     invertParam.clampMaxes[0] = true;
-    manager->appendToggle(invertParam);
+    manager->appendToggle(invertParam);*/
 
     // Device type dropdown
     OP_StringParameter deviceTypeParam;
@@ -384,10 +384,10 @@ void FreenectTOP::executeV1(TOP_Output* output, const OP_Inputs* inputs) {
         device = nullptr;
         return;
     }
-    bool flip = true; // always flip for v1
-    bool invert = inputs->getParInt("Invertdepth") != 0;
+    //bool flip = true; // always flip for v1
+    //bool invert = inputs->getParInt("Invertdepth") != 0;
     std::vector<uint8_t> colorFrame;
-    if (device->getColorFrame(colorFrame, flip)) {
+    if (device->getColorFrame(colorFrame)) {
         OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(colorWidth * colorHeight * 4, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             std::memcpy(buf->data, colorFrame.data(), colorWidth * colorHeight * 4);
@@ -401,7 +401,7 @@ void FreenectTOP::executeV1(TOP_Output* output, const OP_Inputs* inputs) {
         }
     }
     std::vector<uint16_t> depthFrame;
-    if (device->getDepthFrame(depthFrame, invert, flip)) {
+    if (device->getDepthFrame(depthFrame)) {
         OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
@@ -470,7 +470,7 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     // Profiling getColorFrame
     std::vector<uint8_t> colorFrame;
     auto t0 = std::chrono::high_resolution_clock::now();
-    bool gotColor = fn2_device->getColorFrame(colorFrame, false, downscale);
+    bool gotColor = fn2_device->getColorFrame(colorFrame, downscale);
     auto t1 = std::chrono::high_resolution_clock::now();
     auto colorFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
     if (gotColor) {

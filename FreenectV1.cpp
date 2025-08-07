@@ -82,12 +82,12 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
 }
 
 // Get color frame and flip it
-bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, bool flip) {
+bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
     if (!hasNewRGB) return false;                   // Check if new RGB data is available
     out.resize(WIDTH * HEIGHT * 4);
     for (int y = 0; y < HEIGHT; ++y) {
-        int srcY = flip ? (HEIGHT - 1 - y) : y;
+        int srcY = HEIGHT - 1 - y; // Always flip vertically
         for (int x = 0; x < WIDTH; ++x) {
             int srcIdx = (srcY * WIDTH + x) * 3;
             int dstIdx = (y * WIDTH + x) * 4;
@@ -102,19 +102,19 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, bool flip) {
 }
 
 // Get depth frame and apply scaling and flipping
-bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, bool invert, bool flip) {
+bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
     int width = WIDTH, height = HEIGHT;
     out.resize(width * height);
     for (int y = 0; y < height; ++y) {
-        int srcY = flip ? (height - 1 - y) : y;
+        int srcY = height - 1 - y; // Always flip vertically
         for (int x = 0; x < width; ++x) {
             int idx = srcY * width + x;
             uint16_t raw = depthBuffer[idx];
             if (raw > 0 && raw < 2047) {
                 uint16_t scaled = raw << 5;
-                out[y * width + x] = invert ? 65535 - scaled : scaled;
+                out[y * width + x] = scaled;
             } else {
                 out[y * width + x] = 0;
             }
