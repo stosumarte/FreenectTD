@@ -18,15 +18,18 @@
 #define FREENECTTOP_VERSION "dev"
 #endif
 
+using namespace TD;
+
 // TouchDesigner Entrypoints
 extern "C" {
+
         DLLEXPORT void FillTOPPluginInfo(TOP_PluginInfo* info) {
         info->apiVersion = TOPCPlusPlusAPIVersion;
         info->executeMode = TOP_ExecuteMode::CPUMem;
         info->customOPInfo.opType->setString("Freenecttop");
         info->customOPInfo.opLabel->setString("FreenectTOP");
         info->customOPInfo.opIcon->setString("KNT");
-        info->customOPInfo.authorName->setString("Matteo (Marte) Tagliabue");
+        info->customOPInfo.authorName->setString("Marte Tagliabue");
         info->customOPInfo.authorEmail->setString("");
         info->customOPInfo.minInputs = 0;
         info->customOPInfo.maxInputs = 0;
@@ -43,6 +46,9 @@ extern "C" {
 
 // Touchdesigner Parameters
 void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
+    
+    
+    
     // Show version in header
     OP_StringParameter versionHeader;
     versionHeader.name = "Version";
@@ -107,7 +113,7 @@ void FreenectTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void*
 bool FreenectTOP::initDeviceV1() {
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (freenect_init(&freenectContext, nullptr) < 0) {
-        fprintf(stderr, "[FreenectTOP] freenect_init failed\n");
+        //fprintf(stderr, "[FreenectTOP] freenect_init failed\n");
         return false;
     }
     freenect_set_log_level(freenectContext, FREENECT_LOG_WARNING);
@@ -488,9 +494,10 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     // Profiling getDepthFrame
     std::vector<uint16_t> depthFrame;
     auto t5 = std::chrono::high_resolution_clock::now();
-    bool gotDepth = fn2_device->getDepthFrame(depthFrame, (inputs->getParInt("Invertdepth") != 0), true);
+    //bool gotDepth = fn2_device->getDepthFrame(depthFrame, (inputs->getParInt("Invertdepth") != 0), true);
     auto t6 = std::chrono::high_resolution_clock::now();
     auto depthFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(t6 - t5).count();
+    bool gotDepth = fn2_device->getDepthFrame(depthFrame);
     if (gotDepth) {
         // auto t7 = std::chrono::high_resolution_clock::now();
         int outDW = depthWidth, outDH = depthHeight;

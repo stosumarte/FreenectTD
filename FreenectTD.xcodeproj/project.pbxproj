@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
+		81B5F7F42E4290FD004330EE /* Protonect_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81B5F7F32E4290FD004330EE /* Protonect_test.cpp */; };
 		81FC70F62E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */; };
 		81FC70F72E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */; };
 		81FC70F82E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F52E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib */; };
@@ -34,6 +35,7 @@
 		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
+		81B5F7F32E4290FD004330EE /* Protonect_test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Protonect_test.cpp; path = /Users/marte/vjing/libfreenect2/examples/Protonect_test.cpp; sourceTree = "<absolute>"; };
 		81BC12DF2E379780006C281E /* CPlusPlus_Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPlusPlus_Common.h; sourceTree = "<group>"; };
 		81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_core.4.12.0.dylib; path = ../../../../../../opt/homebrew/Cellar/opencv/4.12.0/lib/libopencv_core.4.12.0.dylib; sourceTree = "<group>"; };
 		81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_highgui.4.12.0.dylib; path = ../../../../../../opt/homebrew/Cellar/opencv/4.12.0/lib/libopencv_highgui.4.12.0.dylib; sourceTree = "<group>"; };
@@ -144,6 +146,7 @@
 				81FD1DE72E3630A700900396 /* FreenectV2.cpp */,
 				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
 				81BC12DF2E379780006C281E /* CPlusPlus_Common.h */,
+				81B5F7F32E4290FD004330EE /* Protonect_test.cpp */,
 				815B45FA2E229E6A004836E4 /* VendorLibs */,
 				81735C062E228BE300A275AF /* include */,
 				8112B5972E23E1140089336F /* Frameworks */,
@@ -215,6 +218,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				81B5F7F42E4290FD004330EE /* Protonect_test.cpp in Sources */,
 				8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */,
 				81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */,
 				81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */,

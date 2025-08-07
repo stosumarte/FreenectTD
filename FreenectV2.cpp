@@ -19,8 +19,8 @@ MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
     : device(dev), listener(nullptr), rgbReady(rgbFlag), depthReady(depthFlag),
       rgbBuffer(WIDTH * HEIGHT * 4, 0), depthBuffer(DEPTH_WIDTH * DEPTH_HEIGHT, 0),
       hasNewRGB(false), hasNewDepth(false) {
-    listener = new libfreenect2::SyncMultiFrameListener(
-        libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
+    listener = new libfreenect2::SyncMultiFrameListener
+          (libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
     device->setColorFrameListener(listener);
     device->setIrAndDepthFrameListener(listener);
 }
@@ -68,8 +68,8 @@ void MyFreenect2Device::processFrames() {
         if (depth && depth->data && depth->width == DEPTH_WIDTH && depth->height == DEPTH_HEIGHT) {
             const float* src = reinterpret_cast<const float*>(depth->data);
             // Debug: print first 10 raw depth values from device
-            std::cout << "[processFrames] First 10 raw device depth values: ";
-            for (int i = 0; i < 10; ++i) std::cout << src[i] << " ";
+            std::cout << "[processFrames] First 100 raw device depth values: /n";
+            for (int i = 0; i < 100; ++i) std::cout << src[i] << " ";
             std::cout << std::endl;
             std::copy(src, src + DEPTH_WIDTH * DEPTH_HEIGHT, depthBuffer.begin());
             hasNewDepth = true;
@@ -100,10 +100,14 @@ bool MyFreenect2Device::getRGB(std::vector<uint8_t>& out) {
 // Get depth data
 bool MyFreenect2Device::getDepth(std::vector<float>& out) {
     std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewDepth) return false;
-    out = depthBuffer;
-    hasNewDepth = false;
-    return true;
+    if (!hasNewDepth) {
+        return false;
+    }
+    else {
+        out = depthBuffer;
+        hasNewDepth = false;
+        return true;
+    }
 }
 
 // Metal shader - Get color frame with optional flipping and downscaling
@@ -224,44 +228,66 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool flip, bool
 }
 
 // Get depth frame with optional inversion and undistortion
-bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, bool invert, bool undistort) {
+bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
-    //if (!hasNewDepth) return false;
+
+    if (!hasNewDepth) return false;
     int width = DEPTH_WIDTH, height = DEPTH_HEIGHT;
     out.resize(width * height);
-    undistort = true; // Enable undistortion by default
-    if (undistort && device) {
-        static libfreenect2::Registration registration(device->getIrCameraParams(), device->getColorCameraParams());
-        static libfreenect2::Frame undistorted(width, height, 4);
-        static libfreenect2::Frame registered(width, height, 4);
-        // Simulate a color frame for registration (not used for depth only)
-        libfreenect2::Frame fakeColor(1920, 1080, 4);
-        libfreenect2::Frame depthFrame(width, height, 4, reinterpret_cast<unsigned char*>(depthBuffer.data()));
-        registration.apply(&fakeColor, &depthFrame, &undistorted, &registered);
-        float* undistData = reinterpret_cast<float*>(undistorted.data);
-        for (int i = 0; i < width * height; ++i) {
-            float d = undistData[i];
-            uint16_t val = 0;
-            if (d > 0.1f && d < 4.5f) {
-                val = static_cast<uint16_t>(d / 4.5f * 65535.0f);
-                if (invert) val = 65535 - val;
-            }
-            out[i] = val;
+
+    for (int i = 0; i < width * height; ++i) {
+        float d = depthBuffer[i];
+        uint16_t val = 0;
+        if (d > 100.0f && d < 4500.0f) {
+            val = static_cast<uint16_t>(d / 4500.0f * 65535.0f);
         }
-    } else {
-        for (int i = 0; i < width * height; ++i) {
-            float d = depthBuffer[i];
-            uint16_t val = 0;
-            if (d > 0.1f && d < 4.5f) {
-                val = static_cast<uint16_t>(d / 4.5f * 65535.0f);
-                if (invert) val = 65535 - val;
-            }
-            out[i] = val;
-        }
+        out[i] = val;
     }
+
     hasNewDepth = false;
     return true;
 }
+
+// Backup depth frame function
+/* bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, bool invert, bool undistort) {
+ std::lock_guard<std::mutex> lock(mutex);
+ 
+ if (!hasNewDepth) return false;
+ int width = DEPTH_WIDTH, height = DEPTH_HEIGHT;
+ out.resize(width * height);
+ undistort = true; // Enable undistortion by default
+ if (undistort && device) {
+     static libfreenect2::Registration registration(device->getIrCameraParams(), device->getColorCameraParams());
+     static libfreenect2::Frame undistorted(width, height, 4);
+     static libfreenect2::Frame registered(width, height, 4);
+     // Simulate a color frame for registration (not used for depth only)
+     libfreenect2::Frame fakeColor(1920, 1080, 4);
+     libfreenect2::Frame depthFrame(width, height, 4, reinterpret_cast<unsigned char*>(depthBuffer.data()));
+     registration.apply(&fakeColor, &depthFrame, &undistorted, &registered);
+     float* undistData = reinterpret_cast<float*>(undistorted.data);
+     for (int i = 0; i < width * height; ++i) {
+         float d = undistData[i];
+         uint16_t val = 0;
+         if (d > 0.1f && d < 4.5f) {
+             val = static_cast<uint16_t>(d / 4.5f * 65535.0f);
+             if (invert) val = 65535 - val;
+         }
+         out[i] = val;
+     }
+ } else {
+     for (int i = 0; i < width * height; ++i) {
+         float d = depthBuffer[i];
+         uint16_t val = 0;
+         if (d > 0.1f && d < 4.5f) {
+             val = static_cast<uint16_t>(d / 4.5f * 65535.0f);
+             if (invert) val = 65535 - val;
+         }
+         out[i] = val;
+     }
+ }
+ hasNewDepth = false;
+ return true;
+}*/
 
 // Set RGB buffer and mark as ready
 void MyFreenect2Device::setRGBBuffer(const std::vector<uint8_t>& buffer, bool markReady) {
