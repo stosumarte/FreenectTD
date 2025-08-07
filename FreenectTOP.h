@@ -16,21 +16,21 @@
 #include "FreenectV1.h"
 #include "FreenectV2.h"
 
-using namespace TD;
+//using namespace TD;
 
-class FreenectTOP : public TOP_CPlusPlusBase {
+class FreenectTOP : public TD::TOP_CPlusPlusBase {
 public:
-    FreenectTOP(const OP_NodeInfo* info, TOP_Context* context);
+    FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context);
     virtual ~FreenectTOP();
 
-    void getGeneralInfo   (TOP_GeneralInfo* ginfo, const OP_Inputs* inputs, void*) override;
-    void execute          (TOP_Output* output, const OP_Inputs* inputs, void*) override;
-    void setupParameters  (OP_ParameterManager* manager, void*) override;
+    void getGeneralInfo   (TD::TOP_GeneralInfo* ginfo, const TD::OP_Inputs* inputs, void*) override;
+    void execute          (TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) override;
+    void setupParameters  (TD::OP_ParameterManager* manager, void*) override;
     void pulsePressed     (const char* name, void*) override;
 
 private:
-    const OP_NodeInfo*        myNodeInfo;
-    TOP_Context*              myContext;
+    const TD::OP_NodeInfo*        myNodeInfo;
+    TD::TOP_Context*              myContext;
     
     // V1 device members
     freenect_context*         freenectContext;
@@ -66,8 +66,8 @@ private:
     std::mutex freenectMutex;
     
     // Execution methods for different device versions
-    void executeV1(TOP_Output* output, const OP_Inputs* inputs);
-    void executeV2(TOP_Output* output, const OP_Inputs* inputs);
+    void executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
+    void executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
 
     // Add declarations for v2 enumeration thread helpers
     void startV2EnumThread();

@@ -33,7 +33,8 @@ public:
     void processFrames();
     // Unified processed frame methods for v2
     bool getColorFrame(std::vector<uint8_t>& out, bool flip, bool downscale);
-    bool getDepthFrame(std::vector<uint16_t>& out, bool invert, bool undistort);
+    //bool getDepthFrame(std::vector<uint16_t>& out, bool invert, bool undistort);
+    bool getDepthFrame(std::vector<uint16_t>& out);
     // Setters for buffer injection
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
