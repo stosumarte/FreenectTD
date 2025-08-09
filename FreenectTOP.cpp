@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <thread>
+#include <iostream>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
@@ -26,11 +27,11 @@ extern "C" {
         DLLEXPORT void FillTOPPluginInfo(TOP_PluginInfo* info) {
         info->apiVersion = TOPCPlusPlusAPIVersion;
         info->executeMode = TOP_ExecuteMode::CPUMem;
-        info->customOPInfo.opType->setString("Freenecttop");
-        info->customOPInfo.opLabel->setString("FreenectTOP");
-        info->customOPInfo.opIcon->setString("KNT");
+        info->customOPInfo.opType->setString("Freenect");
+        info->customOPInfo.opLabel->setString("Freenect");
+        info->customOPInfo.opIcon->setString("FNT");
         info->customOPInfo.authorName->setString("Marte Tagliabue");
-        info->customOPInfo.authorEmail->setString("");
+        info->customOPInfo.authorEmail->setString("ciao@marte.ee");
         info->customOPInfo.minInputs = 0;
         info->customOPInfo.maxInputs = 0;
     }
@@ -47,14 +48,26 @@ extern "C" {
 // Touchdesigner Parameters
 void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     
-    
-    
     // Show version in header
     OP_StringParameter versionHeader;
     versionHeader.name = "Version";
-    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION;
+    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " – by @stosumarte";
     versionHeader.label = versionLabel.c_str();
     manager->appendHeader(versionHeader);
+    
+    // Check for updates button
+    OP_NumericParameter checkUpdateParam;
+    checkUpdateParam.name = "Checkforupdates";
+    checkUpdateParam.label = "Check for updates";
+    checkUpdateParam.defaultValues[0] = 0.0;
+    checkUpdateParam.minValues[0] = 0.0;
+    checkUpdateParam.maxValues[0] = 1.0;
+    checkUpdateParam.minSliders[0] = 0.0;
+    checkUpdateParam.maxSliders[0] = 1.0;
+    checkUpdateParam.clampMins[0] = true;
+    checkUpdateParam.clampMaxes[0] = true;
+    manager->appendMomentary(checkUpdateParam);
+    
 
     // Tilt angle parameter
     OP_NumericParameter np;
@@ -67,7 +80,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     np.maxSliders[0] = 30.0;
     manager->appendFloat(np);
 
-    // Invert depth map toggle
+    // DEPRECATED - Invert depth map toggle
     /*OP_NumericParameter invertParam;
     invertParam.name = "Invertdepth";
     invertParam.label = "Invert Depth Map";
@@ -135,14 +148,14 @@ bool FreenectTOP::initDeviceV1() {
         device->startDepth();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-        runEvents = true;
+        runV1Events = true;
         eventThreadV1 = std::thread([this]() {
-            while (runEvents.load()) {
+            while (runV1Events.load()) {
                 std::lock_guard<std::mutex> lock(freenectMutex);
                 if (!freenectContext) break;
                 int err = freenect_process_events(freenectContext);
                 if (err < 0) {
-                    fprintf(stderr, "[FreenectTOP] Error in freenect_process_events (%d)\n", err);
+                    std::cout << "[FreenectTOP] Error in freenect_process_events\n";
                     break;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -158,7 +171,7 @@ bool FreenectTOP::initDeviceV1() {
 
 // Cleanup for Kinect v1 (libfreenect)
 void FreenectTOP::cleanupDeviceV1() {
-    runEvents = false;
+    runV1Events = false;
     if (eventThreadV1.joinable()) {
         eventThreadV1.join();
     }
@@ -203,20 +216,27 @@ void FreenectTOP::stopV2EnumThread() {
 }
 
 // Init for Kinect v2 (libfreenect2)
-// In FreenectTOP::initDeviceV2()
 bool FreenectTOP::initDeviceV2() {
-    startV2EnumThread();
-    if (!v2DeviceAvailable.load()) return false;
+    
     std::lock_guard<std::mutex> lock(freenectMutex);
+    
+    startV2EnumThread();
+    
+    if (!v2DeviceAvailable.load()) return false;
+    
     if (fn2_ctx) return true;
+    
     fn2_ctx = new libfreenect2::Freenect2();
+    
     if (fn2_ctx->enumerateDevices() == 0) {
         fprintf(stderr, "[FreenectTOP] No Kinect v2 devices found\n");
         delete fn2_ctx;
         fn2_ctx = nullptr;
         return false;
     }
+    
     fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
+    
     try {
         //fn2_pipeline = new libfreenect2::OpenCLPacketPipeline();
         fn2_pipeline = new libfreenect2::CpuPacketPipeline(); // Use CPU pipeline for debugging
@@ -225,11 +245,14 @@ bool FreenectTOP::initDeviceV2() {
     } catch (...) {
         fn2_pipeline = nullptr;
     }
+    
     if (!fn2_pipeline) {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
         fprintf(stderr, "[FreenectTOP] Falling back to CpuPacketPipeline for Kinect v2\n");
     }
+    
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
+    
     if (!dev) {
         fprintf(stderr, "[FreenectTOP] Failed to open Kinect v2 device\n");
         delete fn2_ctx;
@@ -240,15 +263,26 @@ bool FreenectTOP::initDeviceV2() {
         }
         return false;
     }
+    
     if (!fn2_device) {
         fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady);
     }
+    
     if (!fn2_device->start()) {
         fprintf(stderr, "[FreenectTOP] Failed to start Kinect v2 device\n");
         delete fn2_device;
+        if (fn2_pipeline) {
+            delete fn2_pipeline;
+            fn2_pipeline = nullptr;
+        }
+        if (fn2_ctx) {
+            delete fn2_ctx;
+            fn2_ctx = nullptr;
+        }
         fn2_device = nullptr;
         return false;
     }
+    
     // **Stop enumeration thread after successful device start**
     stopV2EnumThread();
 
@@ -257,11 +291,11 @@ bool FreenectTOP::initDeviceV2() {
         runV2Events = true;
         eventThreadV2 = std::thread([this]() {
             while (runV2Events.load()) {
-                {
-                    std::lock_guard<std::mutex> lock(freenectMutex);
-                    if (fn2_device) {
-                        fn2_device->processFrames();
-                    }
+                std::lock_guard<std::mutex> lock(freenectMutex);
+                if (fn2_device) {
+                    fn2_device->processFrames();
+                } else {
+                    std::cout << "[FreenectTOP] fn2_device is null in event thread" << std::endl;
                 }
             }
         });
@@ -271,26 +305,46 @@ bool FreenectTOP::initDeviceV2() {
 
 // Cleanup for Kinect v2 (libfreenect2)
 void FreenectTOP::cleanupDeviceV2() {
+    
     // Stop event thread for v2
     runV2Events = false;
+    std::cout << "[FreenectTOP] Stopping event thread for v2 \n";
+    
     if (eventThreadV2.joinable()) {
         eventThreadV2.join();
+        std::cout << "[FreenectTOP] Event thread for v2 stopped (joinable and joined) \n";
     }
+    
     std::lock_guard<std::mutex> lock(freenectMutex);
+    std::cout << "[FreenectTOP] Locked freenectMutex) \n";
+    
     stopV2EnumThread();
+    
     if (fn2_device) {
-        fn2_device->stop();
+        //fn2_device->stop();
+        //std::cout << "[FreenectTOP] fn2_device->stop \n";
+        //fn2_device->close();
         delete fn2_device;
+        std::cout << "[FreenectTOP] fn2_device deleted \n";
         fn2_device = nullptr;
+        std::cout << "[FreenectTOP] fn2_device set to nullptr \n";
     }
+    
     if (fn2_pipeline) {
-        delete fn2_pipeline;
+        //delete fn2_pipeline;
+        //std::cout << "[FreenectTOP] fn2_pipeline deleted \n";
         fn2_pipeline = nullptr;
+        std::cout << "[FreenectTOP] fn2_pipeline set to nullptr \n";
     }
+    
     if (fn2_ctx) {
         delete fn2_ctx;
+        std::cout << "[FreenectTOP] fn2_ctx deleted \n";
         fn2_ctx = nullptr;
+        std::cout << "[FreenectTOP] fn2_ctx set to nullptr \n";
     }
+    
+    
 }
 
 // Constructor for FreenectTOP
@@ -432,6 +486,8 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     if (!fn2_device || !v2InitOk) {
         OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
+            //errorString.clear();
+            //errorString = "Kinect v2 device not initialized or no device found";
             uint8_t* out = static_cast<uint8_t*>(buf->data);
             for (int i = 0; i < outW * outH; ++i) {
                 out[i * 4 + 0] = 0;
@@ -469,12 +525,17 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     }
     // Profiling getColorFrame
     std::vector<uint8_t> colorFrame;
-    auto t0 = std::chrono::high_resolution_clock::now();
+    
     bool gotColor = fn2_device->getColorFrame(colorFrame, downscale);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    auto colorFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+    
+    //auto t0 = std::chrono::high_resolution_clock::now();
+    //auto t1 = std::chrono::high_resolution_clock::now();
+    //auto colorFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+    
     if (gotColor) {
+        
         // auto t2 = std::chrono::high_resolution_clock::now();
+        
         OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             std::memcpy(buf->data, colorFrame.data(), outW * outH * 4);
@@ -484,22 +545,31 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
             info.textureDesc.texDim = OP_TexDim::e2D;
             info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
-            auto t3 = std::chrono::high_resolution_clock::now();
+            
+            //auto t3 = std::chrono::high_resolution_clock::now();
+            
             output->uploadBuffer(&buf, info, nullptr);
-            auto t4 = std::chrono::high_resolution_clock::now();
-            auto uploadColorTime = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count();
-            fprintf(stderr, "[FreenectTOP] getColorFrame: %lld ms, uploadBuffer(color): %lld ms\n", colorFrameTime, uploadColorTime);
+            
+            //auto t4 = std::chrono::high_resolution_clock::now();
+            //auto uploadColorTime = std::chrono::duration_cast<std::chrono::milliseconds>(t4 - t3).count();
+            //fprintf(stderr, "[FreenectTOP] getColorFrame: %lld ms, uploadBuffer(color): %lld ms\n", colorFrameTime, uploadColorTime);
         }
     }
+    
     // Profiling getDepthFrame
+    
     std::vector<uint16_t> depthFrame;
-    auto t5 = std::chrono::high_resolution_clock::now();
+    
+    //auto t5 = std::chrono::high_resolution_clock::now();
     //bool gotDepth = fn2_device->getDepthFrame(depthFrame, (inputs->getParInt("Invertdepth") != 0), true);
-    auto t6 = std::chrono::high_resolution_clock::now();
-    auto depthFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(t6 - t5).count();
+    //auto t6 = std::chrono::high_resolution_clock::now();
+    //auto depthFrameTime = std::chrono::duration_cast<std::chrono::milliseconds>(t6 - t5).count();
+    
     bool gotDepth = fn2_device->getDepthFrame(depthFrame);
     if (gotDepth) {
+        
         // auto t7 = std::chrono::high_resolution_clock::now();
+        
         int outDW = depthWidth, outDH = depthHeight;
         OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
@@ -510,11 +580,14 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
             info.textureDesc.texDim = OP_TexDim::e2D;
             info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
-            auto t8 = std::chrono::high_resolution_clock::now();
+            
+            //auto t8 = std::chrono::high_resolution_clock::now();
+            
             output->uploadBuffer(&buf, info, nullptr);
-            auto t9 = std::chrono::high_resolution_clock::now();
-            auto uploadDepthTime = std::chrono::duration_cast<std::chrono::milliseconds>(t9 - t8).count();
-            fprintf(stderr, "[FreenectTOP] getDepthFrame: %lld ms, uploadBuffer(depth): %lld ms\n", depthFrameTime, uploadDepthTime);
+            
+            //auto t9 = std::chrono::high_resolution_clock::now();
+            //auto uploadDepthTime = std::chrono::duration_cast<std::chrono::milliseconds>(t9 - t8).count();
+            //fprintf(stderr, "[FreenectTOP] getDepthFrame: %lld ms, uploadBuffer(depth): %lld ms\n", depthFrameTime, uploadDepthTime);
         }
     }
 }
