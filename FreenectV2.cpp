@@ -27,10 +27,17 @@ MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
 
 // MyFreenect2Device class destructor
 MyFreenect2Device::~MyFreenect2Device() {
+    std::cout << "[FreenectV2.cpp] MyFreenect2Device destructor called \n";
     stop();
+    std::cout << "[FreenectV2.cpp] MyFreenect2Device stop called \n";
+    //close();
+    //std::cout << "[FreenectV2.cpp] MyFreenect2Device close called \n";
     if (listener) {
+        std::cout << "[FreenectV2.cpp] Deleting listener \n";
         delete listener;
+        std::cout << "[FreenectV2.cpp] listener deleted \n";
         listener = nullptr;
+        std::cout << "[FreenectV2.cpp] listener set to nullptr \n";
     }
 }
 
@@ -42,7 +49,18 @@ bool MyFreenect2Device::start() {
 
 // Stop the device streams using libfreenect2 API
 void MyFreenect2Device::stop() {
-    if (device) device->stop();
+    if (device) {
+        device->stop();
+        std::cout << "[FreenectV2.cpp] device->stop \n";
+    }
+}
+
+// Close the device using libfreenect2 API
+void MyFreenect2Device::close() {
+    if (device) {
+        device->close();
+        std::cout << "[FreenectV2.cpp] device->close \n";
+    }
 }
 
 // Set RGB buffer and mark as ready
@@ -67,10 +85,10 @@ void MyFreenect2Device::processFrames() {
         }
         if (depth && depth->data && depth->width == DEPTH_WIDTH && depth->height == DEPTH_HEIGHT) {
             const float* src = reinterpret_cast<const float*>(depth->data);
-            // Debug: print first 10 raw depth values from device
-            std::cout << "[processFrames] First 100 raw device depth values: /n";
-            for (int i = 0; i < 100; ++i) std::cout << src[i] << " ";
-            std::cout << std::endl;
+            // Debug: print first 100 raw depth values from device
+            //std::cout << "[processFrames] First 100 raw device depth values: /n";
+            //for (int i = 0; i < 100; ++i) std::cout << src[i] << " ";
+            //std::cout << std::endl;
             std::copy(src, src + DEPTH_WIDTH * DEPTH_HEIGHT, depthBuffer.begin());
             hasNewDepth = true;
             depthReady = true;

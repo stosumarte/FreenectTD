@@ -39,7 +39,7 @@ private:
     std::atomic<bool>         firstDepthReady{false};
     std::vector<uint8_t>      lastRGB;
     std::vector<uint16_t>     lastDepth;
-    std::atomic<bool>         runEvents{false};
+    std::atomic<bool>         runV1Events{false};
     std::thread               eventThreadV1;
 
     // Device type
@@ -49,14 +49,15 @@ private:
     std::string lastDeviceTypeStr;
 
     // V2 device members
-    libfreenect2::Freenect2*       fn2_ctx = nullptr;
-    MyFreenect2Device*             fn2_device = nullptr;
-    libfreenect2::PacketPipeline*  fn2_pipeline = nullptr;
-    std::string                    fn2_serial;
-    std::atomic<bool>              fn2_rgbReady{false};
-    std::atomic<bool>              fn2_depthReady{false};
-    std::atomic<bool>              runV2Events{false};
-    std::thread                    eventThreadV2;
+    libfreenect2::Freenect2*                fn2_ctx = nullptr;
+    MyFreenect2Device*                      fn2_device = nullptr;
+    libfreenect2::PacketPipeline*           fn2_pipeline = nullptr;
+    //libfreenect2::SyncMultiFrameListener*   fn2_listener = nullptr;
+    std::string                             fn2_serial;
+    std::atomic<bool>                       fn2_rgbReady{false};
+    std::atomic<bool>                       fn2_depthReady{false};
+    std::atomic<bool>                       runV2Events{false};
+    std::thread                             eventThreadV2;
 
     // Device init/cleanup methods
     bool initDeviceV1();
@@ -72,4 +73,11 @@ private:
     // Add declarations for v2 enumeration thread helpers
     void startV2EnumThread();
     void stopV2EnumThread();
+    
+    /*std::string errorString;
+
+    void getErrorString(TD::OP_String *error, void *reserved1) override {
+        if (!errorString.empty())
+            error->setString(errorString.c_str());
+    }*/
 };

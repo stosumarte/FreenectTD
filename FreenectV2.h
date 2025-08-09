@@ -28,6 +28,7 @@ public:
     ~MyFreenect2Device();
     bool start();
     void stop();
+    void close();
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<float>& out);
     void processFrames();
