@@ -74,10 +74,10 @@ private:
     void startV2EnumThread();
     void stopV2EnumThread();
     
-    /*std::string errorString;
+    std::string errorString;
 
     void getErrorString(TD::OP_String *error, void *reserved1) override {
         if (!errorString.empty())
             error->setString(errorString.c_str());
-    }*/
+    }
 };
