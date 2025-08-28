@@ -52,18 +52,26 @@ private:
     libfreenect2::Freenect2*                fn2_ctx = nullptr;
     MyFreenect2Device*                      fn2_device = nullptr;
     libfreenect2::PacketPipeline*           fn2_pipeline = nullptr;
-    //libfreenect2::SyncMultiFrameListener*   fn2_listener = nullptr;
     std::string                             fn2_serial;
     std::atomic<bool>                       fn2_rgbReady{false};
     std::atomic<bool>                       fn2_depthReady{false};
     std::atomic<bool>                       runV2Events{false};
     std::thread                             eventThreadV2;
 
+    // V2 background init members
+    std::atomic<bool>                       v2InitInProgress{false};
+    std::atomic<bool>                       v2InitDone{false};
+    std::atomic<bool>                       v2InitSuccess{false};
+    std::thread                             v2InitThread;
+    std::string                             v2InitErrorString;
+
     // Device init/cleanup methods
     bool initDeviceV1();
     void cleanupDeviceV1();
     bool initDeviceV2();
     void cleanupDeviceV2();
+    void startV2InitThread();
+    void waitV2InitThread();
     std::mutex freenectMutex;
     
     // Execution methods for different device versions

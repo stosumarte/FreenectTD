@@ -358,7 +358,7 @@ void FreenectTOP::cleanupDeviceV2() {
 }
 
 // Constructor for FreenectTOP
-FreenectTOP::FreenectTOP(const OP_NodeInfo* info, TOP_Context* context)
+FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     : myNodeInfo(info),
       myContext(context),
       freenectContext(nullptr),
@@ -376,7 +376,7 @@ FreenectTOP::~FreenectTOP() {
 }
 
 // Execute method for Kinect v1 (libfreenect)
-void FreenectTOP::executeV1(TOP_Output* output, const OP_Inputs* inputs) {
+void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
     int colorWidth = MyFreenectDevice::WIDTH, colorHeight = MyFreenectDevice::HEIGHT, depthWidth = MyFreenectDevice::WIDTH, depthHeight = MyFreenectDevice::HEIGHT;
     if (!device) {
         cleanupDeviceV1();
@@ -403,14 +403,14 @@ void FreenectTOP::executeV1(TOP_Output* output, const OP_Inputs* inputs) {
     std::vector<uint8_t> colorFrame;
     if (device->getColorFrame(colorFrame)) {
         errorString.clear();
-        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(colorWidth * colorHeight * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+        OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(colorWidth * colorHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             std::memcpy(buf->data, colorFrame.data(), colorWidth * colorHeight * 4);
-            TOP_UploadInfo info;
+            TD::TOP_UploadInfo info;
             info.textureDesc.width = colorWidth;
             info.textureDesc.height = colorHeight;
-            info.textureDesc.texDim = OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
             output->uploadBuffer(&buf, info, nullptr);
         }
@@ -418,14 +418,14 @@ void FreenectTOP::executeV1(TOP_Output* output, const OP_Inputs* inputs) {
     std::vector<uint16_t> depthFrame;
     if (device->getDepthFrame(depthFrame)) {
         errorString.clear();
-        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+        OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
-            TOP_UploadInfo info;
+            TD::TOP_UploadInfo info;
             info.textureDesc.width = depthWidth;
             info.textureDesc.height = depthHeight;
-            info.textureDesc.texDim = OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
             output->uploadBuffer(&buf, info, nullptr);
         }
