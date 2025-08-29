@@ -87,10 +87,10 @@ This means you are free to use, modify, and distribute this plugin, including in
 This project also includes the following third-party libraries, each under their respective licenses:
 
 - **libfreenect** – Apache 2.0 License  
-  [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect/master/LICENSE)
+  [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect/master/APACHE20)
 
 - **libfreenect2** – Apache 2.0 License  
-  [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect2/master/LICENSE)
+  [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect2/master/APACHE20)
 
 - **libusb** – LGPL 2.1 License  
   [Full License Text](https://raw.githubusercontent.com/libusb/libusb/master/COPYING)
