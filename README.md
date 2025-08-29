@@ -78,3 +78,24 @@ This project contains code from both libfreenect and libusb, licensed under GPL2
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
 [You can donate here via PayPal.](https://www.paypal.com/donate/?hosted_button_id=PZXS4BCQJ9QMQ "You can donate here via PayPal.")
+
+## Licensing
+
+**FreenectTD** is licensed under the **GNU Lesser General Public License v2.1 (LGPL-2.1)**.  
+This means you are free to use, modify, and distribute this plugin, including in closed-source applications, provided that any modifications to the plugin itself are released under the same LGPL v2.1 license.
+
+This project also includes the following third-party libraries, each under their respective licenses:
+
+- **libfreenect** – Apache 2.0 License  
+  [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect/master/APACHE20)
+
+- **libfreenect2** – Apache 2.0 License  
+  [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect2/master/APACHE20)
+
+- **libusb** – LGPL 2.1 License  
+  [Full License Text](https://raw.githubusercontent.com/libusb/libusb/master/COPYING)
+
+- **OpenCV** – Apache 2.0 License  
+  [Full License Text](https://raw.githubusercontent.com/opencv/opencv/master/LICENSE)
+
+By distributing this plugin, you agree to comply with the terms of both the **LGPL-2.1** license for the plugin itself and the respective licenses of the third-party libraries included.
