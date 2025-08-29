@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "logger.h"
+
 #include "TOP_CPlusPlusBase.h"
 #include <thread>
 #include <atomic>

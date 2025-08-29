@@ -6,6 +6,9 @@
 //
 
 #pragma once
+
+#include "logger.h"
+
 #include "libfreenect.hpp"
 
 class MyFreenectDevice : public Freenect::FreenectDevice {

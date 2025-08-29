@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "logger.h"
+
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/registration.h>
