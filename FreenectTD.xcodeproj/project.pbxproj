@@ -31,6 +31,7 @@
 
 /* Begin PBXFileReference section */
 		811030EB2E36883D001975DE /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
+		8120BA1B2E61E88100126067 /* logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logger.h; sourceTree = "<group>"; };
 		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
@@ -71,7 +72,11 @@
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			attributesByRelativePath = {
 				libfreenect.0.7.5.dylib = (CodeSignOnCopy, );
+				libfreenect.0.dylib = (CodeSignOnCopy, );
+				libfreenect.dylib = (CodeSignOnCopy, );
 				libfreenect2.0.2.0.dylib = (CodeSignOnCopy, );
+				libfreenect2.0.2.dylib = (CodeSignOnCopy, );
+				libfreenect2.dylib = (CodeSignOnCopy, );
 				libusb.dylib = (CodeSignOnCopy, );
 			};
 			buildPhase = 8112B5A22E23E1140089336F /* Embed Libraries */;
@@ -142,6 +147,7 @@
 				81FD1DE52E3630A700900396 /* FreenectV1.cpp */,
 				81FD1DEB2E36519700900396 /* FreenectV2.h */,
 				81FD1DE72E3630A700900396 /* FreenectV2.cpp */,
+				8120BA1B2E61E88100126067 /* logger.h */,
 				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
 				81BC12DF2E379780006C281E /* CPlusPlus_Common.h */,
 				815B45FA2E229E6A004836E4 /* VendorLibs */,
@@ -362,7 +368,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
-					"DEBUG=1",
+					"FNTD_DEBUG=1",
 					"$(inherited)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;

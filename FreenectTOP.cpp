@@ -6,7 +6,7 @@
 //
 
 #include "FreenectTOP.h"
-
+#include "logger.h"
 #include <atomic>
 #include <thread>
 #include <iostream>
@@ -126,14 +126,14 @@ void FreenectTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void*
 bool FreenectTOP::initDeviceV1() {
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (freenect_init(&freenectContext, nullptr) < 0) {
-        //fprintf(stderr, "[FreenectTOP] freenect_init failed\n");
+        //LOG("[FreenectTOP] freenect_init failed");
         return false;
     }
     freenect_set_log_level(freenectContext, FREENECT_LOG_WARNING);
 
     int numDevices = freenect_num_devices(freenectContext);
     if (numDevices <= 0) {
-        fprintf(stderr, "[FreenectTOP] No devices found\n");
+        LOG("[FreenectTOP] No Kinect v1 devices found");
         errorString.clear();
         errorString = "No Kinect v1 devices found";
         freenect_shutdown(freenectContext);
@@ -157,14 +157,14 @@ bool FreenectTOP::initDeviceV1() {
                 if (!freenectContext) break;
                 int err = freenect_process_events(freenectContext);
                 if (err < 0) {
-                    std::cout << "[FreenectTOP] Error in freenect_process_events\n";
+                    LOG("[FreenectTOP] Error in freenect_process_events");
                     break;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
         });
     } catch (...) {
-        fprintf(stderr, "[FreenectTOP] Failed to start device\n");
+        LOG("[FreenectTOP] Failed to start device");
         errorString.clear();
         errorString = "Failed to start Kinect v1 device";
         cleanupDeviceV1();
@@ -175,22 +175,24 @@ bool FreenectTOP::initDeviceV1() {
 
 // Cleanup for Kinect v1 (libfreenect)
 void FreenectTOP::cleanupDeviceV1() {
+    LOG("[FreenectTOP] cleanupDeviceV1 called");
     runV1Events = false;
     if (eventThreadV1.joinable()) {
         eventThreadV1.join();
+        LOG("[FreenectTOP] eventThreadV1 joined");
     }
-    
-    // Remove Kinect v2 cleanup
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (device) {
         device->stopVideo();
         device->stopDepth();
         delete device;
+        LOG("[FreenectTOP] device deleted (v1)");
         device = nullptr;
     }
     if (freenectContext) {
         freenect_shutdown(freenectContext);
         freenectContext = nullptr;
+        LOG("[FreenectTOP] freenectContext shutdown (v1)");
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
@@ -233,7 +235,7 @@ bool FreenectTOP::initDeviceV2() {
     fn2_ctx = new libfreenect2::Freenect2();
     
     if (fn2_ctx->enumerateDevices() == 0) {
-        fprintf(stderr, "[FreenectTOP] No Kinect v2 devices found\n");
+        LOG("[FreenectTOP] No Kinect v2 devices found");
         errorString.clear();
         errorString = "No Kinect v2 devices found";
         delete fn2_ctx;
@@ -247,20 +249,20 @@ bool FreenectTOP::initDeviceV2() {
         //fn2_pipeline = new libfreenect2::OpenCLPacketPipeline();
         fn2_pipeline = new libfreenect2::CpuPacketPipeline(); // Use CPU pipeline for debugging
         //fprintf(stderr, "[FreenectTOP] Using OpenCLPacketPipeline for Kinect v2\n");
-        fprintf(stderr, "[FreenectTOP] Using CPU pipeline for Kinect v2\n");
+        LOG("[FreenectTOP] Using CPU pipeline for Kinect v2");
     } catch (...) {
         fn2_pipeline = nullptr;
     }
     
     if (!fn2_pipeline) {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
-        fprintf(stderr, "[FreenectTOP] Falling back to CpuPacketPipeline for Kinect v2\n");
+        LOG("[FreenectTOP] Falling back to CpuPacketPipeline for Kinect v2");
     }
     
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
     
     if (!dev) {
-        fprintf(stderr, "[FreenectTOP] Failed to open Kinect v2 device\n");
+        LOG("[FreenectTOP] Failed to open Kinect v2 device");
         errorString.clear();
         errorString = "Failed to open Kinect v2 device";
         delete fn2_ctx;
@@ -277,7 +279,7 @@ bool FreenectTOP::initDeviceV2() {
     }
     
     if (!fn2_device->start()) {
-        fprintf(stderr, "[FreenectTOP] Failed to start Kinect v2 device\n");
+        LOG("[FreenectTOP] Failed to start Kinect v2 device");
         errorString.clear();
         errorString = "Failed to start Kinect v2 device";
         delete fn2_device;
@@ -305,7 +307,7 @@ bool FreenectTOP::initDeviceV2() {
                 if (fn2_device) {
                     fn2_device->processFrames();
                 } else {
-                    std::cout << "[FreenectTOP] fn2_device is null in event thread" << std::endl;
+                    LOG("[FreenectTOP] fn2_device is null in event thread");
                 }
             }
         });
@@ -315,43 +317,31 @@ bool FreenectTOP::initDeviceV2() {
 
 // Cleanup for Kinect v2 (libfreenect2)
 void FreenectTOP::cleanupDeviceV2() {
-    
-    // Stop event thread for v2
+    LOG("[FreenectTOP] cleanupDeviceV2 called");
     runV2Events = false;
-    std::cout << "[FreenectTOP] Stopping event thread for v2 \n";
-    
+    LOG("[FreenectTOP] Stopping event thread for v2");
     if (eventThreadV2.joinable()) {
         eventThreadV2.join();
-        std::cout << "[FreenectTOP] Event thread for v2 stopped (joinable and joined) \n";
+        LOG("[FreenectTOP] Event thread for v2 stopped (joinable and joined)");
     }
-    
     std::lock_guard<std::mutex> lock(freenectMutex);
-    std::cout << "[FreenectTOP] Locked freenectMutex) \n";
-    
+    LOG("[FreenectTOP] Locked freenectMutex)");
     stopV2EnumThread();
-    
     if (fn2_device) {
-        //fn2_device->stop();
-        //std::cout << "[FreenectTOP] fn2_device->stop \n";
-        //fn2_device->close();
         delete fn2_device;
-        std::cout << "[FreenectTOP] fn2_device deleted \n";
+        LOG("[FreenectTOP] fn2_device deleted");
         fn2_device = nullptr;
-        std::cout << "[FreenectTOP] fn2_device set to nullptr \n";
+        LOG("[FreenectTOP] fn2_device set to nullptr");
     }
-    
     if (fn2_pipeline) {
-        //delete fn2_pipeline;
-        //std::cout << "[FreenectTOP] fn2_pipeline deleted \n";
         fn2_pipeline = nullptr;
-        std::cout << "[FreenectTOP] fn2_pipeline set to nullptr \n";
+        LOG("[FreenectTOP] fn2_pipeline set to nullptr");
     }
-    
     if (fn2_ctx) {
         delete fn2_ctx;
-        std::cout << "[FreenectTOP] fn2_ctx deleted \n";
+        LOG("[FreenectTOP] fn2_ctx deleted");
         fn2_ctx = nullptr;
-        std::cout << "[FreenectTOP] fn2_ctx set to nullptr \n";
+        LOG("[FreenectTOP] fn2_ctx set to nullptr");
     }
     
     
@@ -371,6 +361,7 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
 
 // Destructor for FreenectTOP
 FreenectTOP::~FreenectTOP() {
+    LOG("[FreenectTOP] Destructor called, cleaning up devices");
     cleanupDeviceV1();
     cleanupDeviceV2();
 }
@@ -379,23 +370,31 @@ FreenectTOP::~FreenectTOP() {
 void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
     int colorWidth = MyFreenectDevice::WIDTH, colorHeight = MyFreenectDevice::HEIGHT, depthWidth = MyFreenectDevice::WIDTH, depthHeight = MyFreenectDevice::HEIGHT;
     if (!device) {
+        LOG("[FreenectTOP] executeV1: device is null, cleaning up and re-initializing");
         cleanupDeviceV1();
         if (!initDeviceV1()) {
+            LOG("[FreenectTOP] executeV1: initDeviceV1 failed, returning early");
             errorString = "No Kinect v1 devices found";
             return;
         }
     }
     if (!device) {
-        fprintf(stderr, "[FreenectTOP] ERROR: device is null after init!\n");
+        LOG("[FreenectTOP] ERROR: device is null after init!");
         errorString = "Device is null after initialization";
+        return;
+    }
+    // If device is not available, do not proceed further
+    if (!device) {
+        LOG("[FreenectTOP] executeV1: device is still null, aborting frame");
         return;
     }
     float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     try {
         device->setTiltDegrees(tilt);
     } catch (const std::exception& e) {
-        fprintf(stderr, "[FreenectTOP] Failed to set tilt: %s\n", e.what());
+        LOG(std::string("[FreenectTOP] Failed to set tilt: ") + e.what());
         errorString = "Failed to set tilt angle: " + std::string(e.what());
+        LOG("[FreenectTOP] executeV1: cleaning up device due to tilt error");
         cleanupDeviceV1();
         device = nullptr;
         return;
@@ -403,8 +402,10 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     std::vector<uint8_t> colorFrame;
     if (device->getColorFrame(colorFrame)) {
         errorString.clear();
+        LOG("[FreenectTOP] executeV1: creating color output buffer");
         OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(colorWidth * colorHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
+            LOG("[FreenectTOP] executeV1: copying color frame data to buffer");
             std::memcpy(buf->data, colorFrame.data(), colorWidth * colorHeight * 4);
             TD::TOP_UploadInfo info;
             info.textureDesc.width = colorWidth;
@@ -412,14 +413,19 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
+            LOG("[FreenectTOP] executeV1: uploading color buffer");
             output->uploadBuffer(&buf, info, nullptr);
+        } else {
+            LOG("[FreenectTOP] executeV1: failed to create color output buffer");
         }
     }
     std::vector<uint16_t> depthFrame;
     if (device->getDepthFrame(depthFrame)) {
         errorString.clear();
+        LOG("[FreenectTOP] executeV1: creating depth output buffer");
         OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
+            LOG("[FreenectTOP] executeV1: copying depth frame data to buffer");
             std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
             TD::TOP_UploadInfo info;
             info.textureDesc.width = depthWidth;
@@ -427,7 +433,10 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
+            LOG("[FreenectTOP] executeV1: uploading depth buffer");
             output->uploadBuffer(&buf, info, nullptr);
+        } else {
+            LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
         }
     }
 }
@@ -437,9 +446,11 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     int colorWidth = MyFreenect2Device::WIDTH, colorHeight = MyFreenect2Device::HEIGHT, depthWidth = MyFreenect2Device::DEPTH_WIDTH, depthHeight = MyFreenect2Device::DEPTH_HEIGHT;
     bool v2InitOk = true;
     if (!fn2_device) {
+        LOG("[FreenectTOP] executeV2: fn2_device is null, initializing device");
         v2InitOk = initDeviceV2();
         if (!v2InitOk) {
-            fprintf(stderr, "[FreenectTOP] Kinect v2 init failed or no device found\n");
+            LOG("[FreenectTOP] executeV2: initDeviceV2 failed, returning early");
+            LOG("[FreenectTOP] Kinect v2 init failed or no device found");
             errorString = "No Kinect v2 devices found";
             return;
         }
@@ -448,6 +459,7 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     int outW = downscale ? 1280 : colorWidth;
     int outH = downscale ? 720 : colorHeight;
     if (!fn2_device || !v2InitOk) {
+        LOG("[FreenectTOP] executeV2: fn2_device is null or v2InitOk is false, returning early");
         errorString = "No Kinect v2 devices found";
         return;
     }
@@ -455,8 +467,10 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     bool gotColor = fn2_device->getColorFrame(colorFrame, downscale);
     if (gotColor) {
         errorString.clear();
+        LOG("[FreenectTOP] executeV2: creating color output buffer");
         OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
+            LOG("[FreenectTOP] executeV2: copying color frame data to buffer");
             std::memcpy(buf->data, colorFrame.data(), outW * outH * 4);
             TOP_UploadInfo info;
             info.textureDesc.width = outW;
@@ -464,7 +478,10 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
             info.textureDesc.texDim = OP_TexDim::e2D;
             info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
+            LOG("[FreenectTOP] executeV2: uploading color buffer");
             output->uploadBuffer(&buf, info, nullptr);
+        } else {
+            LOG("[FreenectTOP] executeV2: failed to create color output buffer");
         }
     }
     std::vector<uint16_t> depthFrame;
@@ -472,8 +489,10 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     if (gotDepth) {
         errorString.clear();
         int outDW = depthWidth, outDH = depthHeight;
+        LOG("[FreenectTOP] executeV2: creating depth output buffer");
         OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
+            LOG("[FreenectTOP] executeV2: copying depth frame data to buffer");
             std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
             TOP_UploadInfo info;
             info.textureDesc.width = outDW;
@@ -481,7 +500,10 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
             info.textureDesc.texDim = OP_TexDim::e2D;
             info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
+            LOG("[FreenectTOP] executeV2: uploading depth buffer");
             output->uploadBuffer(&buf, info, nullptr);
+        } else {
+            LOG("[FreenectTOP] executeV2: failed to create depth output buffer");
         }
     }
 }
@@ -489,7 +511,7 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
 // Main execution method
 void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     if (!inputs) {
-        fprintf(stderr, "[FreenectTOP] ERROR: inputs is null!\n");
+        LOG("[FreenectTOP] ERROR: inputs is null!");
         return;
     }
     const char* devTypeCStr = inputs->getParString("Devicetype");
@@ -510,7 +532,7 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     } else if (deviceType == 1) {           // Kinect v2
         executeV2(output, inputs);
     } else {                                // Invalid device type string (should not happen like EVER)
-        fprintf(stderr, "[FreenectTOP] ERROR: Couldn't get device type - something went REALLY wrong '%s'\n", deviceTypeStr.c_str());
+        LOG(std::string("[FreenectTOP] ERROR: Couldn't get device type - something went REALLY wrong '") + deviceTypeStr + "'");
         return;
     }
 }
