@@ -79,6 +79,7 @@ private:
     // Execution methods for different device versions
     void executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
+    void uploadFallbackBuffer();
 
     // Add declarations for v2 enumeration thread helpers
     void startV2EnumThread();
@@ -90,4 +91,6 @@ private:
         if (!errorString.empty())
             error->setString(errorString.c_str());
     }
+    
+    TD::TOP_Output* myCurrentOutput = nullptr;
 };

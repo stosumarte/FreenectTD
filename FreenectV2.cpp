@@ -27,17 +27,15 @@ MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
 
 // MyFreenect2Device class destructor
 MyFreenect2Device::~MyFreenect2Device() {
-    std::cout << "[FreenectV2.cpp] MyFreenect2Device destructor called \n";
+    LOG("[FreenectV2.cpp] MyFreenect2Device destructor called");
     stop();
-    std::cout << "[FreenectV2.cpp] MyFreenect2Device stop called \n";
-    //close();
-    //std::cout << "[FreenectV2.cpp] MyFreenect2Device close called \n";
+    LOG("[FreenectV2.cpp] MyFreenect2Device stop called");
     if (listener) {
-        std::cout << "[FreenectV2.cpp] Deleting listener \n";
+        LOG("[FreenectV2.cpp] Deleting listener");
         delete listener;
-        std::cout << "[FreenectV2.cpp] listener deleted \n";
+        LOG("[FreenectV2.cpp] listener deleted");
         listener = nullptr;
-        std::cout << "[FreenectV2.cpp] listener set to nullptr \n";
+        LOG("[FreenectV2.cpp] listener set to nullptr");
     }
 }
 
@@ -51,7 +49,7 @@ bool MyFreenect2Device::start() {
 void MyFreenect2Device::stop() {
     if (device) {
         device->stop();
-        std::cout << "[FreenectV2.cpp] device->stop \n";
+        LOG("[FreenectV2.cpp] device->stop");
     }
 }
 
@@ -59,7 +57,7 @@ void MyFreenect2Device::stop() {
 void MyFreenect2Device::close() {
     if (device) {
         device->close();
-        std::cout << "[FreenectV2.cpp] device->close \n";
+        LOG("[FreenectV2.cpp] device->close");
     }
 }
 
@@ -85,10 +83,6 @@ void MyFreenect2Device::processFrames() {
         }
         if (depth && depth->data && depth->width == DEPTH_WIDTH && depth->height == DEPTH_HEIGHT) {
             const float* src = reinterpret_cast<const float*>(depth->data);
-            // Debug: print first 100 raw depth values from device
-            //std::cout << "[processFrames] First 100 raw device depth values: /n";
-            //for (int i = 0; i < 100; ++i) std::cout << src[i] << " ";
-            //std::cout << std::endl;
             std::copy(src, src + DEPTH_WIDTH * DEPTH_HEIGHT, depthBuffer.begin());
             hasNewDepth = true;
             depthReady = true;
@@ -98,9 +92,10 @@ void MyFreenect2Device::processFrames() {
     // Logging FPS
     frameCount++;
     auto now = std::chrono::steady_clock::now();
+    auto frameCountString = std::to_string(frameCount);
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - lastTime).count();
     if (elapsed >= 1) {
-        std::cout << "[FreenectV2] processFrames FPS: " << frameCount << std::endl;
+        LOG("[FreenectV2] processFrames FPS: " + frameCountString);
         frameCount = 0;
         lastTime = now;
     }
