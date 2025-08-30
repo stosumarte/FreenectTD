@@ -246,17 +246,12 @@ bool FreenectTOP::initDeviceV2() {
     fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
     
     try {
-        //fn2_pipeline = new libfreenect2::OpenCLPacketPipeline();
-        fn2_pipeline = new libfreenect2::CpuPacketPipeline(); // Use CPU pipeline for debugging
-        //fprintf(stderr, "[FreenectTOP] Using OpenCLPacketPipeline for Kinect v2\n");
+        fn2_pipeline = new libfreenect2::CpuPacketPipeline();
         LOG("[FreenectTOP] Using CPU pipeline for Kinect v2");
     } catch (...) {
-        fn2_pipeline = nullptr;
-    }
-    
-    if (!fn2_pipeline) {
-        fn2_pipeline = new libfreenect2::CpuPacketPipeline();
-        LOG("[FreenectTOP] Falling back to CpuPacketPipeline for Kinect v2");
+        errorString.clear();
+        errorString = "Couldn't create CPU pipeline for Kinect v2";
+        LOG("Couldn't create CPU pipeline for Kinect v2");
     }
     
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
@@ -373,14 +368,19 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         LOG("[FreenectTOP] executeV1: device is null, cleaning up and re-initializing");
         cleanupDeviceV1();
         if (!initDeviceV1()) {
-            LOG("[FreenectTOP] executeV1: initDeviceV1 failed, returning early");
+            LOG("[FreenectTOP] executeV1: initDeviceV1 failed, uploading fallback black buffer");
+            errorString.clear();
             errorString = "No Kinect v1 devices found";
+            // Upload a fallback black buffer to TD to avoid Metal crash
+            uploadFallbackBuffer();
             return;
         }
     }
     if (!device) {
-        LOG("[FreenectTOP] ERROR: device is null after init!");
+        LOG("[FreenectTOP] ERROR: device is null after init! Uploading fallback black buffer");
         errorString = "Device is null after initialization";
+        // Upload a fallback black buffer to TD to avoid Metal crash
+        uploadFallbackBuffer();
         return;
     }
     // If device is not available, do not proceed further
@@ -510,6 +510,7 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
 
 // Main execution method
 void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
+    myCurrentOutput = output;
     if (!inputs) {
         LOG("[FreenectTOP] ERROR: inputs is null!");
         return;
@@ -532,10 +533,34 @@ void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
     } else if (deviceType == 1) {           // Kinect v2
         executeV2(output, inputs);
     } else {                                // Invalid device type string (should not happen like EVER)
-        LOG(std::string("[FreenectTOP] ERROR: Couldn't get device type - something went REALLY wrong '") + deviceTypeStr + "'");
+        errorString.clear();
+        errorString = "Couldn't get device type - something went REALLY wrong";
+        LOG("ERROR: Couldn't get device type - something went REALLY wrong");
         return;
     }
 }
 
 // Pulse handler for FreenectTOP - currently does nothing
 void FreenectTOP::pulsePressed(const char*, void*) {}
+
+// Upload a fallback black buffer
+void FreenectTOP::uploadFallbackBuffer() {
+    if (!myCurrentOutput) {
+        LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null, cannot upload fallback buffer");
+        return;
+    }
+    int fallbackWidth = 256, fallbackHeight = 256;
+    std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
+    OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+    if (buf) {
+        std::memcpy(buf->data, black.data(), fallbackWidth * fallbackHeight * 4);
+        TD::TOP_UploadInfo info;
+        info.textureDesc.width = fallbackWidth;
+        info.textureDesc.height = fallbackHeight;
+        info.textureDesc.texDim = TD::OP_TexDim::e2D;
+        info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
+        info.colorBufferIndex = 0; // Always upload to buffer index 0
+        myCurrentOutput->uploadBuffer(&buf, info, nullptr);
+        LOG("[FreenectTOP] uploadFallbackBuffer: uploaded fallback black buffer");
+    }
+}
