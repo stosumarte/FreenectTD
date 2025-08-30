@@ -124,20 +124,25 @@ void FreenectTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void*
 
 // Init for Kinect v1 (libfreenect)
 bool FreenectTOP::initDeviceV1() {
+    PROFILE("initDeviceV1: start");
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (freenect_init(&freenectContext, nullptr) < 0) {
+        PROFILE("initDeviceV1: freenect_init failed");
         //LOG("[FreenectTOP] freenect_init failed");
+        PROFILE("initDeviceV1: end");
         return false;
     }
     freenect_set_log_level(freenectContext, FREENECT_LOG_WARNING);
 
     int numDevices = freenect_num_devices(freenectContext);
+    PROFILE(std::string("initDeviceV1: numDevices=") + std::to_string(numDevices));
     if (numDevices <= 0) {
         LOG("[FreenectTOP] No Kinect v1 devices found");
         errorString.clear();
         errorString = "No Kinect v1 devices found";
         freenect_shutdown(freenectContext);
         freenectContext = nullptr;
+        PROFILE("initDeviceV1: end");
         return false;
     }
 
@@ -146,13 +151,17 @@ bool FreenectTOP::initDeviceV1() {
         firstDepthReady = false;
 
         device = new MyFreenectDevice(freenectContext, 0, firstRGBReady, firstDepthReady);
+        PROFILE("initDeviceV1: device created");
         device->startVideo();
         device->startDepth();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         runV1Events = true;
+        PROFILE("initDeviceV1: starting eventThreadV1");
         eventThreadV1 = std::thread([this]() {
+            PROFILE("eventThreadV1: started");
             while (runV1Events.load()) {
+                PROFILE("eventThreadV1: iteration start");
                 std::lock_guard<std::mutex> lock(freenectMutex);
                 if (!freenectContext) break;
                 int err = freenect_process_events(freenectContext);
@@ -160,24 +169,31 @@ bool FreenectTOP::initDeviceV1() {
                     LOG("[FreenectTOP] Error in freenect_process_events");
                     break;
                 }
+                PROFILE("eventThreadV1: iteration end");
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
+            PROFILE("eventThreadV1: exiting");
         });
+        PROFILE("initDeviceV1: eventThreadV1 started");
     } catch (...) {
         LOG("[FreenectTOP] Failed to start device");
         errorString.clear();
         errorString = "Failed to start Kinect v1 device";
         cleanupDeviceV1();
+        PROFILE("initDeviceV1: end");
         return false;
     }
+    PROFILE("initDeviceV1: end");
     return true;
 }
 
 // Cleanup for Kinect v1 (libfreenect)
 void FreenectTOP::cleanupDeviceV1() {
+    PROFILE("cleanupDeviceV1: start");
     LOG("[FreenectTOP] cleanupDeviceV1 called");
     runV1Events = false;
     if (eventThreadV1.joinable()) {
+        PROFILE("cleanupDeviceV1: joining eventThreadV1");
         eventThreadV1.join();
         LOG("[FreenectTOP] eventThreadV1 joined");
     }
@@ -195,6 +211,7 @@ void FreenectTOP::cleanupDeviceV1() {
         LOG("[FreenectTOP] freenectContext shutdown (v1)");
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    PROFILE("cleanupDeviceV1: end");
 }
 
 // Add static atomic flag and thread for v2 device search
@@ -204,8 +221,14 @@ static std::atomic<bool> v2EnumThreadRunning(false);
 
 // Start the background enumeration thread for Kinect v2
 void FreenectTOP::startV2EnumThread() {
-    if (v2EnumThreadRunning.load()) return;
+    PROFILE("startV2EnumThread: start");
+    if (v2EnumThreadRunning.load()) {
+        PROFILE("startV2EnumThread: already running");
+        PROFILE("startV2EnumThread: end");
+        return;
+    }
     v2EnumThreadRunning = true;
+    PROFILE("startV2EnumThread: launching thread");
     v2EnumThread = std::thread([]() {
         while (v2EnumThreadRunning.load()) {
             libfreenect2::Freenect2 ctx;
@@ -213,66 +236,81 @@ void FreenectTOP::startV2EnumThread() {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     });
+    PROFILE("startV2EnumThread: thread launched");
+    PROFILE("startV2EnumThread: end");
 }
 
 // Stop the background enumeration thread for Kinect v2
 void FreenectTOP::stopV2EnumThread() {
+    PROFILE("stopV2EnumThread: start");
     v2EnumThreadRunning = false;
-    if (v2EnumThread.joinable()) v2EnumThread.join();
+    if (v2EnumThread.joinable()) {
+        PROFILE("stopV2EnumThread: joining thread");
+        v2EnumThread.join();
+        PROFILE("stopV2EnumThread: thread joined");
+    }
+    PROFILE("stopV2EnumThread: end");
 }
 
 // Init for Kinect v2 (libfreenect2)
 bool FreenectTOP::initDeviceV2() {
-    
+    PROFILE("initDeviceV2: start");
     std::lock_guard<std::mutex> lock(freenectMutex);
-    
     startV2EnumThread();
-    
-    if (!v2DeviceAvailable.load()) return false;
-    
-    if (fn2_ctx) return true;
-    
+    if (!v2DeviceAvailable.load()) {
+        PROFILE("initDeviceV2: no device available");
+        PROFILE("initDeviceV2: end");
+        return false;
+    }
+    if (fn2_ctx) {
+        PROFILE("initDeviceV2: already initialized");
+        PROFILE("initDeviceV2: end");
+        return true;
+    }
     fn2_ctx = new libfreenect2::Freenect2();
-    
+    PROFILE("initDeviceV2: fn2_ctx created");
     if (fn2_ctx->enumerateDevices() == 0) {
         LOG("[FreenectTOP] No Kinect v2 devices found");
         errorString.clear();
         errorString = "No Kinect v2 devices found";
         delete fn2_ctx;
         fn2_ctx = nullptr;
+        PROFILE("initDeviceV2: end");
         return false;
     }
-    
     fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
-    
     try {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
         LOG("[FreenectTOP] Using CPU pipeline for Kinect v2");
+        PROFILE("initDeviceV2: CPU pipeline created");
     } catch (...) {
         errorString.clear();
         errorString = "Couldn't create CPU pipeline for Kinect v2";
         LOG("Couldn't create CPU pipeline for Kinect v2");
+        PROFILE("initDeviceV2: CPU pipeline creation failed");
     }
-    
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
-    
     if (!dev) {
         LOG("[FreenectTOP] Failed to open Kinect v2 device");
         errorString.clear();
         errorString = "Failed to open Kinect v2 device";
-        delete fn2_ctx;
-        fn2_ctx = nullptr;
+        delete fn2_device;
         if (fn2_pipeline) {
             delete fn2_pipeline;
             fn2_pipeline = nullptr;
         }
+        if (fn2_ctx) {
+            delete fn2_ctx;
+            fn2_ctx = nullptr;
+        }
+        fn2_device = nullptr;
+        PROFILE("initDeviceV2: end");
         return false;
     }
-    
     if (!fn2_device) {
         fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady);
+        PROFILE("initDeviceV2: fn2_device created");
     }
-    
     if (!fn2_device->start()) {
         LOG("[FreenectTOP] Failed to start Kinect v2 device");
         errorString.clear();
@@ -287,35 +325,44 @@ bool FreenectTOP::initDeviceV2() {
             fn2_ctx = nullptr;
         }
         fn2_device = nullptr;
+        PROFILE("initDeviceV2: end");
         return false;
     }
-    
     // **Stop enumeration thread after successful device start**
     stopV2EnumThread();
-
+    PROFILE("initDeviceV2: device started and enum thread stopped");
     // Start event thread for v2
     if (!eventThreadV2.joinable()) {
         runV2Events = true;
+        PROFILE("initDeviceV2: starting eventThreadV2");
         eventThreadV2 = std::thread([this]() {
+            PROFILE("eventThreadV2: started");
             while (runV2Events.load()) {
+                PROFILE("eventThreadV2: iteration start");
                 std::lock_guard<std::mutex> lock(freenectMutex);
                 if (fn2_device) {
                     fn2_device->processFrames();
                 } else {
                     LOG("[FreenectTOP] fn2_device is null in event thread");
                 }
+                PROFILE("eventThreadV2: iteration end");
             }
+            PROFILE("eventThreadV2: exiting");
         });
+        PROFILE("initDeviceV2: eventThreadV2 started");
     }
+    PROFILE("initDeviceV2: end");
     return true;
 }
 
 // Cleanup for Kinect v2 (libfreenect2)
 void FreenectTOP::cleanupDeviceV2() {
+    PROFILE("cleanupDeviceV2: start");
     LOG("[FreenectTOP] cleanupDeviceV2 called");
     runV2Events = false;
     LOG("[FreenectTOP] Stopping event thread for v2");
     if (eventThreadV2.joinable()) {
+        PROFILE("cleanupDeviceV2: joining eventThreadV2");
         eventThreadV2.join();
         LOG("[FreenectTOP] Event thread for v2 stopped (joinable and joined)");
     }
@@ -338,8 +385,7 @@ void FreenectTOP::cleanupDeviceV2() {
         fn2_ctx = nullptr;
         LOG("[FreenectTOP] fn2_ctx set to nullptr");
     }
-    
-    
+    PROFILE("cleanupDeviceV2: end");
 }
 
 // Constructor for FreenectTOP
