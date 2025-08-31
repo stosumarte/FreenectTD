@@ -22,9 +22,11 @@
 // TouchDesigner Entrypoints
 extern "C" {
 
-        DLLEXPORT void FillTOPPluginInfo(TD::TOP_PluginInfo* info) {
-        info->apiVersion = TD::TOPCPlusPlusAPIVersion;
-        info->executeMode = TD::TOP_ExecuteMode::CPUMem;
+    using namespace TD;
+
+    DLLEXPORT void FillTOPPluginInfo(TOP_PluginInfo* info) {
+        info->apiVersion = TOPCPlusPlusAPIVersion;
+        info->executeMode = TOP_ExecuteMode::CPUMem;
         info->customOPInfo.opType->setString("Freenect");
         info->customOPInfo.opLabel->setString("Freenect");
         info->customOPInfo.opIcon->setString("FNT");
@@ -34,11 +36,11 @@ extern "C" {
         info->customOPInfo.maxInputs = 0;
     }
 
-    DLLEXPORT TD::TOP_CPlusPlusBase* CreateTOPInstance(const TD::OP_NodeInfo* info, TD::TOP_Context* context) {
+    DLLEXPORT TOP_CPlusPlusBase* CreateTOPInstance(const OP_NodeInfo* info, TOP_Context* context) {
         return new FreenectTOP(info, context);
     }
 
-    DLLEXPORT void DestroyTOPInstance(TD::TOP_CPlusPlusBase* instance, TD::TOP_Context* context) {
+    DLLEXPORT void DestroyTOPInstance(TOP_CPlusPlusBase* instance, TOP_Context* context) {
         delete static_cast<FreenectTOP*>(instance);
     }
 }
@@ -46,15 +48,17 @@ extern "C" {
 // Touchdesigner Parameters
 void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     
+    using namespace TD;
+    
     // Show version in header
-    TD::OP_StringParameter versionHeader;
+    OP_StringParameter versionHeader;
     versionHeader.name = "Version";
     std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " – by @stosumarte";
     versionHeader.label = versionLabel.c_str();
     manager->appendHeader(versionHeader);
     
     // Check for updates button
-    TD::OP_NumericParameter checkUpdateParam;
+    OP_NumericParameter checkUpdateParam;
     checkUpdateParam.name = "Checkforupdates";
     checkUpdateParam.label = "Check for updates";
     checkUpdateParam.defaultValues[0] = 0.0;
@@ -68,31 +72,18 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     
 
     // Tilt angle parameter
-    TD::OP_NumericParameter np;
-    np.name = "Tilt";
-    np.label = "Tilt Angle";
-    np.defaultValues[0] = 0.0;
-    np.minValues[0] = -30.0;
-    np.maxValues[0] = 30.0;
-    np.minSliders[0] = -30.0;
-    np.maxSliders[0] = 30.0;
-    manager->appendFloat(np);
-
-    // DEPRECATED - Invert depth map toggle
-    /*TD::OP_NumericParameter invertParam;
-    invertParam.name = "Invertdepth";
-    invertParam.label = "Invert Depth Map";
-    invertParam.defaultValues[0] = 0.0;
-    invertParam.minValues[0] = 0.0;
-    invertParam.maxValues[0] = 1.0;
-    invertParam.minSliders[0] = 0.0;
-    invertParam.maxSliders[0] = 1.0;
-    invertParam.clampMins[0] = true;
-    invertParam.clampMaxes[0] = true;
-    manager->appendToggle(invertParam);*/
+    OP_NumericParameter tiltAngleParam;
+    tiltAngleParam.name = "Tilt";
+    tiltAngleParam.label = "Tilt Angle";
+    tiltAngleParam.defaultValues[0] = 0.0;
+    tiltAngleParam.minValues[0] = -30.0;
+    tiltAngleParam.maxValues[0] = 30.0;
+    tiltAngleParam.minSliders[0] = -30.0;
+    tiltAngleParam.maxSliders[0] = 30.0;
+    manager->appendFloat(tiltAngleParam);
 
     // Device type dropdown
-    TD::OP_StringParameter deviceTypeParam;
+    OP_StringParameter deviceTypeParam;
     deviceTypeParam.name = "Devicetype";
     deviceTypeParam.label = "Device Type";
     deviceTypeParam.defaultValue = "Kinect v1";
@@ -101,7 +92,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
     
     // Resolution limiter toggle - Limit resolution to 1280x720 for Kinect V2 instead of 1920x1080 (for non-commercial licenses)
-    TD::OP_NumericParameter resLimitParam;
+    OP_NumericParameter resLimitParam;
     resLimitParam.name = "Resolutionlimit";
     resLimitParam.label = "Resolution Limit";
     resLimitParam.defaultValues[0] = 1.0; // Default to enabled
