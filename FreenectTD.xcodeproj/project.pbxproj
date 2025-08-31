@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
+		8120BA1C2E635E4100126067 /* libopencv_imgproc.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F52E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		8120BA1D2E635E4300126067 /* libopencv_highgui.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		8120BA1E2E635E4400126067 /* libopencv_core.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		81FC70F62E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */; };
 		81FC70F72E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */; };
 		81FC70F82E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F52E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib */; };
@@ -23,6 +26,9 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				8120BA1E2E635E4400126067 /* libopencv_core.4.12.0.dylib in Embed Libraries */,
+				8120BA1C2E635E4100126067 /* libopencv_imgproc.4.12.0.dylib in Embed Libraries */,
+				8120BA1D2E635E4300126067 /* libopencv_highgui.4.12.0.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -30,7 +36,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		811030EB2E36883D001975DE /* FreenectTD.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTD.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
+		811030EB2E36883D001975DE /* FreenectTOP.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTOP.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8120BA1B2E61E88100126067 /* logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logger.h; sourceTree = "<group>"; };
 		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
@@ -47,7 +53,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8112B5962E23E0E70089336F /* Exceptions for "VendorLibs" folder in "FreenectTD" target */ = {
+		8112B5962E23E0E70089336F /* Exceptions for "VendorLibs" folder in "FreenectTOP" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				libfreenect.0.dylib,
@@ -55,28 +61,24 @@
 				libfreenect2.0.2.dylib,
 				libfreenect2.dylib,
 			);
-			target = 81E3B9612DC3687500B0413C /* FreenectTD */;
+			target = 81E3B9612DC3687500B0413C /* FreenectTOP */;
 		};
-		815B45EF2E228F4A004836E4 /* Exceptions for "include" folder in "FreenectTD" target */ = {
+		815B45EF2E228F4A004836E4 /* Exceptions for "include" folder in "FreenectTOP" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				libfreenect2/examples/Protonect.cpp,
 				libfreenect2/examples/viewer.cpp,
 			);
-			target = 81E3B9612DC3687500B0413C /* FreenectTD */;
+			target = 81E3B9612DC3687500B0413C /* FreenectTOP */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		8112B5A32E23E1140089336F /* Exceptions for "VendorLibs" folder in "Embed Libraries" phase from "FreenectTD" target */ = {
+		8112B5A32E23E1140089336F /* Exceptions for "VendorLibs" folder in "Embed Libraries" phase from "FreenectTOP" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			attributesByRelativePath = {
 				libfreenect.0.7.5.dylib = (CodeSignOnCopy, );
-				libfreenect.0.dylib = (CodeSignOnCopy, );
-				libfreenect.dylib = (CodeSignOnCopy, );
 				libfreenect2.0.2.0.dylib = (CodeSignOnCopy, );
-				libfreenect2.0.2.dylib = (CodeSignOnCopy, );
-				libfreenect2.dylib = (CodeSignOnCopy, );
 				libusb.dylib = (CodeSignOnCopy, );
 			};
 			buildPhase = 8112B5A22E23E1140089336F /* Embed Libraries */;
@@ -96,8 +98,8 @@
 		815B45FA2E229E6A004836E4 /* VendorLibs */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				8112B5962E23E0E70089336F /* Exceptions for "VendorLibs" folder in "FreenectTD" target */,
-				8112B5A32E23E1140089336F /* Exceptions for "VendorLibs" folder in "Embed Libraries" phase from "FreenectTD" target */,
+				8112B5962E23E0E70089336F /* Exceptions for "VendorLibs" folder in "FreenectTOP" target */,
+				8112B5A32E23E1140089336F /* Exceptions for "VendorLibs" folder in "Embed Libraries" phase from "FreenectTOP" target */,
 			);
 			path = VendorLibs;
 			sourceTree = "<group>";
@@ -105,7 +107,7 @@
 		81735C062E228BE300A275AF /* include */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				815B45EF2E228F4A004836E4 /* Exceptions for "include" folder in "FreenectTD" target */,
+				815B45EF2E228F4A004836E4 /* Exceptions for "include" folder in "FreenectTOP" target */,
 			);
 			path = include;
 			sourceTree = "<group>";
@@ -153,16 +155,16 @@
 				815B45FA2E229E6A004836E4 /* VendorLibs */,
 				81735C062E228BE300A275AF /* include */,
 				8112B5972E23E1140089336F /* Frameworks */,
-				811030EB2E36883D001975DE /* FreenectTD.plugin */,
+				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		81E3B9612DC3687500B0413C /* FreenectTD */ = {
+		81E3B9612DC3687500B0413C /* FreenectTOP */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 81E3B9662DC3687500B0413C /* Build configuration list for PBXNativeTarget "FreenectTD" */;
+			buildConfigurationList = 81E3B9662DC3687500B0413C /* Build configuration list for PBXNativeTarget "FreenectTOP" */;
 			buildPhases = (
 				81E3B95E2DC3687500B0413C /* Sources */,
 				81E3B95F2DC3687500B0413C /* Frameworks */,
@@ -176,11 +178,11 @@
 				815B45FA2E229E6A004836E4 /* VendorLibs */,
 				81735C062E228BE300A275AF /* include */,
 			);
-			name = FreenectTD;
+			name = FreenectTOP;
 			packageProductDependencies = (
 			);
 			productName = FreenectTOP;
-			productReference = 811030EB2E36883D001975DE /* FreenectTD.plugin */;
+			productReference = 811030EB2E36883D001975DE /* FreenectTOP.plugin */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
@@ -211,7 +213,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				81E3B9612DC3687500B0413C /* FreenectTD */,
+				81E3B9612DC3687500B0413C /* FreenectTOP */,
 			);
 		};
 /* End PBXProject section */
@@ -362,6 +364,7 @@
 		81E3B9672DC3687500B0413C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = arm64;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -369,6 +372,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
 					"FNTD_DEBUG=1",
+					"FNTD_PROFILE=0",
 					"$(inherited)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
@@ -378,7 +382,7 @@
 					"$(PROJECT_DIR)/include/**",
 					/usr/local/include,
 				);
-				INFOPLIST_KEY_CFBundleDisplayName = FreenectTD;
+				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
@@ -405,6 +409,7 @@
 		81E3B9682DC3687500B0413C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = arm64;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -417,7 +422,7 @@
 					"$(PROJECT_DIR)/include/**",
 					/usr/local/include,
 				);
-				INFOPLIST_KEY_CFBundleDisplayName = FreenectTD;
+				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
@@ -453,7 +458,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		81E3B9662DC3687500B0413C /* Build configuration list for PBXNativeTarget "FreenectTD" */ = {
+		81E3B9662DC3687500B0413C /* Build configuration list for PBXNativeTarget "FreenectTOP" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				81E3B9672DC3687500B0413C /* Debug */,

@@ -32,9 +32,13 @@ inline std::string currentTimeMillis() {
 
 #if FNTD_DEBUG == 1
 #define LOG(msg) { std::lock_guard<std::mutex> lock(logMutex); std::cout << "[FNTD_DEBUG] " << msg << std::endl; }
-#define PROFILE(msg) { std::lock_guard<std::mutex> lock(logMutex); std::cout << "[" << currentTimeMillis() << "][PROFILE] " << msg << std::endl; }
 #else
 #define LOG(msg)
+#endif
+
+#if FNTD_PROFILE == 1
+#define PROFILE(msg) { std::lock_guard<std::mutex> lock(logMutex); std::cout << "[" << currentTimeMillis() << "][PROFILE] " << msg << std::endl; }
+#else
 #define PROFILE(msg)
 #endif
 
