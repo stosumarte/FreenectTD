@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "81E3B9612DC3687500B0413C"
-               BuildableName = "FreenectTD.plugin"
-               BlueprintName = "FreenectTD"
+               BuildableName = "FreenectTOP.plugin"
+               BlueprintName = "FreenectTOP"
                ReferencedContainer = "container:FreenectTD.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -56,8 +56,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "81E3B9612DC3687500B0413C"
-            BuildableName = "FreenectTD.plugin"
-            BlueprintName = "FreenectTD"
+            BuildableName = "FreenectTOP.plugin"
+            BlueprintName = "FreenectTOP"
             ReferencedContainer = "container:FreenectTD.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
