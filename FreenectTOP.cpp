@@ -19,14 +19,12 @@
 #define FREENECTTOP_VERSION "dev"
 #endif
 
-using namespace TD;
-
 // TouchDesigner Entrypoints
 extern "C" {
 
-        DLLEXPORT void FillTOPPluginInfo(TOP_PluginInfo* info) {
-        info->apiVersion = TOPCPlusPlusAPIVersion;
-        info->executeMode = TOP_ExecuteMode::CPUMem;
+        DLLEXPORT void FillTOPPluginInfo(TD::TOP_PluginInfo* info) {
+        info->apiVersion = TD::TOPCPlusPlusAPIVersion;
+        info->executeMode = TD::TOP_ExecuteMode::CPUMem;
         info->customOPInfo.opType->setString("Freenect");
         info->customOPInfo.opLabel->setString("Freenect");
         info->customOPInfo.opIcon->setString("FNT");
@@ -36,27 +34,27 @@ extern "C" {
         info->customOPInfo.maxInputs = 0;
     }
 
-    DLLEXPORT TOP_CPlusPlusBase* CreateTOPInstance(const OP_NodeInfo* info, TOP_Context* context) {
+    DLLEXPORT TD::TOP_CPlusPlusBase* CreateTOPInstance(const TD::OP_NodeInfo* info, TD::TOP_Context* context) {
         return new FreenectTOP(info, context);
     }
 
-    DLLEXPORT void DestroyTOPInstance(TOP_CPlusPlusBase* instance, TOP_Context* context) {
+    DLLEXPORT void DestroyTOPInstance(TD::TOP_CPlusPlusBase* instance, TD::TOP_Context* context) {
         delete static_cast<FreenectTOP*>(instance);
     }
 }
 
 // Touchdesigner Parameters
-void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
+void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     
     // Show version in header
-    OP_StringParameter versionHeader;
+    TD::OP_StringParameter versionHeader;
     versionHeader.name = "Version";
     std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " – by @stosumarte";
     versionHeader.label = versionLabel.c_str();
     manager->appendHeader(versionHeader);
     
     // Check for updates button
-    OP_NumericParameter checkUpdateParam;
+    TD::OP_NumericParameter checkUpdateParam;
     checkUpdateParam.name = "Checkforupdates";
     checkUpdateParam.label = "Check for updates";
     checkUpdateParam.defaultValues[0] = 0.0;
@@ -70,7 +68,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     
 
     // Tilt angle parameter
-    OP_NumericParameter np;
+    TD::OP_NumericParameter np;
     np.name = "Tilt";
     np.label = "Tilt Angle";
     np.defaultValues[0] = 0.0;
@@ -81,7 +79,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     manager->appendFloat(np);
 
     // DEPRECATED - Invert depth map toggle
-    /*OP_NumericParameter invertParam;
+    /*TD::OP_NumericParameter invertParam;
     invertParam.name = "Invertdepth";
     invertParam.label = "Invert Depth Map";
     invertParam.defaultValues[0] = 0.0;
@@ -94,7 +92,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     manager->appendToggle(invertParam);*/
 
     // Device type dropdown
-    OP_StringParameter deviceTypeParam;
+    TD::OP_StringParameter deviceTypeParam;
     deviceTypeParam.name = "Devicetype";
     deviceTypeParam.label = "Device Type";
     deviceTypeParam.defaultValue = "Kinect v1";
@@ -103,7 +101,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
     manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
     
     // Resolution limiter toggle - Limit resolution to 1280x720 for Kinect V2 instead of 1920x1080 (for non-commercial licenses)
-    OP_NumericParameter resLimitParam;
+    TD::OP_NumericParameter resLimitParam;
     resLimitParam.name = "Resolutionlimit";
     resLimitParam.label = "Resolution Limit";
     resLimitParam.defaultValues[0] = 1.0; // Default to enabled
@@ -118,7 +116,7 @@ void FreenectTOP::setupParameters(OP_ParameterManager* manager, void*) {
 }
 
 // TD - Cook every frame
-void FreenectTOP::getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void*) {
+void FreenectTOP::getGeneralInfo(TD::TOP_GeneralInfo* ginfo, const TD::OP_Inputs*, void*) {
     ginfo->cookEveryFrameIfAsked = true;
 }
 
@@ -521,7 +519,7 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     if (device->getColorFrame(colorFrame)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating color output buffer");
-        OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(colorWidth * colorHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(colorWidth * colorHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             LOG("[FreenectTOP] executeV1: copying color frame data to buffer");
             std::memcpy(buf->data, colorFrame.data(), colorWidth * colorHeight * 4);
@@ -541,7 +539,7 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     if (device->getDepthFrame(depthFrame)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating depth output buffer");
-        OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             LOG("[FreenectTOP] executeV1: copying depth frame data to buffer");
             std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
@@ -560,7 +558,7 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 }
 
 // Execute method for Kinect v2 (libfreenect2)
-void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
+void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
     int colorWidth = MyFreenect2Device::WIDTH, colorHeight = MyFreenect2Device::HEIGHT, depthWidth = MyFreenect2Device::DEPTH_WIDTH, depthHeight = MyFreenect2Device::DEPTH_HEIGHT;
     bool v2InitOk = true;
     if (!fn2_device) {
@@ -586,15 +584,15 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
     if (gotColor) {
         errorString.clear();
         LOG("[FreenectTOP] executeV2: creating color output buffer");
-        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TOP_BufferFlags::None, nullptr) : nullptr;
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             LOG("[FreenectTOP] executeV2: copying color frame data to buffer");
             std::memcpy(buf->data, colorFrame.data(), outW * outH * 4);
-            TOP_UploadInfo info;
+            TD::TOP_UploadInfo info;
             info.textureDesc.width = outW;
             info.textureDesc.height = outH;
-            info.textureDesc.texDim = OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = OP_PixelFormat::RGBA8Fixed;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
             LOG("[FreenectTOP] executeV2: uploading color buffer");
             output->uploadBuffer(&buf, info, nullptr);
@@ -608,15 +606,15 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
         errorString.clear();
         int outDW = depthWidth, outDH = depthHeight;
         LOG("[FreenectTOP] executeV2: creating depth output buffer");
-        OP_SmartRef<TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TOP_BufferFlags::None, nullptr) : nullptr;
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             LOG("[FreenectTOP] executeV2: copying depth frame data to buffer");
             std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
-            TOP_UploadInfo info;
+            TD::TOP_UploadInfo info;
             info.textureDesc.width = outDW;
             info.textureDesc.height = outDH;
-            info.textureDesc.texDim = OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = OP_PixelFormat::Mono16Fixed;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
             LOG("[FreenectTOP] executeV2: uploading depth buffer");
             output->uploadBuffer(&buf, info, nullptr);
@@ -627,7 +625,7 @@ void FreenectTOP::executeV2(TOP_Output* output, const OP_Inputs* inputs) {
 }
 
 // Main execution method
-void FreenectTOP::execute(TOP_Output* output, const OP_Inputs* inputs, void*) {
+void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) {
     myCurrentOutput = output;
     if (!inputs) {
         LOG("[FreenectTOP] ERROR: inputs is null!");
@@ -669,7 +667,7 @@ void FreenectTOP::uploadFallbackBuffer() {
     }
     int fallbackWidth = 256, fallbackHeight = 256;
     std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
-    OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+    TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
     if (buf) {
         std::memcpy(buf->data, black.data(), fallbackWidth * fallbackHeight * 4);
         TD::TOP_UploadInfo info;
