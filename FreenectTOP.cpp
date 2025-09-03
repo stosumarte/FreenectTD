@@ -669,10 +669,13 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 // Main execution method
 void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) {
     myCurrentOutput = output;
+    
     if (!inputs) {
         LOG("[FreenectTOP] ERROR: inputs is null!");
         return;
     }
+    
+    // Get device type parameter
     const char* devTypeCStr = inputs->getParString("Devicetype");
     std::string deviceTypeStr = devTypeCStr ? devTypeCStr : "Kinect v1";
     int newDeviceType = (deviceTypeStr == "Kinect v2") ? 1 : 0;
@@ -680,14 +683,14 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     LOG("[FreenectTOP] execute: switching device type from " + lastDeviceTypeStr + " to " + deviceTypeStr);
     
     // Enable/disable parameters based on device type
-    if (deviceTypeStr == "Kinect v2") {
-        inputs->enablePar("Tilt", false);               // Disable Tilt for Kinect v2
-        inputs->enablePar("Resolutionlimit", true);     // Enable Resolutionlimit for Kinect v2
-        inputs->enablePar("Depthformat", true);         // Enable Depthformat for Kinect v2
-    } else if (deviceTypeStr == "Kinect v1") {
+    if (deviceType == 0) {
         inputs->enablePar("Tilt", true);                // Enable Tilt for Kinect v1
         inputs->enablePar("Resolutionlimit", false);    // Disable Resolutionlimit for Kinect v1
         inputs->enablePar("Depthformat", false);        // Disable Depthformat for Kinect v1
+    } else if (deviceType == 1) {
+        inputs->enablePar("Tilt", false);               // Disable Tilt for Kinect v2
+        inputs->enablePar("Resolutionlimit", true);     // Enable Resolutionlimit for Kinect v2
+        inputs->enablePar("Depthformat", true);         // Enable Depthformat for Kinect v2
     }
     
     // If device type changed, re-init device
@@ -697,6 +700,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         cleanupDeviceV2();
         lastDeviceTypeStr = deviceTypeStr;
     }
+    
     // Device type handling
     if (deviceType == 0) {                  // Kinect v1
         executeV1(output, inputs);
