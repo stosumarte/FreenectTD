@@ -70,6 +70,47 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     checkUpdateParam.clampMaxes[0] = true;
     manager->appendMomentary(checkUpdateParam);
     
+    // Device type dropdown
+    OP_StringParameter deviceTypeParam;
+    deviceTypeParam.name = "Devicetype";
+    deviceTypeParam.label = "Device Type";
+    deviceTypeParam.defaultValue = "Kinect v1";
+    const char* deviceTypeNames[] = {"Kinect v1", "Kinect v2"};
+    const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
+    manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
+    
+    // TO DO - Enable Depth toggle
+    OP_NumericParameter enableDepthParam;
+    enableDepthParam.name = "enableDepth";
+    enableDepthParam.label = "Enable Depth Stream";
+    enableDepthParam.defaultValues[0] = 1.0; // Default to enabled
+    enableDepthParam.minValues[0] = 0.0;
+    enableDepthParam.maxValues[0] = 1.0;
+    enableDepthParam.minSliders[0] = 0.0;
+    enableDepthParam.maxSliders[0] = 1.0;
+    enableDepthParam.clampMins[0] = true;
+    enableDepthParam.clampMaxes[0] = true;
+    manager->appendToggle(enableDepthParam);
+    
+    // TO DO - Enable IR toggle
+    OP_NumericParameter enableIRParam;
+    enableIRParam.name = "enableIR";
+    enableIRParam.label = "Enable IR Stream";
+    enableIRParam.defaultValues[0] = 0.0; // Default to disabled
+    enableIRParam.minValues[0] = 0.0;
+    enableIRParam.maxValues[0] = 1.0;
+    enableIRParam.minSliders[0] = 0.0;
+    enableIRParam.maxSliders[0] = 1.0;
+    enableIRParam.clampMins[0] = true;
+    enableIRParam.clampMaxes[0] = true;
+    manager->appendToggle(enableIRParam);
+    
+    // V1 settings header
+    OP_StringParameter v1Header;
+    v1Header.name = "V1";
+    std::string v1Label = std::string("Kinect V1 Settings");
+    v1Header.label = v1Label.c_str();
+    manager->appendHeader(v1Header);
 
     // Tilt angle parameter
     OP_NumericParameter tiltAngleParam;
@@ -81,15 +122,13 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     tiltAngleParam.minSliders[0] = -30.0;
     tiltAngleParam.maxSliders[0] = 30.0;
     manager->appendFloat(tiltAngleParam);
-
-    // Device type dropdown
-    OP_StringParameter deviceTypeParam;
-    deviceTypeParam.name = "Devicetype";
-    deviceTypeParam.label = "Device Type";
-    deviceTypeParam.defaultValue = "Kinect v1";
-    const char* deviceTypeNames[] = {"Kinect v1", "Kinect v2"};
-    const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
-    manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
+    
+    // V2 settings header
+    OP_StringParameter v2Header;
+    v2Header.name = "V2";
+    std::string v2Label = std::string("Kinect V2 Settings");
+    v2Header.label = v2Label.c_str();
+    manager->appendHeader(v2Header);
     
     // Resolution limiter toggle - Limit resolution to 1280x720 for Kinect V2 instead of 1920x1080 (for non-commercial licenses)
     OP_NumericParameter resLimitParam;
@@ -103,6 +142,16 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     resLimitParam.clampMins[0] = true;
     resLimitParam.clampMaxes[0] = true;
     manager->appendToggle(resLimitParam);
+    
+    // TO DO - Depth format dropdown (16-bit or 32-bit float)
+    OP_StringParameter depthFormatParam;
+    depthFormatParam.name = "Depthformat";
+    depthFormatParam.label = "Depth Format";
+    depthFormatParam.defaultValue = "Raw (16-bit)";
+    const char* depthFormatNames[] = {"Raw (16-bit)", "Registered (32-bit float)", "Visualized (8-bit)"};
+    const char* depthFormatLabels[] = {"Raw (16-bit)", "Registered (32-bit float)", "Visualized (8-bit)"};
+    manager->appendMenu(depthFormatParam, 3, depthFormatNames, depthFormatLabels);
+    
 
 }
 
@@ -550,8 +599,15 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-    int colorWidth = MyFreenect2Device::WIDTH, colorHeight = MyFreenect2Device::HEIGHT, depthWidth = MyFreenect2Device::DEPTH_WIDTH, depthHeight = MyFreenect2Device::DEPTH_HEIGHT;
+    int colorWidth = MyFreenect2Device::WIDTH,
+        colorHeight = MyFreenect2Device::HEIGHT,
+        colorScaledWidth = MyFreenect2Device::SCALED_WIDTH,
+        colorScaledHeight = MyFreenect2Device::SCALED_HEIGHT,
+        depthWidth = MyFreenect2Device::DEPTH_WIDTH,
+        depthHeight = MyFreenect2Device::DEPTH_HEIGHT;
+    
     bool v2InitOk = true;
+    
     if (!fn2_device) {
         LOG("[FreenectTOP] executeV2: fn2_device is null, initializing device");
         v2InitOk = initDeviceV2();
@@ -563,8 +619,9 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         }
     }
     bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
-    int outW = downscale ? 1280 : colorWidth;
-    int outH = downscale ? 720 : colorHeight;
+    int outW = downscale ? colorScaledWidth : colorWidth;
+    int outH = downscale ? colorScaledHeight : colorHeight;
+    
     if (!fn2_device || !v2InitOk) {
         LOG("[FreenectTOP] executeV2: fn2_device is null or v2InitOk is false, returning early");
         errorString = "No Kinect v2 devices found";
