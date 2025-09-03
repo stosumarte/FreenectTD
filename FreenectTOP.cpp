@@ -80,8 +80,8 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
     
     // TO DO - Enable Depth toggle
-    OP_NumericParameter enableDepthParam;
-    enableDepthParam.name = "enableDepth";
+    /*OP_NumericParameter enableDepthParam;
+    enableDepthParam.name = "Enabledepth";
     enableDepthParam.label = "Enable Depth Stream";
     enableDepthParam.defaultValues[0] = 1.0; // Default to enabled
     enableDepthParam.minValues[0] = 0.0;
@@ -90,11 +90,11 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     enableDepthParam.maxSliders[0] = 1.0;
     enableDepthParam.clampMins[0] = true;
     enableDepthParam.clampMaxes[0] = true;
-    manager->appendToggle(enableDepthParam);
+    manager->appendToggle(enableDepthParam);*/
     
     // TO DO - Enable IR toggle
-    OP_NumericParameter enableIRParam;
-    enableIRParam.name = "enableIR";
+    /*OP_NumericParameter enableIRParam;
+    enableIRParam.name = "Enableir";
     enableIRParam.label = "Enable IR Stream";
     enableIRParam.defaultValues[0] = 0.0; // Default to disabled
     enableIRParam.minValues[0] = 0.0;
@@ -103,7 +103,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     enableIRParam.maxSliders[0] = 1.0;
     enableIRParam.clampMins[0] = true;
     enableIRParam.clampMaxes[0] = true;
-    manager->appendToggle(enableIRParam);
+    manager->appendToggle(enableIRParam);*/
 
     // Tilt angle parameter
     OP_NumericParameter tiltAngleParam;
