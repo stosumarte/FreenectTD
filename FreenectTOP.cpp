@@ -104,13 +104,6 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     enableIRParam.clampMins[0] = true;
     enableIRParam.clampMaxes[0] = true;
     manager->appendToggle(enableIRParam);
-    
-    // V1 settings header
-    OP_StringParameter v1Header;
-    v1Header.name = "V1";
-    std::string v1Label = std::string("Kinect V1 Settings");
-    v1Header.label = v1Label.c_str();
-    manager->appendHeader(v1Header);
 
     // Tilt angle parameter
     OP_NumericParameter tiltAngleParam;
@@ -122,13 +115,6 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     tiltAngleParam.minSliders[0] = -30.0;
     tiltAngleParam.maxSliders[0] = 30.0;
     manager->appendFloat(tiltAngleParam);
-    
-    // V2 settings header
-    OP_StringParameter v2Header;
-    v2Header.name = "V2";
-    std::string v2Label = std::string("Kinect V2 Settings");
-    v2Header.label = v2Label.c_str();
-    manager->appendHeader(v2Header);
     
     // Resolution limiter toggle - Limit resolution to 1280x720 for Kinect V2 instead of 1920x1080 (for non-commercial licenses)
     OP_NumericParameter resLimitParam;
@@ -618,7 +604,9 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             return;
         }
     }
+    
     bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
+    
     int outW = downscale ? colorScaledWidth : colorWidth;
     int outH = downscale ? colorScaledHeight : colorHeight;
     
@@ -627,8 +615,11 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         errorString = "No Kinect v2 devices found";
         return;
     }
+    
     std::vector<uint8_t> colorFrame;
+    
     bool gotColor = fn2_device->getColorFrame(colorFrame, downscale);
+    
     if (gotColor) {
         errorString.clear();
         LOG("[FreenectTOP] executeV2: creating color output buffer");
@@ -648,8 +639,11 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             LOG("[FreenectTOP] executeV2: failed to create color output buffer");
         }
     }
+    
     std::vector<uint16_t> depthFrame;
+    
     bool gotDepth = fn2_device->getDepthFrame(depthFrame);
+    
     if (gotDepth) {
         errorString.clear();
         int outDW = depthWidth, outDH = depthHeight;
@@ -684,6 +678,18 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     int newDeviceType = (deviceTypeStr == "Kinect v2") ? 1 : 0;
     deviceType = newDeviceType;
     LOG("[FreenectTOP] execute: switching device type from " + lastDeviceTypeStr + " to " + deviceTypeStr);
+    
+    // Enable/disable parameters based on device type
+    if (deviceTypeStr == "Kinect v2") {
+        inputs->enablePar("Tilt", false);               // Disable Tilt for Kinect v2
+        inputs->enablePar("Resolutionlimit", true);     // Enable Resolutionlimit for Kinect v2
+        inputs->enablePar("Depthformat", true);         // Enable Depthformat for Kinect v2
+    } else if (deviceTypeStr == "Kinect v1") {
+        inputs->enablePar("Tilt", true);                // Enable Tilt for Kinect v1
+        inputs->enablePar("Resolutionlimit", false);    // Disable Resolutionlimit for Kinect v1
+        inputs->enablePar("Depthformat", false);        // Disable Depthformat for Kinect v1
+    }
+    
     // If device type changed, re-init device
     if (deviceTypeStr != lastDeviceTypeStr) {
         LOG("[FreenectTOP] execute: device type changed, cleaning up devices");
