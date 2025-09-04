@@ -439,6 +439,14 @@ bool FreenectTOP::initDeviceV2() {
         LOG("[FreenectTOP] initDeviceV2: eventThreadV2 joinable after = " + std::to_string(eventThreadV2.joinable()));
         PROFILE("initDeviceV2: eventThreadV2 started");
     }
+    // After opening device, create Registration object
+    if (fn2_device && !registrationV2) {
+        registrationV2 = new libfreenect2::Registration(
+            dev->getIrCameraParams(),
+            dev->getColorCameraParams()
+        );
+        LOG("[FreenectTOP] registrationV2 created");
+    }
     PROFILE("initDeviceV2: end");
     LOG("[FreenectTOP] initDeviceV2: end (success)");
     return true;
@@ -480,6 +488,12 @@ void FreenectTOP::cleanupDeviceV2() {
         fn2_ctx = nullptr;
         LOG("[FreenectTOP] fn2_ctx set to nullptr");
     }
+    // Cleanup registrationV2
+    if (registrationV2) {
+        delete registrationV2;
+        registrationV2 = nullptr;
+        LOG("[FreenectTOP] registrationV2 deleted");
+    }
     PROFILE("cleanupDeviceV2: end");
     LOG("[FreenectTOP] cleanupDeviceV2: end");
 }
@@ -501,6 +515,7 @@ FreenectTOP::~FreenectTOP() {
     LOG("[FreenectTOP] Destructor called, cleaning up devices");
     cleanupDeviceV1();
     cleanupDeviceV2();
+    fallbackBuffer = nullptr; // Release fallback buffer
 }
 
 // Execute method for Kinect v1 (libfreenect)
@@ -591,9 +606,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         colorScaledHeight = MyFreenect2Device::SCALED_HEIGHT,
         depthWidth = MyFreenect2Device::DEPTH_WIDTH,
         depthHeight = MyFreenect2Device::DEPTH_HEIGHT;
-    
     bool v2InitOk = true;
-    
     if (!fn2_device) {
         LOG("[FreenectTOP] executeV2: fn2_device is null, initializing device");
         v2InitOk = initDeviceV2();
@@ -601,25 +614,21 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             LOG("[FreenectTOP] executeV2: initDeviceV2 failed, returning early");
             LOG("[FreenectTOP] Kinect v2 init failed or no device found");
             errorString = "No Kinect v2 devices found";
+            uploadFallbackBuffer();
             return;
         }
     }
-    
     bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
-    
     int outW = downscale ? colorScaledWidth : colorWidth;
     int outH = downscale ? colorScaledHeight : colorHeight;
-    
     if (!fn2_device || !v2InitOk) {
         LOG("[FreenectTOP] executeV2: fn2_device is null or v2InitOk is false, returning early");
         errorString = "No Kinect v2 devices found";
+        uploadFallbackBuffer();
         return;
     }
-    
     std::vector<uint8_t> colorFrame;
-    
     bool gotColor = fn2_device->getColorFrame(colorFrame, downscale);
-    
     if (gotColor) {
         errorString.clear();
         LOG("[FreenectTOP] executeV2: creating color output buffer");
@@ -639,29 +648,70 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             LOG("[FreenectTOP] executeV2: failed to create color output buffer");
         }
     }
-    
+    // --- Output depth according to Depthformat parameter ---
     std::vector<uint16_t> depthFrame;
-    
     bool gotDepth = fn2_device->getDepthFrame(depthFrame);
-    
     if (gotDepth) {
         errorString.clear();
         int outDW = depthWidth, outDH = depthHeight;
-        LOG("[FreenectTOP] executeV2: creating depth output buffer");
-        TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-        if (buf) {
-            LOG("[FreenectTOP] executeV2: copying depth frame data to buffer");
-            std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = outDW;
-            info.textureDesc.height = outDH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 1;
-            LOG("[FreenectTOP] executeV2: uploading depth buffer");
-            output->uploadBuffer(&buf, info, nullptr);
-        } else {
-            LOG("[FreenectTOP] executeV2: failed to create depth output buffer");
+        std::string depthFormatStr = inputs->getParString("Depthformat") ? inputs->getParString("Depthformat") : "Raw (16-bit)";
+        if (depthFormatStr == "Raw (16-bit)") {
+            LOG("[FreenectTOP] executeV2: outputting raw depth");
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = outDW;
+                info.textureDesc.height = outDH;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex = 1;
+                LOG("[FreenectTOP] executeV2: uploading raw depth buffer");
+                output->uploadBuffer(&buf, info, nullptr);
+            } else {
+                LOG("[FreenectTOP] executeV2: failed to create raw depth output buffer");
+            }
+        } else if (depthFormatStr == "Registered (32-bit float)" && registrationV2) {
+            LOG("[FreenectTOP] executeV2: outputting registered depth");
+            libfreenect2::Frame rgbFrame(outW, outH, 4, colorFrame.data());
+            libfreenect2::Frame depthFrameF(outDW, outDH, 2, reinterpret_cast<uint8_t*>(depthFrame.data()));
+            libfreenect2::Frame undistorted(outDW, outDH, 4);
+            libfreenect2::Frame registered(outDW, outDH, 4);
+            registrationV2->apply(&rgbFrame, &depthFrameF, &undistorted, &registered);
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                std::memcpy(buf->data, registered.data, outDW * outDH * 4);
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = outDW;
+                info.textureDesc.height = outDH;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono32Float;
+                info.colorBufferIndex = 1;
+                LOG("[FreenectTOP] executeV2: uploading registered depth buffer");
+                output->uploadBuffer(&buf, info, nullptr);
+            } else {
+                LOG("[FreenectTOP] executeV2: failed to create registered depth output buffer");
+            }
+        } else if (depthFormatStr == "Visualized (8-bit)") {
+            LOG("[FreenectTOP] executeV2: outputting visualized depth");
+            std::vector<uint8_t> visualized(outDW * outDH);
+            for (int i = 0; i < outDW * outDH; ++i) {
+                visualized[i] = static_cast<uint8_t>(std::min(255, depthFrame[i] / 8)); // Simple normalization
+            }
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                std::memcpy(buf->data, visualized.data(), outDW * outDH);
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = outDW;
+                info.textureDesc.height = outDH;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono8Fixed;
+                info.colorBufferIndex = 1;
+                LOG("[FreenectTOP] executeV2: uploading visualized depth buffer");
+                output->uploadBuffer(&buf, info, nullptr);
+            } else {
+                LOG("[FreenectTOP] executeV2: failed to create visualized depth output buffer");
+            }
         }
     }
 }
@@ -724,17 +774,21 @@ void FreenectTOP::uploadFallbackBuffer() {
         return;
     }
     int fallbackWidth = 256, fallbackHeight = 256;
-    std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
-    TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-    if (buf) {
-        std::memcpy(buf->data, black.data(), fallbackWidth * fallbackHeight * 4);
+    if (!fallbackBuffer) {
+        std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
+        fallbackBuffer = myContext ? myContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        if (fallbackBuffer) {
+            std::memcpy(fallbackBuffer->data, black.data(), fallbackWidth * fallbackHeight * 4);
+        }
+    }
+    if (fallbackBuffer) {
         TD::TOP_UploadInfo info;
         info.textureDesc.width = fallbackWidth;
         info.textureDesc.height = fallbackHeight;
         info.textureDesc.texDim = TD::OP_TexDim::e2D;
         info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
         info.colorBufferIndex = 0; // Always upload to buffer index 0
-        myCurrentOutput->uploadBuffer(&buf, info, nullptr);
-        LOG("[FreenectTOP] uploadFallbackBuffer: uploaded fallback black buffer");
+        myCurrentOutput->uploadBuffer(&fallbackBuffer, info, nullptr);
+        LOG("[FreenectTOP] uploadFallbackBuffer: uploaded persistent fallback black buffer");
     }
 }
