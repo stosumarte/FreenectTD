@@ -11,6 +11,8 @@
 		8120BA1C2E635E4100126067 /* libopencv_imgproc.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F52E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		8120BA1D2E635E4300126067 /* libopencv_highgui.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		8120BA1E2E635E4400126067 /* libopencv_core.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		81D935BA2E69D61600432C95 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81D935B92E69D61600432C95 /* CoreFoundation.framework */; };
+		81D935BC2E69D61D00432C95 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81D935BB2E69D61D00432C95 /* ApplicationServices.framework */; };
 		81FC70F62E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */; };
 		81FC70F72E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */; };
 		81FC70F82E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F52E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib */; };
@@ -42,6 +44,8 @@
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
 		81BC12DF2E379780006C281E /* CPlusPlus_Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPlusPlus_Common.h; sourceTree = "<group>"; };
+		81D935B92E69D61600432C95 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		81D935BB2E69D61D00432C95 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 		81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_core.4.12.0.dylib; path = ../../../../../../opt/homebrew/Cellar/opencv/4.12.0/lib/libopencv_core.4.12.0.dylib; sourceTree = "<group>"; };
 		81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_highgui.4.12.0.dylib; path = ../../../../../../opt/homebrew/Cellar/opencv/4.12.0/lib/libopencv_highgui.4.12.0.dylib; sourceTree = "<group>"; };
 		81FC70F52E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_imgproc.4.12.0.dylib; path = ../../../../../../opt/homebrew/Cellar/opencv/4.12.0/lib/libopencv_imgproc.4.12.0.dylib; sourceTree = "<group>"; };
@@ -121,6 +125,8 @@
 			files = (
 				81FC70FA2E3CC608007447B2 /* Accelerate.framework in Frameworks */,
 				81FC70F62E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib in Frameworks */,
+				81D935BC2E69D61D00432C95 /* ApplicationServices.framework in Frameworks */,
+				81D935BA2E69D61600432C95 /* CoreFoundation.framework in Frameworks */,
 				81FC70F72E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib in Frameworks */,
 				81FC70F82E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib in Frameworks */,
 			);
@@ -132,6 +138,8 @@
 		8112B5972E23E1140089336F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				81D935BB2E69D61D00432C95 /* ApplicationServices.framework */,
+				81D935B92E69D61600432C95 /* CoreFoundation.framework */,
 				81FC70F92E3CC608007447B2 /* Accelerate.framework */,
 				81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */,
 				81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */,

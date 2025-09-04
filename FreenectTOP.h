@@ -28,7 +28,7 @@ public:
     void getGeneralInfo   (TD::TOP_GeneralInfo* ginfo, const TD::OP_Inputs* inputs, void*) override;
     void execute          (TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) override;
     void setupParameters  (TD::OP_ParameterManager* manager, void*) override;
-    void pulsePressed     (const char* name, void*) override;
+//    void pulsePressed     (const char* name, void*) override;
 
 private:
     const TD::OP_NodeInfo*        myNodeInfo;

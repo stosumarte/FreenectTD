@@ -57,8 +57,10 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     versionHeader.label = versionLabel.c_str();
     manager->appendHeader(versionHeader);
     
-    // Check for updates button
-    OP_NumericParameter checkUpdateParam;
+    // Temporarily disabled - Check for updates button
+    // It seems that accessing system APIs for network requests is not allowed in TouchDesigner plugins
+    // I already tried circumventing this but it doesn't work. I'll look into it again in the future.
+    /*OP_NumericParameter checkUpdateParam;
     checkUpdateParam.name = "Checkforupdates";
     checkUpdateParam.label = "Check for updates";
     checkUpdateParam.defaultValues[0] = 0.0;
@@ -68,7 +70,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     checkUpdateParam.maxSliders[0] = 1.0;
     checkUpdateParam.clampMins[0] = true;
     checkUpdateParam.clampMaxes[0] = true;
-    manager->appendMomentary(checkUpdateParam);
+    manager->appendMomentary(checkUpdateParam);*/
     
     // Device type dropdown
     OP_StringParameter deviceTypeParam;
@@ -138,6 +140,25 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     const char* depthFormatLabels[] = {"Raw (16-bit)", "Registered (32-bit float)", "Visualized (8-bit)"};
     manager->appendMenu(depthFormatParam, 3, depthFormatNames, depthFormatLabels);
     
+    // Empty spacer header
+    OP_StringParameter emptyHeader1;
+    emptyHeader1.name = "Emptyheader1";
+    std::string emptyLabel1 = std::string(" ");
+    emptyHeader1.label = emptyLabel1.c_str();
+    manager->appendHeader(emptyHeader1);
+    
+    // Check for updates header
+    OP_StringParameter updateHeader;
+    updateHeader.name = "Updateheader";
+    std::string updateLabel = std::string("Visit the following URL to check for updates:");
+    updateHeader.label = updateLabel.c_str();
+    manager->appendHeader(updateHeader);
+    
+    OP_StringParameter updateURLParam;
+    updateURLParam.name = "Updateurl";
+    updateURLParam.label = "Copy this → ";
+    updateURLParam.defaultValue = "github.com/stosumarte/FreenectTD/releases/latest";
+    manager->appendString(updateURLParam);
 
 }
 
@@ -716,6 +737,26 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
 }
 
+// Function to open a webpage (macOS specific, uncomment to use)
+
+/*#include <CoreServices/CoreServices.h> // for LSOpenCFURLRef
+#include <CoreFoundation/CoreFoundation.h>
+
+void openWebpage(const char* urlString)
+{
+    CFStringRef cfUrlString = CFStringCreateWithCString(NULL, urlString, kCFStringEncodingUTF8);
+    if (cfUrlString)
+    {
+        CFURLRef url = CFURLCreateWithString(NULL, cfUrlString, NULL);
+        if (url)
+        {
+            LSOpenCFURLRef(url, NULL); // This tells macOS to open in the default browser
+            CFRelease(url);
+        }
+        CFRelease(cfUrlString);
+    }
+}*/
+
 // Main execution method
 void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) {
     myCurrentOutput = output;
@@ -762,10 +803,13 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         LOG("ERROR: Couldn't get device type - something went REALLY wrong");
         return;
     }
+    
+    // Handle Checkforupdates button (uncomment to enable)
+    /*if (inputs->getParInt("Checkforupdates") == 1) {
+        openWebpage("github.com/stosumarte/FreenectTD/releases");
+        LOG("[FreenectTOP] Check for updates button pressed: opened update webpage");
+    }*/
 }
-
-// Pulse handler for FreenectTOP - currently does nothing
-void FreenectTOP::pulsePressed(const char*, void*) {}
 
 // Upload a fallback black buffer
 void FreenectTOP::uploadFallbackBuffer() {
