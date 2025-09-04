@@ -58,6 +58,7 @@ private:
     std::atomic<bool>                       fn2_rgbReady{false};
     std::atomic<bool>                       fn2_depthReady{false};
     std::atomic<bool>                       runV2Events{false};
+    libfreenect2::Registration*             registrationV2 = nullptr;
     std::thread                             eventThreadV2;
 
     // V2 background init members
@@ -93,4 +94,6 @@ private:
     }
     
     TD::TOP_Output* myCurrentOutput = nullptr;
+
+    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer; // Persistent fallback buffer for Metal safety
 };
