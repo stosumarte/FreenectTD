@@ -54,10 +54,24 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // FREENECT PAGE
     // -------------
     
+    // TODO - Active toggle
+    /*OP_NumericParameter activeParam;
+    activeParam.name = "Active";
+    activeParam.label = "Active";
+    activeParam.page = "Freenect";
+    activeParam.defaultValues[0] = 1.0; // Default to enabled
+    activeParam.minValues[0] = 0.0;
+    activeParam.maxValues[0] = 1.0;
+    activeParam.minSliders[0] = 0.0;
+    activeParam.maxSliders[0] = 1.0;
+    activeParam.clampMins[0] = true;
+    activeParam.clampMaxes[0] = true;
+    manager->appendToggle(activeParam);*/
+    
     // Device type dropdown
     OP_StringParameter deviceTypeParam;
-    deviceTypeParam.name = "Devicetype";
-    deviceTypeParam.label = "Device Type";
+    deviceTypeParam.name = "Hardwareversion";
+    deviceTypeParam.label = "Hardware Version";
     deviceTypeParam.page = "Freenect";
     deviceTypeParam.defaultValue = "Kinect v1";
     const char* deviceTypeNames[] = {"Kinect v1", "Kinect v2"};
@@ -142,20 +156,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // ABOUT PAGE
     // ----------
     
-    // Temporarily disabled - Check for updates button
-    // It seems that accessing system APIs for network requests is not allowed in TouchDesigner plugins
-    // I already tried circumventing this but it doesn't work. I'll look into it again in the future.
-    /*OP_NumericParameter checkUpdateParam;
-    checkUpdateParam.name = "Checkforupdates";
-    checkUpdateParam.label = "Check for updates";
-    checkUpdateParam.defaultValues[0] = 0.0;
-    checkUpdateParam.minValues[0] = 0.0;
-    checkUpdateParam.maxValues[0] = 1.0;
-    checkUpdateParam.minSliders[0] = 0.0;
-    checkUpdateParam.maxSliders[0] = 1.0;
-    checkUpdateParam.clampMins[0] = true;
-    checkUpdateParam.clampMaxes[0] = true;
-    manager->appendMomentary(checkUpdateParam);*/
+    
     
     // Show version in header
     OP_StringParameter versionHeader;
@@ -683,13 +684,23 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             LOG("[FreenectTOP] executeV2: failed to create color output buffer");
         }
     }
-    // --- Output depth according to Depthformat parameter ---
+    // --- Output depth according to Depthformat and Depthdistortion parameter ---
+    std::string depthDistortStr = inputs->getParString("Depthdistortion") ? inputs->getParString("Depthdistortion") : "Distorted";
+    std::string depthFormatStr = inputs->getParString("Depthformat") ? inputs->getParString("Depthformat") : "Raw (16-bit)";
+    int outDW = depthWidth, outDH = depthHeight;
     std::vector<uint16_t> depthFrame;
-    bool gotDepth = fn2_device->getDepthFrame(depthFrame);
+    bool gotDepth = false;
+    if (depthDistortStr == "Undistorted") {
+        // Get undistorted depth using MyFreenect2Device method
+        if (fn2_device) {
+            gotDepth = fn2_device->getUndistortedDepthFrame(depthFrame);
+        }
+    } else {
+        // Distorted: use raw depth
+        gotDepth = fn2_device->getDepthFrame(depthFrame);
+    }
     if (gotDepth) {
         errorString.clear();
-        int outDW = depthWidth, outDH = depthHeight;
-        std::string depthFormatStr = inputs->getParString("Depthformat") ? inputs->getParString("Depthformat") : "Raw (16-bit)";
         if (depthFormatStr == "Raw (16-bit)") {
             LOG("[FreenectTOP] executeV2: outputting raw depth");
             TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
@@ -708,42 +719,31 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             }
         } else if (depthFormatStr == "Visualized (8-bit)") {
             LOG("[FreenectTOP] executeV2: outputting visualized depth as RGB");
-
-            // Use actual depth data for visualization
             std::vector<uint8_t> visualized(outDW * outDH * 4);
-            // Debug: log a few depth values
-            LOG(std::string("[FreenectTOP] Depth sample: ") + std::to_string(depthFrame[0]) + ", " + std::to_string(depthFrame[outDW * outDH / 2]) + ", " + std::to_string(depthFrame[outDW * outDH - 1]));
-            // Optionally, auto-detect min/max for visualization
             uint16_t minDepth = 65535, maxDepth = 0;
             for (size_t i = 0; i < depthFrame.size(); ++i) {
                 uint16_t d = depthFrame[i];
                 if (d > 0 && d < minDepth) minDepth = d;
                 if (d > maxDepth) maxDepth = d;
             }
-            // If min/max are not reasonable, use defaults
             if (minDepth == 65535 || maxDepth == 0 || maxDepth - minDepth < 100) {
                 minDepth = 500;
                 maxDepth = 4500;
             }
-            LOG(std::string("[FreenectTOP] Visualized depth min/max: ") + std::to_string(minDepth) + ", " + std::to_string(maxDepth));
             for (int y = 0; y < outDH; ++y) {
                 for (int x = 0; x < outDW; ++x) {
                     int i = (y * outDW + x);
                     uint16_t d = depthFrame[i];
-                    // Normalize depth to [0, 1]
                     float norm = (float)(d - minDepth) / (maxDepth - minDepth);
                     if (norm < 0.0f) norm = 0.0f;
                     if (norm > 1.0f) norm = 1.0f;
-                    // Simple RGB colormap: blue (near) -> green (mid) -> red (far)
                     uint8_t r, g, b;
                     if (norm < 0.5f) {
-                        // Interpolate blue to green
                         float t = norm / 0.5f;
                         r = 0;
                         g = static_cast<uint8_t>(t * 255);
                         b = static_cast<uint8_t>((1.0f - t) * 255);
                     } else {
-                        // Interpolate green to red
                         float t = (norm - 0.5f) / 0.5f;
                         r = static_cast<uint8_t>(t * 255);
                         g = static_cast<uint8_t>((1.0f - t) * 255);
@@ -776,7 +776,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
 }
 
-// Function to open a webpage (macOS specific, uncomment to use)
+// DISABLED (probably blocked by TouchDesigner?) - Function to open a webpage (uncomment to use)
 
 /*#include <CoreServices/CoreServices.h> // for LSOpenCFURLRef
 #include <CoreFoundation/CoreFoundation.h>
@@ -806,7 +806,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     }
     
     // Get device type parameter
-    const char* devTypeCStr = inputs->getParString("Devicetype");
+    const char* devTypeCStr = inputs->getParString("Hardwareversion");
     std::string deviceTypeStr = devTypeCStr ? devTypeCStr : "Kinect v1";
     int newDeviceType = (deviceTypeStr == "Kinect v2") ? 1 : 0;
     deviceType = newDeviceType;
@@ -817,10 +817,12 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         inputs->enablePar("Tilt", true);                // Enable Tilt for Kinect v1
         inputs->enablePar("Resolutionlimit", false);    // Disable Resolutionlimit for Kinect v1
         inputs->enablePar("Depthformat", false);        // Disable Depthformat for Kinect v1
+        inputs->enablePar("Depthdistortion", false);    // Disable Depthdistortion for Kinect v1
     } else if (deviceType == 1) {
         inputs->enablePar("Tilt", false);               // Disable Tilt for Kinect v2
         inputs->enablePar("Resolutionlimit", true);     // Enable Resolutionlimit for Kinect v2
         inputs->enablePar("Depthformat", true);         // Enable Depthformat for Kinect v2
+        inputs->enablePar("Depthdistortion", true);     // Enable Depthdistortion for Kinect v2
     }
     
     // If device type changed, re-init device
