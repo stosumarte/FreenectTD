@@ -694,44 +694,95 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             }
         } else if (depthFormatStr == "Registered (32-bit float)" && registrationV2) {
             LOG("[FreenectTOP] executeV2: outputting registered depth");
+            // Always use Kinect v2 registered resolution
+            const int regW = 512, regH = 424;
             libfreenect2::Frame rgbFrame(outW, outH, 4, colorFrame.data());
             libfreenect2::Frame depthFrameF(outDW, outDH, 2, reinterpret_cast<uint8_t*>(depthFrame.data()));
-            libfreenect2::Frame undistorted(outDW, outDH, 4);
-            libfreenect2::Frame registered(outDW, outDH, 4);
+            libfreenect2::Frame undistorted(regW, regH, 4);
+            libfreenect2::Frame registered(regW, regH, 4);
             registrationV2->apply(&rgbFrame, &depthFrameF, &undistorted, &registered);
-            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            // Debug: log a few values
+            float* regData = reinterpret_cast<float*>(registered.data);
+            LOG(std::string("[FreenectTOP] Registered depth sample: ") + std::to_string(regData[0]) + ", " + std::to_string(regData[1000]) + ", " + std::to_string(regData[regW*regH/2]));
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(regW * regH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
             if (buf) {
-                std::memcpy(buf->data, registered.data, outDW * outDH * 4);
+                std::memcpy(buf->data, registered.data, regW * regH * 4);
                 TD::TOP_UploadInfo info;
-                info.textureDesc.width = outDW;
-                info.textureDesc.height = outDH;
+                info.textureDesc.width = regW;
+                info.textureDesc.height = regH;
                 info.textureDesc.texDim = TD::OP_TexDim::e2D;
                 info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono32Float;
                 info.colorBufferIndex = 1;
-                LOG("[FreenectTOP] executeV2: uploading registered depth buffer");
+                LOG("[FreenectTOP] executeV2: uploading registered depth buffer (float32, 512x424)");
                 output->uploadBuffer(&buf, info, nullptr);
             } else {
                 LOG("[FreenectTOP] executeV2: failed to create registered depth output buffer");
             }
         } else if (depthFormatStr == "Visualized (8-bit)") {
-            LOG("[FreenectTOP] executeV2: outputting visualized depth");
-            std::vector<uint8_t> visualized(outDW * outDH);
-            for (int i = 0; i < outDW * outDH; ++i) {
-                visualized[i] = static_cast<uint8_t>(std::min(255, depthFrame[i] / 8)); // Simple normalization
+            LOG("[FreenectTOP] executeV2: outputting visualized depth as RGB");
+
+            // Use actual depth data for visualization
+            std::vector<uint8_t> visualized(outDW * outDH * 4);
+            // Debug: log a few depth values
+            LOG(std::string("[FreenectTOP] Depth sample: ") + std::to_string(depthFrame[0]) + ", " + std::to_string(depthFrame[outDW * outDH / 2]) + ", " + std::to_string(depthFrame[outDW * outDH - 1]));
+            // Optionally, auto-detect min/max for visualization
+            uint16_t minDepth = 65535, maxDepth = 0;
+            for (size_t i = 0; i < depthFrame.size(); ++i) {
+                uint16_t d = depthFrame[i];
+                if (d > 0 && d < minDepth) minDepth = d;
+                if (d > maxDepth) maxDepth = d;
             }
-            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            // If min/max are not reasonable, use defaults
+            if (minDepth == 65535 || maxDepth == 0 || maxDepth - minDepth < 100) {
+                minDepth = 500;
+                maxDepth = 4500;
+            }
+            LOG(std::string("[FreenectTOP] Visualized depth min/max: ") + std::to_string(minDepth) + ", " + std::to_string(maxDepth));
+            for (int y = 0; y < outDH; ++y) {
+                for (int x = 0; x < outDW; ++x) {
+                    int i = (y * outDW + x);
+                    uint16_t d = depthFrame[i];
+                    // Normalize depth to [0, 1]
+                    float norm = (float)(d - minDepth) / (maxDepth - minDepth);
+                    if (norm < 0.0f) norm = 0.0f;
+                    if (norm > 1.0f) norm = 1.0f;
+                    // Simple RGB colormap: blue (near) -> green (mid) -> red (far)
+                    uint8_t r, g, b;
+                    if (norm < 0.5f) {
+                        // Interpolate blue to green
+                        float t = norm / 0.5f;
+                        r = 0;
+                        g = static_cast<uint8_t>(t * 255);
+                        b = static_cast<uint8_t>((1.0f - t) * 255);
+                    } else {
+                        // Interpolate green to red
+                        float t = (norm - 0.5f) / 0.5f;
+                        r = static_cast<uint8_t>(t * 255);
+                        g = static_cast<uint8_t>((1.0f - t) * 255);
+                        b = 0;
+                    }
+                    int vi = i * 4;
+                    visualized[vi + 0] = r;
+                    visualized[vi + 1] = g;
+                    visualized[vi + 2] = b;
+                    visualized[vi + 3] = 255;
+                }
+            }
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext
+                ? myContext->createOutputBuffer(outDW * outDH * 4, TD::TOP_BufferFlags::None, nullptr)
+                : nullptr;
             if (buf) {
-                std::memcpy(buf->data, visualized.data(), outDW * outDH);
+                std::memcpy(buf->data, visualized.data(), outDW * outDH * 4);
                 TD::TOP_UploadInfo info;
                 info.textureDesc.width = outDW;
                 info.textureDesc.height = outDH;
                 info.textureDesc.texDim = TD::OP_TexDim::e2D;
-                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono8Fixed;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
                 info.colorBufferIndex = 1;
                 LOG("[FreenectTOP] executeV2: uploading visualized depth buffer");
                 output->uploadBuffer(&buf, info, nullptr);
             } else {
-                LOG("[FreenectTOP] executeV2: failed to create visualized depth output buffer");
+                LOG("[FreenectTOP] executeV2: failed to create visualized depth buffer");
             }
         }
     }
