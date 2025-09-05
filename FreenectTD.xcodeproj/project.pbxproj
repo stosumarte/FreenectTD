@@ -8,15 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
-		8120BA1C2E635E4100126067 /* libopencv_imgproc.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F52E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		8120BA1D2E635E4300126067 /* libopencv_highgui.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		8120BA1E2E635E4400126067 /* libopencv_core.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		81D935BA2E69D61600432C95 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81D935B92E69D61600432C95 /* CoreFoundation.framework */; };
-		81D935BC2E69D61D00432C95 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81D935BB2E69D61D00432C95 /* ApplicationServices.framework */; };
 		81FC70F62E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F32E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib */; };
 		81FC70F72E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F42E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib */; };
 		81FC70F82E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F52E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib */; };
-		81FC70FA2E3CC608007447B2 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F92E3CC608007447B2 /* Accelerate.framework */; };
 		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
 		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
 /* End PBXBuildFile section */
@@ -28,9 +22,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				8120BA1E2E635E4400126067 /* libopencv_core.4.12.0.dylib in Embed Libraries */,
-				8120BA1C2E635E4100126067 /* libopencv_imgproc.4.12.0.dylib in Embed Libraries */,
-				8120BA1D2E635E4300126067 /* libopencv_highgui.4.12.0.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -83,6 +74,9 @@
 			attributesByRelativePath = {
 				libfreenect.0.7.5.dylib = (CodeSignOnCopy, );
 				libfreenect2.0.2.0.dylib = (CodeSignOnCopy, );
+				libopencv_core.4.12.0.dylib = (CodeSignOnCopy, );
+				libopencv_highgui.4.12.0.dylib = (CodeSignOnCopy, );
+				libopencv_imgproc.4.12.0.dylib = (CodeSignOnCopy, );
 				libusb.dylib = (CodeSignOnCopy, );
 			};
 			buildPhase = 8112B5A22E23E1140089336F /* Embed Libraries */;
@@ -93,6 +87,15 @@
 				libfreenect2.0.2.0.dylib,
 				libfreenect2.0.2.dylib,
 				libfreenect2.dylib,
+				libopencv_core.4.12.0.dylib,
+				libopencv_core.412.dylib,
+				libopencv_core.dylib,
+				libopencv_highgui.4.12.0.dylib,
+				libopencv_highgui.412.dylib,
+				libopencv_highgui.dylib,
+				libopencv_imgproc.4.12.0.dylib,
+				libopencv_imgproc.412.dylib,
+				libopencv_imgproc.dylib,
 				libusb.dylib,
 			);
 		};
@@ -123,10 +126,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				81FC70FA2E3CC608007447B2 /* Accelerate.framework in Frameworks */,
 				81FC70F62E3CC2C0007447B2 /* libopencv_core.4.12.0.dylib in Frameworks */,
-				81D935BC2E69D61D00432C95 /* ApplicationServices.framework in Frameworks */,
-				81D935BA2E69D61600432C95 /* CoreFoundation.framework in Frameworks */,
 				81FC70F72E3CC2C0007447B2 /* libopencv_highgui.4.12.0.dylib in Frameworks */,
 				81FC70F82E3CC2C0007447B2 /* libopencv_imgproc.4.12.0.dylib in Frameworks */,
 			);

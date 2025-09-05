@@ -50,32 +50,15 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     
     using namespace TD;
     
-    // Show version in header
-    OP_StringParameter versionHeader;
-    versionHeader.name = "Version";
-    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " – by @stosumarte";
-    versionHeader.label = versionLabel.c_str();
-    manager->appendHeader(versionHeader);
-    
-    // Temporarily disabled - Check for updates button
-    // It seems that accessing system APIs for network requests is not allowed in TouchDesigner plugins
-    // I already tried circumventing this but it doesn't work. I'll look into it again in the future.
-    /*OP_NumericParameter checkUpdateParam;
-    checkUpdateParam.name = "Checkforupdates";
-    checkUpdateParam.label = "Check for updates";
-    checkUpdateParam.defaultValues[0] = 0.0;
-    checkUpdateParam.minValues[0] = 0.0;
-    checkUpdateParam.maxValues[0] = 1.0;
-    checkUpdateParam.minSliders[0] = 0.0;
-    checkUpdateParam.maxSliders[0] = 1.0;
-    checkUpdateParam.clampMins[0] = true;
-    checkUpdateParam.clampMaxes[0] = true;
-    manager->appendMomentary(checkUpdateParam);*/
+    // -------------
+    // FREENECT PAGE
+    // -------------
     
     // Device type dropdown
     OP_StringParameter deviceTypeParam;
     deviceTypeParam.name = "Devicetype";
     deviceTypeParam.label = "Device Type";
+    deviceTypeParam.page = "Freenect";
     deviceTypeParam.defaultValue = "Kinect v1";
     const char* deviceTypeNames[] = {"Kinect v1", "Kinect v2"};
     const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
@@ -111,6 +94,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     OP_NumericParameter tiltAngleParam;
     tiltAngleParam.name = "Tilt";
     tiltAngleParam.label = "Tilt Angle";
+    tiltAngleParam.page = "Freenect";
     tiltAngleParam.defaultValues[0] = 0.0;
     tiltAngleParam.minValues[0] = -30.0;
     tiltAngleParam.maxValues[0] = 30.0;
@@ -118,10 +102,13 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     tiltAngleParam.maxSliders[0] = 30.0;
     manager->appendFloat(tiltAngleParam);
     
-    // Resolution limiter toggle - Limit resolution to 1280x720 for Kinect V2 instead of 1920x1080 (for non-commercial licenses)
+    // Resolution limiter toggle
+    // Limit resolution to 1280x720 for Kinect V2 instead of 1920x1080 (for non-commercial licenses)
+    // !!! Look into automating this based on requested output resolution
     OP_NumericParameter resLimitParam;
     resLimitParam.name = "Resolutionlimit";
     resLimitParam.label = "Resolution Limit";
+    resLimitParam.page = "Freenect";
     resLimitParam.defaultValues[0] = 1.0; // Default to enabled
     resLimitParam.minValues[0] = 0.0;
     resLimitParam.maxValues[0] = 1.0;
@@ -131,18 +118,57 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     resLimitParam.clampMaxes[0] = true;
     manager->appendToggle(resLimitParam);
     
-    // TO DO - Depth format dropdown (16-bit or 32-bit float)
+    // WIP - Depth format dropdown
     OP_StringParameter depthFormatParam;
     depthFormatParam.name = "Depthformat";
     depthFormatParam.label = "Depth Format";
+    depthFormatParam.page = "Freenect";
     depthFormatParam.defaultValue = "Raw (16-bit)";
-    const char* depthFormatNames[] = {"Raw (16-bit)", "Registered (32-bit float)", "Visualized (8-bit)"};
-    const char* depthFormatLabels[] = {"Raw (16-bit)", "Registered (32-bit float)", "Visualized (8-bit)"};
-    manager->appendMenu(depthFormatParam, 3, depthFormatNames, depthFormatLabels);
+    const char* depthFormatNames[] = {"Raw (16-bit)", "Visualized (8-bit)"};
+    const char* depthFormatLabels[] = {"Raw (16-bit)", "Visualized (8-bit)"};
+    manager->appendMenu(depthFormatParam, 2, depthFormatNames, depthFormatLabels);
+    
+    // TO DO - Distorted / undistorted depth dropdown
+    OP_StringParameter depthDistortParam;
+    depthDistortParam.name = "Depthdistortion";
+    depthDistortParam.label = "Depth Distortion";
+    depthDistortParam.page = "Freenect";
+    depthDistortParam.defaultValue = "Distorted";
+    const char* depthDistortNames[] = {"Distorted", "Undistorted"};
+    const char* depthDistortLabels[] = {"Distorted", "Undistorted"};
+    manager->appendMenu(depthDistortParam, 2, depthDistortNames, depthDistortLabels);
+    
+    // ----------
+    // ABOUT PAGE
+    // ----------
+    
+    // Temporarily disabled - Check for updates button
+    // It seems that accessing system APIs for network requests is not allowed in TouchDesigner plugins
+    // I already tried circumventing this but it doesn't work. I'll look into it again in the future.
+    /*OP_NumericParameter checkUpdateParam;
+    checkUpdateParam.name = "Checkforupdates";
+    checkUpdateParam.label = "Check for updates";
+    checkUpdateParam.defaultValues[0] = 0.0;
+    checkUpdateParam.minValues[0] = 0.0;
+    checkUpdateParam.maxValues[0] = 1.0;
+    checkUpdateParam.minSliders[0] = 0.0;
+    checkUpdateParam.maxSliders[0] = 1.0;
+    checkUpdateParam.clampMins[0] = true;
+    checkUpdateParam.clampMaxes[0] = true;
+    manager->appendMomentary(checkUpdateParam);*/
+    
+    // Show version in header
+    OP_StringParameter versionHeader;
+    versionHeader.name = "Version";
+    versionHeader.page = "About";
+    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " – by @stosumarte";
+    versionHeader.label = versionLabel.c_str();
+    manager->appendHeader(versionHeader);
     
     // Empty spacer header
     OP_StringParameter emptyHeader1;
     emptyHeader1.name = "Emptyheader1";
+    emptyHeader1.page = "About";
     std::string emptyLabel1 = std::string(" ");
     emptyHeader1.label = emptyLabel1.c_str();
     manager->appendHeader(emptyHeader1);
@@ -150,6 +176,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // Check for updates header
     OP_StringParameter updateHeader;
     updateHeader.name = "Updateheader";
+    updateHeader.page = "About";
     std::string updateLabel = std::string("Visit the following URL to check for updates:");
     updateHeader.label = updateLabel.c_str();
     manager->appendHeader(updateHeader);
@@ -157,6 +184,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     OP_StringParameter updateURLParam;
     updateURLParam.name = "Updateurl";
     updateURLParam.label = "Copy this → ";
+    updateURLParam.page = "About";
     updateURLParam.defaultValue = "github.com/stosumarte/FreenectTD/releases/latest";
     manager->appendString(updateURLParam);
 
@@ -460,14 +488,6 @@ bool FreenectTOP::initDeviceV2() {
         LOG("[FreenectTOP] initDeviceV2: eventThreadV2 joinable after = " + std::to_string(eventThreadV2.joinable()));
         PROFILE("initDeviceV2: eventThreadV2 started");
     }
-    // After opening device, create Registration object
-    if (fn2_device && !registrationV2) {
-        registrationV2 = new libfreenect2::Registration(
-            dev->getIrCameraParams(),
-            dev->getColorCameraParams()
-        );
-        LOG("[FreenectTOP] registrationV2 created");
-    }
     PROFILE("initDeviceV2: end");
     LOG("[FreenectTOP] initDeviceV2: end (success)");
     return true;
@@ -508,12 +528,6 @@ void FreenectTOP::cleanupDeviceV2() {
         LOG("[FreenectTOP] fn2_ctx deleted");
         fn2_ctx = nullptr;
         LOG("[FreenectTOP] fn2_ctx set to nullptr");
-    }
-    // Cleanup registrationV2
-    if (registrationV2) {
-        delete registrationV2;
-        registrationV2 = nullptr;
-        LOG("[FreenectTOP] registrationV2 deleted");
     }
     PROFILE("cleanupDeviceV2: end");
     LOG("[FreenectTOP] cleanupDeviceV2: end");
@@ -691,32 +705,6 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
                 output->uploadBuffer(&buf, info, nullptr);
             } else {
                 LOG("[FreenectTOP] executeV2: failed to create raw depth output buffer");
-            }
-        } else if (depthFormatStr == "Registered (32-bit float)" && registrationV2) {
-            LOG("[FreenectTOP] executeV2: outputting registered depth");
-            // Always use Kinect v2 registered resolution
-            const int regW = 512, regH = 424;
-            libfreenect2::Frame rgbFrame(outW, outH, 4, colorFrame.data());
-            libfreenect2::Frame depthFrameF(outDW, outDH, 2, reinterpret_cast<uint8_t*>(depthFrame.data()));
-            libfreenect2::Frame undistorted(regW, regH, 4);
-            libfreenect2::Frame registered(regW, regH, 4);
-            registrationV2->apply(&rgbFrame, &depthFrameF, &undistorted, &registered);
-            // Debug: log a few values
-            float* regData = reinterpret_cast<float*>(registered.data);
-            LOG(std::string("[FreenectTOP] Registered depth sample: ") + std::to_string(regData[0]) + ", " + std::to_string(regData[1000]) + ", " + std::to_string(regData[regW*regH/2]));
-            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(regW * regH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-            if (buf) {
-                std::memcpy(buf->data, registered.data, regW * regH * 4);
-                TD::TOP_UploadInfo info;
-                info.textureDesc.width = regW;
-                info.textureDesc.height = regH;
-                info.textureDesc.texDim = TD::OP_TexDim::e2D;
-                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono32Float;
-                info.colorBufferIndex = 1;
-                LOG("[FreenectTOP] executeV2: uploading registered depth buffer (float32, 512x424)");
-                output->uploadBuffer(&buf, info, nullptr);
-            } else {
-                LOG("[FreenectTOP] executeV2: failed to create registered depth output buffer");
             }
         } else if (depthFormatStr == "Visualized (8-bit)") {
             LOG("[FreenectTOP] executeV2: outputting visualized depth as RGB");
