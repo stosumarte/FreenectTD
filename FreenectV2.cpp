@@ -170,6 +170,40 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
     return true;
 }
 
+// Get undistorted depth frame using libfreenect2::Registration
+bool MyFreenect2Device::getUndistortedDepthFrame(std::vector<uint16_t>& out) {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!hasNewDepth || !device) return false;
+    // Get IR and color camera params
+    const libfreenect2::Freenect2Device::IrCameraParams& irParams = device->getIrCameraParams();
+    const libfreenect2::Freenect2Device::ColorCameraParams& colorParams = device->getColorCameraParams();
+    libfreenect2::Registration reg(irParams, colorParams);
+    // Create Frame for depth input and copy buffer
+    libfreenect2::Frame depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+    std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
+    libfreenect2::Frame undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+    // Only undistort, do not register
+    reg.undistortDepth(&depthFrame, &undistortedFrame);
+    
+    // Convert to OpenCV matrix for flipping
+    cv::Mat undistortedMat(DEPTH_HEIGHT, DEPTH_WIDTH, CV_32F, undistortedFrame.data);
+    cv::Mat flippedMat;
+    cv::flip(undistortedMat, flippedMat, -1); // Flip both horizontally and vertically
+    
+    // Convert flipped undistorted float depth to uint16_t
+    out.resize(DEPTH_WIDTH * DEPTH_HEIGHT);
+    for (size_t i = 0; i < DEPTH_WIDTH * DEPTH_HEIGHT; ++i) {
+        float d = flippedMat.at<float>(i);
+        uint16_t val = 0;
+        if (d > 100.0f && d < 4500.0f) {
+            val = static_cast<uint16_t>(d / 4500.0f * 65535.0f);
+        }
+        out[i] = val;
+    }
+    hasNewDepth = false;
+    return true;
+}
+
 // Set RGB buffer and mark as ready
 void MyFreenect2Device::setRGBBuffer(const std::vector<uint8_t>& buffer, bool markReady) {
     std::lock_guard<std::mutex> lock(mutex);
