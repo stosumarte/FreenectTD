@@ -29,8 +29,8 @@ public:
     void setupParameters  (TD::OP_ParameterManager* manager, void*) override;
 
 private:
-    const TD::OP_NodeInfo*                  myNodeInfo;
-    TD::TOP_Context*                        myContext;
+    const TD::OP_NodeInfo*                  fntdNodeInfo;
+    TD::TOP_Context*                        fntdContext;
     
     // Device type
     // 0 = Kinect v1
@@ -43,8 +43,8 @@ private:
     MyFreenectDevice*                       fn1_device;
     std::atomic<bool>                       fn1_rgbReady{false};
     std::atomic<bool>                       fn1_depthReady{false};
-    std::atomic<bool>                       runV1Events{false};
-    std::thread                             eventThreadV1;
+    std::atomic<bool>                       fn1_runEvents{false};
+    std::thread                             fn1_eventThread;
 
     // V2 device members
     libfreenect2::Freenect2*                fn2_ctx = nullptr;
@@ -53,16 +53,16 @@ private:
     std::string                             fn2_serial;
     std::atomic<bool>                       fn2_rgbReady{false};
     std::atomic<bool>                       fn2_depthReady{false};
-    std::atomic<bool>                       runV2Events{false};
-    libfreenect2::Registration*             registrationV2 = nullptr;
-    std::thread                             eventThreadV2;
+    std::atomic<bool>                       fn2_runEvents{false};
+    //libfreenect2::Registration*             fn2_registration = nullptr;
+    std::thread                             fn2_eventThread;
 
     // V2 background init members
-    std::atomic<bool>                       v2InitInProgress{false};
-    std::atomic<bool>                       v2InitDone{false};
-    std::atomic<bool>                       v2InitSuccess{false};
-    std::thread                             v2InitThread;
-    std::string                             v2InitErrorString;
+    //std::atomic<bool>                       v2InitInProgress{false};
+    //std::atomic<bool>                       v2InitDone{false};
+    //std::atomic<bool>                       v2InitSuccess{false};
+    //std::thread                             v2InitThread;
+    //std::string                             v2InitErrorString;
     
     // Add declarations for v2 enumeration thread helpers
     void startV2EnumThread();
