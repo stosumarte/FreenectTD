@@ -199,11 +199,7 @@ void FreenectTOP::getGeneralInfo(TD::TOP_GeneralInfo* ginfo, const TD::OP_Inputs
 // Constructor for FreenectTOP
 FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     : fntdNodeInfo(info),
-      fntdContext(context),
-      fn1_ctx(nullptr),
-      fn1_device(nullptr),
-      fn1_rgbReady(false),
-      fn1_depthReady(false)
+      fntdContext(context)
 {
     // Do not initialize device here, will be done in execute
 }

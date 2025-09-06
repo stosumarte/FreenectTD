@@ -39,8 +39,8 @@ private:
     std::string lastDeviceTypeStr;
     
     // V1 device members
-    freenect_context*                       fn1_ctx;
-    MyFreenectDevice*                       fn1_device;
+    freenect_context*                       fn1_ctx = nullptr;
+    MyFreenectDevice*                       fn1_device = nullptr;
     std::atomic<bool>                       fn1_rgbReady{false};
     std::atomic<bool>                       fn1_depthReady{false};
     std::atomic<bool>                       fn1_runEvents{false};
