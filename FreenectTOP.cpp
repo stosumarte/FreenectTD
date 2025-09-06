@@ -238,15 +238,15 @@ bool FreenectTOP::initDeviceV1() {
         fn1_device->startDepth();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-        runV1Events = true;
-        LOG("[FreenectTOP] initDeviceV1: runV1Events set to true");
-        PROFILE("initDeviceV1: starting eventThreadV1");
-        LOG(std::string("[FreenectTOP] initDeviceV1: eventThreadV1 joinable before = ") + std::to_string(eventThreadV1.joinable()));
-        eventThreadV1 = std::thread([this]() {
-            PROFILE("eventThreadV1: started");
-            LOG("[FreenectTOP] eventThreadV1: running");
-            while (runV1Events.load()) {
-                PROFILE("eventThreadV1: iteration start");
+        fn1_runEvents = true;
+        LOG("[FreenectTOP] initDeviceV1: fn1_runEvents set to true");
+        PROFILE("initDeviceV1: starting fn1_eventThread");
+        LOG(std::string("[FreenectTOP] initDeviceV1: fn1_eventThread joinable before = ") + std::to_string(fn1_eventThread.joinable()));
+        fn1_eventThread = std::thread([this]() {
+            PROFILE("fn1_eventThread: started");
+            LOG("[FreenectTOP] fn1_eventThread: running");
+            while (fn1_runEvents.load()) {
+                PROFILE("fn1_eventThread: iteration start");
                 std::lock_guard<std::mutex> lock(freenectMutex);
                 if (!fn1_ctx) break;
                 int err = freenect_process_events(fn1_ctx);
@@ -254,14 +254,14 @@ bool FreenectTOP::initDeviceV1() {
                     LOG("[FreenectTOP] Error in freenect_process_events");
                     break;
                 }
-                PROFILE("eventThreadV1: iteration end");
+                PROFILE("fn1_eventThread: iteration end");
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
-            PROFILE("eventThreadV1: exiting");
-            LOG("[FreenectTOP] eventThreadV1: exiting");
+            PROFILE("fn1_eventThread: exiting");
+            LOG("[FreenectTOP] fn1_eventThread: exiting");
         });
-        LOG(std::string("[FreenectTOP] initDeviceV1: eventThreadV1 joinable after = ") + std::to_string(eventThreadV1.joinable()));
-        PROFILE("initDeviceV1: eventThreadV1 started");
+        LOG(std::string("[FreenectTOP] initDeviceV1: fn1_eventThread joinable after = ") + std::to_string(fn1_eventThread.joinable()));
+        PROFILE("initDeviceV1: fn1_eventThread started");
     } catch (...) {
         LOG("[FreenectTOP] Failed to start device");
         errorString.clear();
@@ -280,14 +280,14 @@ bool FreenectTOP::initDeviceV1() {
 void FreenectTOP::cleanupDeviceV1() {
     LOG("[FreenectTOP] cleanupDeviceV1: start");
     PROFILE("cleanupDeviceV1: start");
-    LOG("[FreenectTOP] cleanupDeviceV1: runV1Events before = " + std::to_string(runV1Events.load()));
-    runV1Events = false;
-    LOG("[FreenectTOP] cleanupDeviceV1: runV1Events after = " + std::to_string(runV1Events.load()));
-    LOG("[FreenectTOP] cleanupDeviceV1: eventThreadV1 joinable = " + std::to_string(eventThreadV1.joinable()));
-    if (eventThreadV1.joinable()) {
-        PROFILE("cleanupDeviceV1: joining eventThreadV1");
-        eventThreadV1.join();
-        LOG("[FreenectTOP] eventThreadV1 joined");
+    LOG("[FreenectTOP] cleanupDeviceV1: fn1_runEvents before = " + std::to_string(fn1_runEvents.load()));
+    fn1_runEvents = false;
+    LOG("[FreenectTOP] cleanupDeviceV1: fn1_runEvents after = " + std::to_string(fn1_runEvents.load()));
+    LOG("[FreenectTOP] cleanupDeviceV1: fn1_eventThread joinable = " + std::to_string(fn1_eventThread.joinable()));
+    if (fn1_eventThread.joinable()) {
+        PROFILE("cleanupDeviceV1: joining fn1_eventThread");
+        fn1_eventThread.join();
+        LOG("[FreenectTOP] fn1_eventThread joined");
     }
     std::lock_guard<std::mutex> lock(freenectMutex);
     LOG(std::string("[FreenectTOP] cleanupDeviceV1: device before = ") + std::to_string(reinterpret_cast<uintptr_t>(fn1_device)));
@@ -465,29 +465,29 @@ bool FreenectTOP::initDeviceV2() {
     PROFILE("initDeviceV2: device started and enum thread stopped");
     LOG("[FreenectTOP] initDeviceV2: device started and enum thread stopped");
     // Start event thread for v2
-    LOG("[FreenectTOP] initDeviceV2: eventThreadV2 joinable before = " + std::to_string(eventThreadV2.joinable()));
-    if (!eventThreadV2.joinable()) {
-        runV2Events = true;
-        LOG("[FreenectTOP] initDeviceV2: runV2Events set to true");
-        PROFILE("initDeviceV2: starting eventThreadV2");
-        eventThreadV2 = std::thread([this]() {
-            PROFILE("eventThreadV2: started");
-            LOG("[FreenectTOP] eventThreadV2: running");
-            while (runV2Events.load()) {
-                PROFILE("eventThreadV2: iteration start");
+    LOG("[FreenectTOP] initDeviceV2: fn2_eventThread joinable before = " + std::to_string(fn2_eventThread.joinable()));
+    if (!fn2_eventThread.joinable()) {
+        fn2_runEvents = true;
+        LOG("[FreenectTOP] initDeviceV2: fn2_runEvents set to true");
+        PROFILE("initDeviceV2: starting fn2_eventThread");
+        fn2_eventThread = std::thread([this]() {
+            PROFILE("fn2_eventThread: started");
+            LOG("[FreenectTOP] fn2_eventThread: running");
+            while (fn2_runEvents.load()) {
+                PROFILE("fn2_eventThread: iteration start");
                 std::lock_guard<std::mutex> lock(freenectMutex);
                 if (fn2_device) {
                     fn2_device->processFrames();
                 } else {
                     LOG("[FreenectTOP] fn2_device is null in event thread");
                 }
-                PROFILE("eventThreadV2: iteration end");
+                PROFILE("fn2_eventThread: iteration end");
             }
-            PROFILE("eventThreadV2: exiting");
-            LOG("[FreenectTOP] eventThreadV2: exiting");
+            PROFILE("fn2_eventThread: exiting");
+            LOG("[FreenectTOP] fn2_eventThread: exiting");
         });
-        LOG("[FreenectTOP] initDeviceV2: eventThreadV2 joinable after = " + std::to_string(eventThreadV2.joinable()));
-        PROFILE("initDeviceV2: eventThreadV2 started");
+        LOG("[FreenectTOP] initDeviceV2: fn2_eventThread joinable after = " + std::to_string(fn2_eventThread.joinable()));
+        PROFILE("initDeviceV2: fn2_eventThread started");
     }
     PROFILE("initDeviceV2: end");
     LOG("[FreenectTOP] initDeviceV2: end (success)");
@@ -498,14 +498,14 @@ bool FreenectTOP::initDeviceV2() {
 void FreenectTOP::cleanupDeviceV2() {
     LOG("[FreenectTOP] cleanupDeviceV2: start");
     PROFILE("cleanupDeviceV2: start");
-    LOG("[FreenectTOP] cleanupDeviceV2: runV2Events before = " + std::to_string(runV2Events.load()));
-    runV2Events = false;
-    LOG("[FreenectTOP] cleanupDeviceV2: runV2Events after = " + std::to_string(runV2Events.load()));
-    LOG("[FreenectTOP] cleanupDeviceV2: eventThreadV2 joinable = " + std::to_string(eventThreadV2.joinable()));
+    LOG("[FreenectTOP] cleanupDeviceV2: fn2_runEvents before = " + std::to_string(fn2_runEvents.load()));
+    fn2_runEvents = false;
+    LOG("[FreenectTOP] cleanupDeviceV2: fn2_runEvents after = " + std::to_string(fn2_runEvents.load()));
+    LOG("[FreenectTOP] cleanupDeviceV2: fn2_eventThread joinable = " + std::to_string(fn2_eventThread.joinable()));
     LOG("[FreenectTOP] Stopping event thread for v2");
-    if (eventThreadV2.joinable()) {
-        PROFILE("cleanupDeviceV2: joining eventThreadV2");
-        eventThreadV2.join();
+    if (fn2_eventThread.joinable()) {
+        PROFILE("cleanupDeviceV2: joining fn2_eventThread");
+        fn2_eventThread.join();
         LOG("[FreenectTOP] Event thread for v2 stopped (joinable and joined)");
     }
     std::lock_guard<std::mutex> lock(freenectMutex);
@@ -536,8 +536,8 @@ void FreenectTOP::cleanupDeviceV2() {
 
 // Constructor for FreenectTOP
 FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
-    : myNodeInfo(info),
-      myContext(context),
+    : fntdNodeInfo(info),
+      fntdContext(context),
       fn1_ctx(nullptr),
       fn1_device(nullptr),
       fn1_rgbReady(false),
@@ -596,7 +596,7 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     if (fn1_device->getColorFrame(colorFrame)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating color output buffer");
-        TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(colorWidth * colorHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(colorWidth * colorHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             LOG("[FreenectTOP] executeV1: copying color frame data to buffer");
             std::memcpy(buf->data, colorFrame.data(), colorWidth * colorHeight * 4);
@@ -616,7 +616,7 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     if (fn1_device->getDepthFrame(depthFrame)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating depth output buffer");
-        TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             LOG("[FreenectTOP] executeV1: copying depth frame data to buffer");
             std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
@@ -668,7 +668,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     if (gotColor) {
         errorString.clear();
         LOG("[FreenectTOP] executeV2: creating color output buffer");
-        TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outW * outH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(outW * outH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             LOG("[FreenectTOP] executeV2: copying color frame data to buffer");
             std::memcpy(buf->data, colorFrame.data(), outW * outH * 4);
@@ -703,7 +703,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         errorString.clear();
         if (depthFormatStr == "Raw (16-bit)") {
             LOG("[FreenectTOP] executeV2: outputting raw depth");
-            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext ? myContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
             if (buf) {
                 std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
                 TD::TOP_UploadInfo info;
@@ -756,8 +756,8 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
                     visualized[vi + 3] = 255;
                 }
             }
-            TD::OP_SmartRef<TD::TOP_Buffer> buf = myContext
-                ? myContext->createOutputBuffer(outDW * outDH * 4, TD::TOP_BufferFlags::None, nullptr)
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext
+                ? fntdContext->createOutputBuffer(outDW * outDH * 4, TD::TOP_BufferFlags::None, nullptr)
                 : nullptr;
             if (buf) {
                 std::memcpy(buf->data, visualized.data(), outDW * outDH * 4);
@@ -884,7 +884,7 @@ void FreenectTOP::uploadFallbackBuffer() {
     int fallbackWidth = 256, fallbackHeight = 256;
     if (!fallbackBuffer) {
         std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
-        fallbackBuffer = myContext ? myContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        fallbackBuffer = fntdContext ? fntdContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (fallbackBuffer) {
             std::memcpy(fallbackBuffer->data, black.data(), fallbackWidth * fallbackHeight * 4);
         }
