@@ -54,8 +54,8 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // FREENECT PAGE
     // -------------
     
-    // TODO - Active toggle
-    /*OP_NumericParameter activeParam;
+    // Active toggle
+    OP_NumericParameter activeParam;
     activeParam.name = "Active";
     activeParam.label = "Active";
     activeParam.page = "Freenect";
@@ -66,9 +66,9 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     activeParam.maxSliders[0] = 1.0;
     activeParam.clampMins[0] = true;
     activeParam.clampMaxes[0] = true;
-    manager->appendToggle(activeParam);*/
+    manager->appendToggle(activeParam);
     
-    // Device type dropdown
+    // Hardware version dropdown
     OP_StringParameter deviceTypeParam;
     deviceTypeParam.name = "Hardwareversion";
     deviceTypeParam.label = "Hardware Version";
@@ -802,6 +802,15 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     if (!inputs) {
         LOG("[FreenectTOP] ERROR: inputs is null!");
+        return;
+    }
+    
+    // Check if the plugin is active
+    if (inputs->getParInt("Active") == 0) {
+        // If not active, upload a black buffer and return
+        LOG("[FreenectTOP] Not active, skipping device initialization and execution");
+        uploadFallbackBuffer();
+        errorString.clear();
         return;
     }
     
