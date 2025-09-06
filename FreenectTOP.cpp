@@ -834,12 +834,14 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     // Check if the plugin is active
     if (isActive == false) {
-        // If not active, upload a black buffer and return
+        // If not active, upload a black buffer and return, keep dynamic parameters updated
         LOG("[FreenectTOP] Not active, skipping device initialization and execution");
         uploadFallbackBuffer();
-        errorString.clear();
         dynamicParameterEnables(deviceType, inputs);
+        errorString.clear();
+        return;
     }
+    
     else {
         
         dynamicParameterEnables(deviceType, inputs);
