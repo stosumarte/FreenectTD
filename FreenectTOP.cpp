@@ -196,6 +196,26 @@ void FreenectTOP::getGeneralInfo(TD::TOP_GeneralInfo* ginfo, const TD::OP_Inputs
     ginfo->cookEveryFrameIfAsked = true;
 }
 
+// Constructor for FreenectTOP
+FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
+    : fntdNodeInfo(info),
+      fntdContext(context),
+      fn1_ctx(nullptr),
+      fn1_device(nullptr),
+      fn1_rgbReady(false),
+      fn1_depthReady(false)
+{
+    // Do not initialize device here, will be done in execute
+}
+
+// Destructor for FreenectTOP
+FreenectTOP::~FreenectTOP() {
+    LOG("[FreenectTOP] Destructor called, cleaning up devices");
+    cleanupDeviceV1();
+    cleanupDeviceV2();
+    fallbackBuffer = nullptr; // Release fallback buffer
+}
+
 // Init for Kinect v1 (libfreenect)
 bool FreenectTOP::initDeviceV1() {
     LOG("[FreenectTOP] initDeviceV1: start");
@@ -534,25 +554,7 @@ void FreenectTOP::cleanupDeviceV2() {
     LOG("[FreenectTOP] cleanupDeviceV2: end");
 }
 
-// Constructor for FreenectTOP
-FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
-    : fntdNodeInfo(info),
-      fntdContext(context),
-      fn1_ctx(nullptr),
-      fn1_device(nullptr),
-      fn1_rgbReady(false),
-      fn1_depthReady(false)
-{
-    // Do not initialize device here, will be done in execute
-}
 
-// Destructor for FreenectTOP
-FreenectTOP::~FreenectTOP() {
-    LOG("[FreenectTOP] Destructor called, cleaning up devices");
-    cleanupDeviceV1();
-    cleanupDeviceV2();
-    fallbackBuffer = nullptr; // Release fallback buffer
-}
 
 // Execute method for Kinect v1 (libfreenect)
 void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
