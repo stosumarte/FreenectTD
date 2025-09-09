@@ -6,12 +6,6 @@
 //
 
 #include "FreenectV2.h"
-#include <cstring>
-#include <algorithm>
-#include <iostream>
-#include <thread>
-#include <opencv.hpp>
-//#import <Accelerate/Accelerate.h>
 
 // MyFreenect2Device class constructor
 MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
@@ -124,7 +118,7 @@ bool MyFreenect2Device::getDepth(std::vector<float>& out) {
 }
 
 // OPENCV - Get color frame with flipping and optional downscaling
-bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale) {
+/*bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale) {
     std::lock_guard<std::mutex> lock(mutex);
     
     if (!hasNewRGB) return false;
@@ -143,6 +137,37 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale)
     out.assign(dst.data, dst.data + dst.total() * dst.elemSize());
     hasNewRGB = false;
     return true;
+}*/
+
+
+// CImg - Get color frame with flipping and optional downscaling
+bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale) {
+    std::lock_guard<std::mutex> lock(mutex);
+
+    if (!hasNewRGB) return false;
+
+    // Create CImg from BGRA buffer
+    cimg_library::CImg<uint8_t> img(rgbBuffer.data(), WIDTH, HEIGHT, 1, 4);
+
+    // Downscale if requested
+    if (downscale) {
+        img.resize(SCALED_WIDTH, SCALED_HEIGHT, 1, 4, 3);
+    }
+
+    // Flip horizontally and vertically
+    img.mirror('x').mirror('y');
+
+    // Convert BGRA to RGBA (swap channels 0 and 2)
+    cimg_forXY(img, x, y) {
+        std::swap(img(x, y, 0, 0), img(x, y, 0, 2));
+    }
+
+    // Copy data to out
+    out.resize(img.width() * img.height() * 4);
+    std::memcpy(out.data(), img.data(), out.size());
+
+    hasNewRGB = false;
+    return true;
 }
 
 // Get depth frame
@@ -152,13 +177,22 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
     if (!hasNewDepth) return false;
 
     int width = DEPTH_WIDTH, height = DEPTH_HEIGHT;
-    cv::Mat src(height, width, CV_32F, depthBuffer.data());
+    
+    /*cv::Mat src(height, width, CV_32F, depthBuffer.data());
     cv::Mat flipped;
-    cv::flip(src, flipped, -1); // Flip both horizontally and vertically
+    cv::flip(src, flipped, -1); // Flip both horizontally and vertically*/
+    
+    // Using CImg for flipping
+    // Create a CImg image from the depth buffer
+    cimg_library::CImg<float> src(depthBuffer.data(), width, height, 1, 1, true);
+
+    // Flip both horizontally and vertically
+    cimg_library::CImg<float> flipped = src.get_mirror('x').mirror('y');
+    
 
     out.resize(width * height);
     for (int i = 0; i < width * height; ++i) {
-        float d = flipped.at<float>(i);
+        float d = flipped.data()[i];
         uint16_t val = 0;
         if (d > 100.0f && d < 4500.0f) {
             val = static_cast<uint16_t>(d / 4500.0f * 65535.0f);
@@ -173,25 +207,31 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
 // Get undistorted depth frame using libfreenect2::Registration
 bool MyFreenect2Device::getUndistortedDepthFrame(std::vector<uint16_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
+    
     if (!hasNewDepth || !device) return false;
+    
+    int width = DEPTH_WIDTH, height = DEPTH_HEIGHT;
+    
     // Get IR and color camera params
     const libfreenect2::Freenect2Device::IrCameraParams& irParams = device->getIrCameraParams();
     const libfreenect2::Freenect2Device::ColorCameraParams& colorParams = device->getColorCameraParams();
     libfreenect2::Registration reg(irParams, colorParams);
+    
     // Create Frame for depth input and copy buffer
     libfreenect2::Frame depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
     std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
     libfreenect2::Frame undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+    
     // Only undistort, do not register
     reg.undistortDepth(&depthFrame, &undistortedFrame);
     
     // Convert to OpenCV matrix for flipping
-    cv::Mat undistortedMat(DEPTH_HEIGHT, DEPTH_WIDTH, CV_32F, undistortedFrame.data);
+    /*cv::Mat undistortedMat(DEPTH_HEIGHT, DEPTH_WIDTH, CV_32F, undistortedFrame.data);
     cv::Mat flippedMat;
-    cv::flip(undistortedMat, flippedMat, -1); // Flip both horizontally and vertically
+    cv::flip(undistortedMat, flippedMat, -1); // Flip both horizontally and vertically*/
     
     // Convert flipped undistorted float depth to uint16_t
-    out.resize(DEPTH_WIDTH * DEPTH_HEIGHT);
+    /*out.resize(DEPTH_WIDTH * DEPTH_HEIGHT);
     for (size_t i = 0; i < DEPTH_WIDTH * DEPTH_HEIGHT; ++i) {
         float d = flippedMat.at<float>(i);
         uint16_t val = 0;
@@ -199,7 +239,26 @@ bool MyFreenect2Device::getUndistortedDepthFrame(std::vector<uint16_t>& out) {
             val = static_cast<uint16_t>(d / 4500.0f * 65535.0f);
         }
         out[i] = val;
+    }*/
+    
+    // Using CImg for flipping
+    // Create a CImg image from the depth buffer
+    cimg_library::CImg<float> src(depthBuffer.data(), width, height, 1, 1, true);
+
+    // Flip both horizontally and vertically
+    cimg_library::CImg<float> flipped = src.get_mirror('x').mirror('y');
+    
+    out.resize(width * height);
+    for (int i = 0; i < width * height; ++i) {
+        float d = flipped.data()[i];
+        uint16_t val = 0;
+        if (d > 100.0f && d < 4500.0f) {
+            val = static_cast<uint16_t>(d / 4500.0f * 65535.0f);
+        }
+        out[i] = val;
     }
+    
+    
     hasNewDepth = false;
     return true;
 }

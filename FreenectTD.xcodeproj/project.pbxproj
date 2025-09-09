@@ -8,15 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
-		81482C4F2E7018C8006EE51D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81D935B92E69D61600432C95 /* CoreFoundation.framework */; };
-		81482C512E7018DC006EE51D /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C502E7018DC006EE51D /* IOKit.framework */; };
-		81482C532E7018E9006EE51D /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C522E7018E9006EE51D /* CoreMedia.framework */; };
-		81482C552E7018FB006EE51D /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C542E7018FA006EE51D /* VideoToolbox.framework */; };
-		81482C572E70191A006EE51D /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C562E70191A006EE51D /* CoreVideo.framework */; };
-		81482C592E701927006EE51D /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C582E701927006EE51D /* Security.framework */; };
-		81482C5B2E70192F006EE51D /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C5A2E70192F006EE51D /* OpenCL.framework */; };
-		81482C5F2E7019B7006EE51D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C5E2E7019B7006EE51D /* CoreGraphics.framework */; };
-		81482C662E701A08006EE51D /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C652E701A08006EE51D /* AppKit.framework */; };
+		81483D502E7071C8006EE51D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81483D4F2E7071C8006EE51D /* CoreFoundation.framework */; };
+		81483D522E7071CD006EE51D /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81483D512E7071CD006EE51D /* CoreVideo.framework */; };
+		81483D542E7071D7006EE51D /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81483D532E7071D7006EE51D /* CoreMedia.framework */; };
+		81483D562E7071E6006EE51D /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81483D552E7071E6006EE51D /* IOKit.framework */; };
+		81483D582E7071F2006EE51D /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81483D572E7071F2006EE51D /* Security.framework */; };
+		81483D5A2E7071F9006EE51D /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81483D592E7071F9006EE51D /* VideoToolbox.framework */; };
+		81483D5C2E707222006EE51D /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81483D5B2E707222006EE51D /* OpenCL.framework */; };
 		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
 		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
 /* End PBXBuildFile section */
@@ -37,23 +35,17 @@
 /* Begin PBXFileReference section */
 		811030EB2E36883D001975DE /* FreenectTOP.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTOP.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8120BA1B2E61E88100126067 /* logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logger.h; sourceTree = "<group>"; };
-		81482C502E7018DC006EE51D /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
-		81482C522E7018E9006EE51D /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
-		81482C542E7018FA006EE51D /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
-		81482C562E70191A006EE51D /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
-		81482C582E701927006EE51D /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
-		81482C5A2E70192F006EE51D /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
-		81482C5E2E7019B7006EE51D /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		81482C602E7019C6006EE51D /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
-		81482C622E7019D0006EE51D /* ClassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ClassKit.framework; path = System/Library/Frameworks/ClassKit.framework; sourceTree = SDKROOT; };
-		81482C652E701A08006EE51D /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		81483D4F2E7071C8006EE51D /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		81483D512E7071CD006EE51D /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		81483D532E7071D7006EE51D /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		81483D552E7071E6006EE51D /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		81483D572E7071F2006EE51D /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		81483D592E7071F9006EE51D /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
+		81483D5B2E707222006EE51D /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
 		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
 		81BC12DF2E379780006C281E /* CPlusPlus_Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPlusPlus_Common.h; sourceTree = "<group>"; };
-		81D935B92E69D61600432C95 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		81D935BB2E69D61D00432C95 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
-		81FC70F92E3CC608007447B2 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
 		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
@@ -73,15 +65,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				81482C662E701A08006EE51D /* AppKit.framework in Frameworks */,
-				81482C4F2E7018C8006EE51D /* CoreFoundation.framework in Frameworks */,
-				81482C5F2E7019B7006EE51D /* CoreGraphics.framework in Frameworks */,
-				81482C532E7018E9006EE51D /* CoreMedia.framework in Frameworks */,
-				81482C572E70191A006EE51D /* CoreVideo.framework in Frameworks */,
-				81482C512E7018DC006EE51D /* IOKit.framework in Frameworks */,
-				81482C5B2E70192F006EE51D /* OpenCL.framework in Frameworks */,
-				81482C552E7018FB006EE51D /* VideoToolbox.framework in Frameworks */,
-				81482C592E701927006EE51D /* Security.framework in Frameworks */,
+				81483D542E7071D7006EE51D /* CoreMedia.framework in Frameworks */,
+				81483D502E7071C8006EE51D /* CoreFoundation.framework in Frameworks */,
+				81483D5A2E7071F9006EE51D /* VideoToolbox.framework in Frameworks */,
+				81483D5C2E707222006EE51D /* OpenCL.framework in Frameworks */,
+				81483D562E7071E6006EE51D /* IOKit.framework in Frameworks */,
+				81483D582E7071F2006EE51D /* Security.framework in Frameworks */,
+				81483D522E7071CD006EE51D /* CoreVideo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,19 +81,13 @@
 		8112B5972E23E1140089336F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				81482C652E701A08006EE51D /* AppKit.framework */,
-				81482C622E7019D0006EE51D /* ClassKit.framework */,
-				81482C602E7019C6006EE51D /* AppleScriptObjC.framework */,
-				81482C5E2E7019B7006EE51D /* CoreGraphics.framework */,
-				81482C5A2E70192F006EE51D /* OpenCL.framework */,
-				81482C582E701927006EE51D /* Security.framework */,
-				81482C562E70191A006EE51D /* CoreVideo.framework */,
-				81482C542E7018FA006EE51D /* VideoToolbox.framework */,
-				81482C522E7018E9006EE51D /* CoreMedia.framework */,
-				81482C502E7018DC006EE51D /* IOKit.framework */,
-				81D935BB2E69D61D00432C95 /* ApplicationServices.framework */,
-				81D935B92E69D61600432C95 /* CoreFoundation.framework */,
-				81FC70F92E3CC608007447B2 /* Accelerate.framework */,
+				81483D5B2E707222006EE51D /* OpenCL.framework */,
+				81483D592E7071F9006EE51D /* VideoToolbox.framework */,
+				81483D572E7071F2006EE51D /* Security.framework */,
+				81483D552E7071E6006EE51D /* IOKit.framework */,
+				81483D532E7071D7006EE51D /* CoreMedia.framework */,
+				81483D512E7071CD006EE51D /* CoreVideo.framework */,
+				81483D4F2E7071C8006EE51D /* CoreFoundation.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -354,9 +338,8 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/include/libs",
-					"$(PROJECT_DIR)/include/libs/opencv",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = "1.0.0-beta";
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
@@ -390,9 +373,8 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/include/libs",
-					"$(PROJECT_DIR)/include/libs/opencv",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = "1.0.0-beta";
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";

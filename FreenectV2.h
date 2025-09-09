@@ -14,6 +14,15 @@
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 
+#include <cstring>
+#include <algorithm>
+#include <iostream>
+#include <thread>
+//#include <opencv.hpp>
+
+#define cimg_display 0
+#include "CImg.h"
+
 class MyFreenect2Device {
 public:
     static constexpr int WIDTH = 1920;
