@@ -23,6 +23,10 @@
 		81482C5B2E70192F006EE51D /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C5A2E70192F006EE51D /* OpenCL.framework */; };
 		81482C5F2E7019B7006EE51D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C5E2E7019B7006EE51D /* CoreGraphics.framework */; };
 		81482C662E701A08006EE51D /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C652E701A08006EE51D /* AppKit.framework */; };
+		814835B62E701C5D006EE51D /* libglfw3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 814831452E701C5D006EE51D /* libglfw3.a */; };
+		814835BF2E701C5D006EE51D /* libusb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 814831462E701C5D006EE51D /* libusb.a */; };
+		814835C62E701C5D006EE51D /* libfreenect2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 814831442E701C5D006EE51D /* libfreenect2.a */; };
+		814835DD2E701C5D006EE51D /* libfreenect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 814831432E701C5D006EE51D /* libfreenect.a */; };
 		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
 		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
 /* End PBXBuildFile section */
@@ -60,6 +64,24 @@
 		81482C622E7019D0006EE51D /* ClassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ClassKit.framework; path = System/Library/Frameworks/ClassKit.framework; sourceTree = SDKROOT; };
 		81482C642E7019D9006EE51D /* libobjc.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libobjc.tbd; path = usr/lib/libobjc.tbd; sourceTree = SDKROOT; };
 		81482C652E701A08006EE51D /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		8148312E2E701C5D006EE51D /* libfreenect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libfreenect.h; sourceTree = "<group>"; };
+		8148312F2E701C5D006EE51D /* libfreenect.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libfreenect.hpp; sourceTree = "<group>"; };
+		814831352E701C5D006EE51D /* color_settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = color_settings.h; sourceTree = "<group>"; };
+		814831362E701C5D006EE51D /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
+		814831372E701C5D006EE51D /* config.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = config.h.in; sourceTree = "<group>"; };
+		814831382E701C5D006EE51D /* export.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = export.h; sourceTree = "<group>"; };
+		814831392E701C5D006EE51D /* frame_listener.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = frame_listener.hpp; sourceTree = "<group>"; };
+		8148313A2E701C5D006EE51D /* frame_listener_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = frame_listener_impl.h; sourceTree = "<group>"; };
+		8148313B2E701C5D006EE51D /* led_settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = led_settings.h; sourceTree = "<group>"; };
+		8148313C2E701C5D006EE51D /* libfreenect2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libfreenect2.hpp; sourceTree = "<group>"; };
+		8148313D2E701C5D006EE51D /* logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logger.h; sourceTree = "<group>"; };
+		8148313E2E701C5D006EE51D /* packet_pipeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = packet_pipeline.h; sourceTree = "<group>"; };
+		8148313F2E701C5D006EE51D /* registration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = registration.h; sourceTree = "<group>"; };
+		814831412E701C5D006EE51D /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libusb.h; sourceTree = "<group>"; };
+		814831432E701C5D006EE51D /* libfreenect.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreenect.a; sourceTree = "<group>"; };
+		814831442E701C5D006EE51D /* libfreenect2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreenect2.a; sourceTree = "<group>"; };
+		814831452E701C5D006EE51D /* libglfw3.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libglfw3.a; sourceTree = "<group>"; };
+		814831462E701C5D006EE51D /* libusb.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libusb.a; sourceTree = "<group>"; };
 		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
@@ -73,28 +95,6 @@
 		81FD1DEB2E36519700900396 /* FreenectV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV2.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		81482C802E701B2C006EE51D /* Exceptions for "include" folder in "FreenectTOP" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				headers/libfreenect2/examples/Protonect.cpp,
-				headers/libfreenect2/examples/viewer.cpp,
-			);
-			target = 81E3B9612DC3687500B0413C /* FreenectTOP */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		81735C062E228BE300A275AF /* include */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				81482C802E701B2C006EE51D /* Exceptions for "include" folder in "FreenectTOP" target */,
-			);
-			path = include;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
-
 /* Begin PBXFrameworksBuildPhase section */
 		81E3B95F2DC3687500B0413C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -102,6 +102,10 @@
 			files = (
 				81482C662E701A08006EE51D /* AppKit.framework in Frameworks */,
 				81482C4F2E7018C8006EE51D /* CoreFoundation.framework in Frameworks */,
+				814835B62E701C5D006EE51D /* libglfw3.a in Frameworks */,
+				814835BF2E701C5D006EE51D /* libusb.a in Frameworks */,
+				814835C62E701C5D006EE51D /* libfreenect2.a in Frameworks */,
+				814835DD2E701C5D006EE51D /* libfreenect.a in Frameworks */,
 				81482C5F2E7019B7006EE51D /* CoreGraphics.framework in Frameworks */,
 				81482C532E7018E9006EE51D /* CoreMedia.framework in Frameworks */,
 				81482C572E70191A006EE51D /* CoreVideo.framework in Frameworks */,
@@ -142,6 +146,63 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		814831302E701C5D006EE51D /* libfreenect */ = {
+			isa = PBXGroup;
+			children = (
+				8148312E2E701C5D006EE51D /* libfreenect.h */,
+				8148312F2E701C5D006EE51D /* libfreenect.hpp */,
+			);
+			path = libfreenect;
+			sourceTree = "<group>";
+		};
+		814831402E701C5D006EE51D /* libfreenect2 */ = {
+			isa = PBXGroup;
+			children = (
+				814831352E701C5D006EE51D /* color_settings.h */,
+				814831362E701C5D006EE51D /* config.h */,
+				814831372E701C5D006EE51D /* config.h.in */,
+				814831382E701C5D006EE51D /* export.h */,
+				814831392E701C5D006EE51D /* frame_listener.hpp */,
+				8148313A2E701C5D006EE51D /* frame_listener_impl.h */,
+				8148313B2E701C5D006EE51D /* led_settings.h */,
+				8148313C2E701C5D006EE51D /* libfreenect2.hpp */,
+				8148313D2E701C5D006EE51D /* logger.h */,
+				8148313E2E701C5D006EE51D /* packet_pipeline.h */,
+				8148313F2E701C5D006EE51D /* registration.h */,
+			);
+			path = libfreenect2;
+			sourceTree = "<group>";
+		};
+		814831422E701C5D006EE51D /* headers */ = {
+			isa = PBXGroup;
+			children = (
+				814831302E701C5D006EE51D /* libfreenect */,
+				814831402E701C5D006EE51D /* libfreenect2 */,
+				814831412E701C5D006EE51D /* libusb.h */,
+			);
+			path = headers;
+			sourceTree = "<group>";
+		};
+		814831472E701C5D006EE51D /* libs */ = {
+			isa = PBXGroup;
+			children = (
+				814831432E701C5D006EE51D /* libfreenect.a */,
+				814831442E701C5D006EE51D /* libfreenect2.a */,
+				814831452E701C5D006EE51D /* libglfw3.a */,
+				814831462E701C5D006EE51D /* libusb.a */,
+			);
+			path = libs;
+			sourceTree = "<group>";
+		};
+		814834F92E701C5D006EE51D /* include */ = {
+			isa = PBXGroup;
+			children = (
+				814831422E701C5D006EE51D /* headers */,
+				814831472E701C5D006EE51D /* libs */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
@@ -154,7 +215,7 @@
 				8120BA1B2E61E88100126067 /* logger.h */,
 				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
 				81BC12DF2E379780006C281E /* CPlusPlus_Common.h */,
-				81735C062E228BE300A275AF /* include */,
+				814834F92E701C5D006EE51D /* include */,
 				8112B5972E23E1140089336F /* Frameworks */,
 				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
 			);
@@ -174,9 +235,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				81735C062E228BE300A275AF /* include */,
 			);
 			name = FreenectTOP;
 			packageProductDependencies = (
@@ -378,7 +436,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"/opt/homebrew/Cellar/opencv/**",
-					"/opt/homebrew/opt/libusb/include/libusb-1.0",
 					"$(PROJECT_DIR)/include/headers",
 					/usr/local/include,
 				);
@@ -389,14 +446,10 @@
 				LD_RUNPATH_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/opt/homebrew/Cellar/libusb/**",
 					"/opt/homebrew/Cellar/opencv/**",
-					"$(PROJECT_DIR)/VendorLibs_static",
-					"/opt/homebrew/Cellar/opencv/4.12.0_10/lib/**",
-					"$(PROJECT_DIR)/VendorLibs",
 					"$(PROJECT_DIR)/include/libs",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = "1.0.0-beta";
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
@@ -420,7 +473,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"/opt/homebrew/Cellar/opencv/**",
-					"/opt/homebrew/opt/libusb/include/libusb-1.0",
 					"$(PROJECT_DIR)/include/headers",
 					/usr/local/include,
 				);
@@ -431,14 +483,10 @@
 				LD_RUNPATH_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/opt/homebrew/Cellar/libusb/**",
 					"/opt/homebrew/Cellar/opencv/**",
-					"$(PROJECT_DIR)/VendorLibs_static",
-					"/opt/homebrew/Cellar/opencv/4.12.0_10/lib/**",
-					"$(PROJECT_DIR)/VendorLibs",
 					"$(PROJECT_DIR)/include/libs",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = "1.0.0-beta";
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
