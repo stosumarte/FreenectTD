@@ -8,12 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
-		81482C442E7017B0006EE51D /* libopencv_core.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C432E7017B0006EE51D /* libopencv_core.4.12.0.dylib */; };
-		81482C462E7017C0006EE51D /* libopencv_highgui.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C452E7017C0006EE51D /* libopencv_highgui.4.12.0.dylib */; };
-		81482C482E7017CE006EE51D /* libopencv_imgproc.4.12.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C472E7017CE006EE51D /* libopencv_imgproc.4.12.0.dylib */; };
-		81482C492E7017EE006EE51D /* libopencv_core.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81482C432E7017B0006EE51D /* libopencv_core.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		81482C4A2E7017EF006EE51D /* libopencv_highgui.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81482C452E7017C0006EE51D /* libopencv_highgui.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		81482C4B2E7017F0006EE51D /* libopencv_imgproc.4.12.0.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 81482C472E7017CE006EE51D /* libopencv_imgproc.4.12.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		81482C4F2E7018C8006EE51D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81D935B92E69D61600432C95 /* CoreFoundation.framework */; };
 		81482C512E7018DC006EE51D /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C502E7018DC006EE51D /* IOKit.framework */; };
 		81482C532E7018E9006EE51D /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C522E7018E9006EE51D /* CoreMedia.framework */; };
@@ -23,10 +17,6 @@
 		81482C5B2E70192F006EE51D /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C5A2E70192F006EE51D /* OpenCL.framework */; };
 		81482C5F2E7019B7006EE51D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C5E2E7019B7006EE51D /* CoreGraphics.framework */; };
 		81482C662E701A08006EE51D /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C652E701A08006EE51D /* AppKit.framework */; };
-		814835B62E701C5D006EE51D /* libglfw3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 814831452E701C5D006EE51D /* libglfw3.a */; };
-		814835BF2E701C5D006EE51D /* libusb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 814831462E701C5D006EE51D /* libusb.a */; };
-		814835C62E701C5D006EE51D /* libfreenect2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 814831442E701C5D006EE51D /* libfreenect2.a */; };
-		814835DD2E701C5D006EE51D /* libfreenect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 814831432E701C5D006EE51D /* libfreenect.a */; };
 		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
 		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
 /* End PBXBuildFile section */
@@ -38,9 +28,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				81482C492E7017EE006EE51D /* libopencv_core.4.12.0.dylib in Embed Libraries */,
-				81482C4A2E7017EF006EE51D /* libopencv_highgui.4.12.0.dylib in Embed Libraries */,
-				81482C4B2E7017F0006EE51D /* libopencv_imgproc.4.12.0.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -50,9 +37,6 @@
 /* Begin PBXFileReference section */
 		811030EB2E36883D001975DE /* FreenectTOP.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTOP.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8120BA1B2E61E88100126067 /* logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logger.h; sourceTree = "<group>"; };
-		81482C432E7017B0006EE51D /* libopencv_core.4.12.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_core.4.12.0.dylib; path = /opt/homebrew/Cellar/opencv/4.12.0_10/lib/libopencv_core.4.12.0.dylib; sourceTree = "<absolute>"; };
-		81482C452E7017C0006EE51D /* libopencv_highgui.4.12.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_highgui.4.12.0.dylib; path = /opt/homebrew/Cellar/opencv/4.12.0_10/lib/libopencv_highgui.4.12.0.dylib; sourceTree = "<absolute>"; };
-		81482C472E7017CE006EE51D /* libopencv_imgproc.4.12.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_imgproc.4.12.0.dylib; path = /opt/homebrew/Cellar/opencv/4.12.0_10/lib/libopencv_imgproc.4.12.0.dylib; sourceTree = "<absolute>"; };
 		81482C502E7018DC006EE51D /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		81482C522E7018E9006EE51D /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		81482C542E7018FA006EE51D /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
@@ -62,26 +46,7 @@
 		81482C5E2E7019B7006EE51D /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		81482C602E7019C6006EE51D /* AppleScriptObjC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppleScriptObjC.framework; path = System/Library/Frameworks/AppleScriptObjC.framework; sourceTree = SDKROOT; };
 		81482C622E7019D0006EE51D /* ClassKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ClassKit.framework; path = System/Library/Frameworks/ClassKit.framework; sourceTree = SDKROOT; };
-		81482C642E7019D9006EE51D /* libobjc.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libobjc.tbd; path = usr/lib/libobjc.tbd; sourceTree = SDKROOT; };
 		81482C652E701A08006EE51D /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
-		8148312E2E701C5D006EE51D /* libfreenect.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libfreenect.h; sourceTree = "<group>"; };
-		8148312F2E701C5D006EE51D /* libfreenect.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libfreenect.hpp; sourceTree = "<group>"; };
-		814831352E701C5D006EE51D /* color_settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = color_settings.h; sourceTree = "<group>"; };
-		814831362E701C5D006EE51D /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
-		814831372E701C5D006EE51D /* config.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = config.h.in; sourceTree = "<group>"; };
-		814831382E701C5D006EE51D /* export.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = export.h; sourceTree = "<group>"; };
-		814831392E701C5D006EE51D /* frame_listener.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = frame_listener.hpp; sourceTree = "<group>"; };
-		8148313A2E701C5D006EE51D /* frame_listener_impl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = frame_listener_impl.h; sourceTree = "<group>"; };
-		8148313B2E701C5D006EE51D /* led_settings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = led_settings.h; sourceTree = "<group>"; };
-		8148313C2E701C5D006EE51D /* libfreenect2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = libfreenect2.hpp; sourceTree = "<group>"; };
-		8148313D2E701C5D006EE51D /* logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logger.h; sourceTree = "<group>"; };
-		8148313E2E701C5D006EE51D /* packet_pipeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = packet_pipeline.h; sourceTree = "<group>"; };
-		8148313F2E701C5D006EE51D /* registration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = registration.h; sourceTree = "<group>"; };
-		814831412E701C5D006EE51D /* libusb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libusb.h; sourceTree = "<group>"; };
-		814831432E701C5D006EE51D /* libfreenect.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreenect.a; sourceTree = "<group>"; };
-		814831442E701C5D006EE51D /* libfreenect2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreenect2.a; sourceTree = "<group>"; };
-		814831452E701C5D006EE51D /* libglfw3.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libglfw3.a; sourceTree = "<group>"; };
-		814831462E701C5D006EE51D /* libusb.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libusb.a; sourceTree = "<group>"; };
 		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
@@ -95,6 +60,14 @@
 		81FD1DEB2E36519700900396 /* FreenectV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV2.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		81483C022E70206B006EE51D /* include */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = include;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		81E3B95F2DC3687500B0413C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -102,10 +75,6 @@
 			files = (
 				81482C662E701A08006EE51D /* AppKit.framework in Frameworks */,
 				81482C4F2E7018C8006EE51D /* CoreFoundation.framework in Frameworks */,
-				814835B62E701C5D006EE51D /* libglfw3.a in Frameworks */,
-				814835BF2E701C5D006EE51D /* libusb.a in Frameworks */,
-				814835C62E701C5D006EE51D /* libfreenect2.a in Frameworks */,
-				814835DD2E701C5D006EE51D /* libfreenect.a in Frameworks */,
 				81482C5F2E7019B7006EE51D /* CoreGraphics.framework in Frameworks */,
 				81482C532E7018E9006EE51D /* CoreMedia.framework in Frameworks */,
 				81482C572E70191A006EE51D /* CoreVideo.framework in Frameworks */,
@@ -113,9 +82,6 @@
 				81482C5B2E70192F006EE51D /* OpenCL.framework in Frameworks */,
 				81482C552E7018FB006EE51D /* VideoToolbox.framework in Frameworks */,
 				81482C592E701927006EE51D /* Security.framework in Frameworks */,
-				81482C442E7017B0006EE51D /* libopencv_core.4.12.0.dylib in Frameworks */,
-				81482C482E7017CE006EE51D /* libopencv_imgproc.4.12.0.dylib in Frameworks */,
-				81482C462E7017C0006EE51D /* libopencv_highgui.4.12.0.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -126,7 +92,6 @@
 			isa = PBXGroup;
 			children = (
 				81482C652E701A08006EE51D /* AppKit.framework */,
-				81482C642E7019D9006EE51D /* libobjc.tbd */,
 				81482C622E7019D0006EE51D /* ClassKit.framework */,
 				81482C602E7019C6006EE51D /* AppleScriptObjC.framework */,
 				81482C5E2E7019B7006EE51D /* CoreGraphics.framework */,
@@ -139,68 +104,8 @@
 				81D935BB2E69D61D00432C95 /* ApplicationServices.framework */,
 				81D935B92E69D61600432C95 /* CoreFoundation.framework */,
 				81FC70F92E3CC608007447B2 /* Accelerate.framework */,
-				81482C432E7017B0006EE51D /* libopencv_core.4.12.0.dylib */,
-				81482C452E7017C0006EE51D /* libopencv_highgui.4.12.0.dylib */,
-				81482C472E7017CE006EE51D /* libopencv_imgproc.4.12.0.dylib */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		814831302E701C5D006EE51D /* libfreenect */ = {
-			isa = PBXGroup;
-			children = (
-				8148312E2E701C5D006EE51D /* libfreenect.h */,
-				8148312F2E701C5D006EE51D /* libfreenect.hpp */,
-			);
-			path = libfreenect;
-			sourceTree = "<group>";
-		};
-		814831402E701C5D006EE51D /* libfreenect2 */ = {
-			isa = PBXGroup;
-			children = (
-				814831352E701C5D006EE51D /* color_settings.h */,
-				814831362E701C5D006EE51D /* config.h */,
-				814831372E701C5D006EE51D /* config.h.in */,
-				814831382E701C5D006EE51D /* export.h */,
-				814831392E701C5D006EE51D /* frame_listener.hpp */,
-				8148313A2E701C5D006EE51D /* frame_listener_impl.h */,
-				8148313B2E701C5D006EE51D /* led_settings.h */,
-				8148313C2E701C5D006EE51D /* libfreenect2.hpp */,
-				8148313D2E701C5D006EE51D /* logger.h */,
-				8148313E2E701C5D006EE51D /* packet_pipeline.h */,
-				8148313F2E701C5D006EE51D /* registration.h */,
-			);
-			path = libfreenect2;
-			sourceTree = "<group>";
-		};
-		814831422E701C5D006EE51D /* headers */ = {
-			isa = PBXGroup;
-			children = (
-				814831302E701C5D006EE51D /* libfreenect */,
-				814831402E701C5D006EE51D /* libfreenect2 */,
-				814831412E701C5D006EE51D /* libusb.h */,
-			);
-			path = headers;
-			sourceTree = "<group>";
-		};
-		814831472E701C5D006EE51D /* libs */ = {
-			isa = PBXGroup;
-			children = (
-				814831432E701C5D006EE51D /* libfreenect.a */,
-				814831442E701C5D006EE51D /* libfreenect2.a */,
-				814831452E701C5D006EE51D /* libglfw3.a */,
-				814831462E701C5D006EE51D /* libusb.a */,
-			);
-			path = libs;
-			sourceTree = "<group>";
-		};
-		814834F92E701C5D006EE51D /* include */ = {
-			isa = PBXGroup;
-			children = (
-				814831422E701C5D006EE51D /* headers */,
-				814831472E701C5D006EE51D /* libs */,
-			);
-			path = include;
 			sourceTree = "<group>";
 		};
 		81E3B9592DC3687500B0413C = {
@@ -215,7 +120,7 @@
 				8120BA1B2E61E88100126067 /* logger.h */,
 				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
 				81BC12DF2E379780006C281E /* CPlusPlus_Common.h */,
-				814834F92E701C5D006EE51D /* include */,
+				81483C022E70206B006EE51D /* include */,
 				8112B5972E23E1140089336F /* Frameworks */,
 				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
 			);
@@ -235,6 +140,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				81483C022E70206B006EE51D /* include */,
 			);
 			name = FreenectTOP;
 			packageProductDependencies = (
@@ -435,8 +343,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/opt/homebrew/Cellar/opencv/**",
-					"$(PROJECT_DIR)/include/headers",
+					"$(PROJECT_DIR)/include/headers/**",
 					/usr/local/include,
 				);
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
@@ -446,8 +353,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/opt/homebrew/Cellar/opencv/**",
 					"$(PROJECT_DIR)/include/libs",
+					"$(PROJECT_DIR)/include/libs/opencv",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = "1.0.0-beta";
@@ -472,8 +379,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"/opt/homebrew/Cellar/opencv/**",
-					"$(PROJECT_DIR)/include/headers",
+					"$(PROJECT_DIR)/include/headers/**",
 					/usr/local/include,
 				);
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
@@ -483,8 +389,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/opt/homebrew/Cellar/opencv/**",
 					"$(PROJECT_DIR)/include/libs",
+					"$(PROJECT_DIR)/include/libs/opencv",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = "1.0.0-beta";
