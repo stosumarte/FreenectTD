@@ -44,10 +44,8 @@
 		81483D5B2E707222006EE51D /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
 		81483D622E70D5F7006EE51D /* post_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = post_build.sh; sourceTree = "<group>"; };
 		81483D632E70D962006EE51D /* postinstall */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = postinstall; sourceTree = "<group>"; };
-		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
-		81BC12DF2E379780006C281E /* CPlusPlus_Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CPlusPlus_Common.h; sourceTree = "<group>"; };
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
 		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
@@ -112,8 +110,6 @@
 				81FD1DEB2E36519700900396 /* FreenectV2.h */,
 				81FD1DE72E3630A700900396 /* FreenectV2.cpp */,
 				8120BA1B2E61E88100126067 /* logger.h */,
-				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
-				81BC12DF2E379780006C281E /* CPlusPlus_Common.h */,
 				81483C022E70206B006EE51D /* include */,
 				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
 				8112B5972E23E1140089336F /* Frameworks */,
