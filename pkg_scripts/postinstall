@@ -1,0 +1,43 @@
+#!/bin/bash
+set -euo pipefail
+
+LOG_FILE="/tmp/FreenectTD_Installer.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+ls -l "$PWD"
+
+# Variables
+
+# Currently logged-in user
+USER_NAME=$(stat -f%Su /dev/console)
+USER_HOME=$(dscl . -read /Users/$USER_NAME NFSHomeDirectory | awk '{print $2}')
+echo "User=$USER_NAME, Home=$USER_HOME"
+
+# Staging directory and source plugin path
+STAGING_DIR="/tmp/FreenectTD-Installer"
+PLUGIN_SRC="${STAGING_DIR}/FreenectTOP.plugin"
+
+# Final plugin destination
+PLUGIN_DEST="$USER_HOME/Library/Application Support/Derivative/TouchDesigner099/Plugins"
+
+# Check if source plugin exists
+if [ ! -d "$PLUGIN_SRC" ]; then
+    echo "ERROR: Plugin not found at $PLUGIN_SRC"
+    exit 1
+fi
+
+# Create destination directory if it doesn't exist
+mkdir -p "$PLUGIN_DEST"
+cp -R "$PLUGIN_SRC" "$PLUGIN_DEST/"
+
+# Chown to the user
+chown -R "$USER_NAME" "$PLUGIN_DEST/FreenectTOP.plugin"
+
+# Delete staging directory
+rm -rf "$STAGING_DIR"
+
+# Show window
+
+osascript -e 'tell app "System Events" to display dialog "Freenect TOP installed successfully!" buttons {"OK"} default button "OK" with icon note'
+
+exit 0
