@@ -42,6 +42,8 @@
 		81483D572E7071F2006EE51D /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		81483D592E7071F9006EE51D /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
 		81483D5B2E707222006EE51D /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
+		81483D622E70D5F7006EE51D /* post_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = post_build.sh; sourceTree = "<group>"; };
+		81483D632E70D962006EE51D /* postinstall */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = postinstall; sourceTree = "<group>"; };
 		8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOP_CPlusPlusBase.h; sourceTree = "<group>"; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
@@ -92,6 +94,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		81483D642E70D962006EE51D /* pkg_scripts */ = {
+			isa = PBXGroup;
+			children = (
+				81483D632E70D962006EE51D /* postinstall */,
+			);
+			path = pkg_scripts;
+			sourceTree = "<group>";
+		};
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
@@ -105,8 +115,10 @@
 				8162680C2E19358A00F1E00B /* TOP_CPlusPlusBase.h */,
 				81BC12DF2E379780006C281E /* CPlusPlus_Common.h */,
 				81483C022E70206B006EE51D /* include */,
-				8112B5972E23E1140089336F /* Frameworks */,
 				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
+				8112B5972E23E1140089336F /* Frameworks */,
+				81483D622E70D5F7006EE51D /* post_build.sh */,
+				81483D642E70D962006EE51D /* pkg_scripts */,
 			);
 			sourceTree = "<group>";
 		};
@@ -120,6 +132,7 @@
 				81E3B95E2DC3687500B0413C /* Sources */,
 				81E3B95F2DC3687500B0413C /* Frameworks */,
 				8112B5A22E23E1140089336F /* Embed Libraries */,
+				81483D612E70D5BE006EE51D /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -167,6 +180,27 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		81483D612E70D5BE006EE51D /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"$PROJECT_DIR/post_build.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		81E3B95E2DC3687500B0413C /* Sources */ = {
@@ -319,6 +353,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
 					"FNTD_DEBUG=1",
@@ -327,7 +362,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/include/headers/**",
+					"$(PROJECT_DIR)/include/headers",
 					/usr/local/include,
 				);
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
@@ -359,10 +394,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = "FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/include/headers/**",
+					"$(PROJECT_DIR)/include/headers",
 					/usr/local/include,
 				);
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
