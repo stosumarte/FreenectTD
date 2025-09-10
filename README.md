@@ -5,39 +5,45 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 
 ## Requirements
 * Apple Silicon Mac
-* macOS 12.4+
+* macOS 12.4+ (Monterey)
 * TouchDesigner 2023+ (any license)
 * Kinect V1 / Kinect V2 
 
 ## Installing
 
-### Option 1 — Global Installation (Recommended)
+### [Recommended] Using installer
 
-1. [Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
+1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
-2. Unzip and copy `FreenectTD.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
+2. Right click on `FreenectTOP_[version]_Installer.pkg` and select "Open"
 
-Now, you should be able to run TouchDesigner and find FreenectTOP under the "Custom" OPs panel.
+3. If the Installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Run Anyway`
 
-⚠️ macOS may prevent the plugin from loading after download due to security quarantine flags. To fix this, open Terminal and type (without running):
+You should now find FreenectTOP under the "Custom" OPs panel.
 
-`xattr -d -r com.apple.quarantine ~/Library/Application\ Support/Derivative/TouchDesigner099/Plugins/FreenectTD.plugin`
+### Manual Installation
+1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
-### Option 2 — Project-specific Installation
+2. Unzip and copy `FreenectTOP.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
 
-1. [Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
+You should now find FreenectTOP under the "Custom" OPs panel.
 
-2. Unzip and copy `FreenectTD.plugin` next to your .toe, in a folder named `Plugins`.
+### Project-specific Installation
+
+1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
+
+2. Unzip and copy `FreenectTOP.plugin` next to your .toe, in a folder named `Plugins`.
 
 You should now be able to open your .toe and find FreenectTOP under the "Custom" OPs panel.
 
-### Option 3 — CPlusPlus TOP
+
+### [Not recommended] CPlusPlus TOP
 
 1. [Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
-2. Unzip and copy `FreenectTD.plugin` wherever you want on your machine.
+2. Unzip and copy `FreenectTOP.plugin` wherever you want on your machine.
 
-3. Add a CPlusPlus TOP to your network, and select `FreenectTD.plugin` under "Plugin Path" in the "Load" tab.
+3. Add a CPlusPlus TOP to your network, and select `FreenectTOP.plugin` under "Plugin Path" in the "Load" tab.
 
 ## Usage
 By default, FreenectTOP outputs RGB data. To get a depth map, you must use a Render Select TOP and reference index 1.
@@ -50,7 +56,7 @@ Example .toe project files are provided in this repository, under the `toe_examp
 ### Known limitations
 
 * Only one Kinect device per machine is supported.
-
+* Only one FreenectTD OP can be active at a time.
 * Skeleton tracking is currently impossible to implement.
 
 ## Support
@@ -63,9 +69,7 @@ Both Kinect V1 (Xbox 360) and Kinect V2 (Xbox One) are supported. Kinect for Win
 * Depth undistortion (V2 only)
 
 ## Credits
-A very big thank you goes to libfreenect developers, who made a great work by creating a way to unofficially interface with Kinect devices on macOS and Linux.
-
-This project contains code from both libfreenect and libusb, licensed under GPL2.
+A very big thank you goes to the OpenKinect project, who developed a great library that made this plugin possible.
 
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
@@ -90,4 +94,4 @@ This project also includes the following third-party libraries, each under their
 - **CImg** – CeCILL-C License  
   [Full License Text](https://cecill.info/licences/Licence_CeCILL-C_V1-en.txt)
 
-By downloading, using, modifying, or distributing this plugin, you agree to comply with the terms of both the **LGPL-2.1** license for the plugin itself and the respective licenses of the third-party libraries included.
+By downloading, using, modifying, or distributing this plugin, either as source-code or binary format, you agree to comply with the terms of both the **LGPL-2.1** license for the plugin itself and the respective licenses of the third-party libraries included.
