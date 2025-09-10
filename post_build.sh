@@ -107,10 +107,10 @@ cp -r "$BUILD_OUTPUT" "${FINAL_NAMED_VERSIONED_PLUGIN}"
 PLUGIN_ZIP="${VERSIONED_DIR}/${PLUGIN_NAME}_v${VERSION}.zip"
 ditto -c -k --sequesterRsrc --keepParent "${FINAL_NAMED_VERSIONED_PLUGIN}" "${PLUGIN_ZIP}"
 
-# Create DMG containing the pkg
-DMG_NAME="${PLUGIN_NAME}_v${VERSION}.dmg"
-DMG_PATH="${VERSIONED_DIR}/${DMG_NAME}"
-hdiutil create -volname "${PLUGIN_NAME} Installer" -srcfolder "$FINAL_NAMED_VERSIONED_PKG" -ov -format UDZO "$DMG_PATH"
+# DISABLED - Create DMG containing the pkg
+#DMG_NAME="${PLUGIN_NAME}_v${VERSION}.dmg"
+#DMG_PATH="${VERSIONED_DIR}/${DMG_NAME}"
+#hdiutil create -volname "${PLUGIN_NAME} Installer" -srcfolder "$FINAL_NAMED_VERSIONED_PKG" -ov -format UDZO "$DMG_PATH"
 fi
 
 exit 0
