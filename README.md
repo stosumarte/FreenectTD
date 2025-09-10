@@ -69,7 +69,7 @@ Both Kinect V1 (Xbox 360) and Kinect V2 (Xbox One) are supported. Kinect for Win
 * Depth undistortion (V2 only)
 
 ## Credits
-A very big thank you goes to the OpenKinect project, who developed a great library that made this plugin possible.
+A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible.
 
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
