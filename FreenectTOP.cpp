@@ -6,6 +6,7 @@
 //
 
 #include "FreenectTOP.h"
+#include "ofxKinectExtras.h"
 #include "logger.h"
 #include <atomic>
 #include <thread>
@@ -227,6 +228,15 @@ bool FreenectTOP::initDeviceV1() {
         return false;
     }
     freenect_set_log_level(fn1_ctx, FREENECT_LOG_WARNING);
+    
+    // Upload firmware to Kinect v1 if needed (models 1473 and Kinect for Windows)
+    freenect_set_fw_address_nui
+        (fn1_ctx, ofxKinectExtras::getFWData1473(), ofxKinectExtras::getFWSize1473());
+    
+    freenect_set_fw_address_k4w
+        (fn1_ctx, ofxKinectExtras::getFWDatak4w(), ofxKinectExtras::getFWSizek4w());
+
+        
 
     int numDevices = freenect_num_devices(fn1_ctx);
     PROFILE(std::string("initDeviceV1: numDevices=") + std::to_string(numDevices));

@@ -17,6 +17,7 @@
 		81482C5B2E70192F006EE51D /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C5A2E70192F006EE51D /* OpenCL.framework */; };
 		81482C5F2E7019B7006EE51D /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C5E2E7019B7006EE51D /* CoreGraphics.framework */; };
 		81482C662E701A08006EE51D /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81482C652E701A08006EE51D /* AppKit.framework */; };
+		81E200842E7428F300CCB6AE /* ofxKinectExtras.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */; };
 		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
 		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
 /* End PBXBuildFile section */
@@ -51,6 +52,10 @@
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
 		81D935B92E69D61600432C95 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		81D935BB2E69D61D00432C95 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
+		81E200812E7428F300CCB6AE /* ofxKinectExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxKinectExtras.h; sourceTree = "<group>"; };
+		81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxKinectExtras.cpp; sourceTree = "<group>"; };
+		81E200852E7428FF00CCB6AE /* postinstall */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = postinstall; sourceTree = "<group>"; };
+		81E200872E7428FF00CCB6AE /* post_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = post_build.sh; sourceTree = "<group>"; };
 		81FC70F92E3CC608007447B2 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
@@ -106,6 +111,23 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		81E200832E7428F300CCB6AE /* ofxKinectExtras */ = {
+			isa = PBXGroup;
+			children = (
+				81E200812E7428F300CCB6AE /* ofxKinectExtras.h */,
+				81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */,
+			);
+			path = ofxKinectExtras;
+			sourceTree = "<group>";
+		};
+		81E200862E7428FF00CCB6AE /* pkg_scripts */ = {
+			isa = PBXGroup;
+			children = (
+				81E200852E7428FF00CCB6AE /* postinstall */,
+			);
+			path = pkg_scripts;
+			sourceTree = "<group>";
+		};
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
@@ -116,9 +138,12 @@
 				81FD1DEB2E36519700900396 /* FreenectV2.h */,
 				81FD1DE72E3630A700900396 /* FreenectV2.cpp */,
 				8120BA1B2E61E88100126067 /* logger.h */,
+				81E200832E7428F300CCB6AE /* ofxKinectExtras */,
 				81483C022E70206B006EE51D /* include */,
 				8112B5972E23E1140089336F /* Frameworks */,
 				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
+				81E200862E7428FF00CCB6AE /* pkg_scripts */,
+				81E200872E7428FF00CCB6AE /* post_build.sh */,
 			);
 			sourceTree = "<group>";
 		};
@@ -132,6 +157,7 @@
 				81E3B95E2DC3687500B0413C /* Sources */,
 				81E3B95F2DC3687500B0413C /* Frameworks */,
 				8112B5A22E23E1140089336F /* Embed Libraries */,
+				81E200882E74291100CCB6AE /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -180,6 +206,26 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		81E200882E74291100CCB6AE /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"$PROJECT_DIR/post_build.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		81E3B95E2DC3687500B0413C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -187,6 +233,7 @@
 			files = (
 				8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */,
 				81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */,
+				81E200842E7428F300CCB6AE /* ofxKinectExtras.cpp in Sources */,
 				81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -331,6 +378,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
 					"FNTD_DEBUG=1",
@@ -372,6 +420,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = "FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
