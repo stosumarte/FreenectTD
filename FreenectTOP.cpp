@@ -79,6 +79,14 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
     manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
     
+    // Kinect V1 firmware binary file path
+    OP_StringParameter fn1FirmwarePathParam;
+    fn1FirmwarePathParam.name = "Firmwarepathv1";
+    fn1FirmwarePathParam.label = "Firmware Path";
+    fn1FirmwarePathParam.page = "Freenect";
+    fn1FirmwarePathParam.defaultValue = "";
+    manager->appendFile(fn1FirmwarePathParam);
+    
     // TO DO - Enable Depth toggle
     /*OP_NumericParameter enableDepthParam;
     enableDepthParam.name = "Enabledepth";
