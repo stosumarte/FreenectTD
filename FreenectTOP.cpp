@@ -318,8 +318,6 @@ void FreenectTOP::cleanupDeviceV1() {
     std::lock_guard<std::mutex> lock(freenectMutex);
     LOG(std::string("[FreenectTOP] cleanupDeviceV1: device before = ") + std::to_string(reinterpret_cast<uintptr_t>(fn1_device)));
     if (fn1_device) {
-        fn1_device->stopVideo();
-        fn1_device->stopDepth();
         delete fn1_device;
         LOG("[FreenectTOP] device deleted (v1)");
         fn1_device = nullptr;
