@@ -1,83 +1,87 @@
 # FreenectTD
-FreenectTD is an open source TouchDesigner implementation of the [libfreenect](https://github.com/OpenKinect/libfreenect) C++ wrapper, aimed at macOS users who don't have a way to use the official Kinect OPs in TouchDesigner.
+FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't have a way to use the official Kinect OPs in TouchDesigner.
+
+It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
 
 ## Requirements
-* Apple Silicon
-* macOS 12.4+
+* Apple Silicon Mac
+* macOS 12.4+ (Monterey)
 * TouchDesigner 2023+ (any license)
-* Kinect v1 (Xbox 360 / Windows)
+* Kinect V1 / Kinect V2 
 
 ## Installing
 
-### Option 1 — Global Installation (Recommended)
+### [Recommended] Using installer
 
-1. [Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
+1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
-2. Unzip and copy `FreenectTD.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
+2. Right click on `FreenectTOP_[version]_Installer.pkg` and select "Open"
 
-Now, you should be able to run TouchDesigner and find FreenectTOP under the "Custom" OPs panel.
+3. If the Installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Run Anyway`
 
-⚠️ macOS may prevent the plugin from loading after download due to security quarantine flags. To fix this, open Terminal and type (without running):
+You should now find FreenectTOP under the "Custom" OPs panel.
 
-`xattr -d -r com.apple.quarantine ~/Library/Application\ Support/Derivative/TouchDesigner099/Plugins/FreenectTD.plugin`
+### Manual Installation
+1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
-### Option 2 — Project-specific Installation
+2. Unzip and copy `FreenectTOP.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
 
-1. [Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
+You should now find FreenectTOP under the "Custom" OPs panel.
 
-2. Unzip and copy `FreenectTD.plugin` next to your .toe, in a folder named `Plugins`.
+### Project-specific Installation
+
+1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
+
+2. Unzip and copy `FreenectTOP.plugin` next to your .toe, in a folder named `Plugins`.
 
 You should now be able to open your .toe and find FreenectTOP under the "Custom" OPs panel.
 
-### Option 3 — CPlusPlus TOP
+
+### [Not recommended] CPlusPlus TOP
 
 1. [Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
-2. Unzip and copy `FreenectTD.plugin` wherever you want on your machine.
+2. Unzip and copy `FreenectTOP.plugin` wherever you want on your machine.
 
-3. Add a CPlusPlus TOP to your network, and select `FreenectTD.plugin` under "Plugin Path" in the "Load" tab.
+3. Add a CPlusPlus TOP to your network, and select `FreenectTOP.plugin` under "Plugin Path" in the "Load" tab.
 
 ## Usage
-By default, FreenectTOP outputs RGB data. To get a depth map, you must use a Render Select TOP and reference index 1 instead of index 0.
+By default, FreenectTOP outputs RGB data. To get a depth map, you must use a Render Select TOP and reference index 1.
 
 ### Examples
-Example .toe project files are provided in this repository, under the "toe_examples" directory.
+Example .toe project files are provided in this repository, under the `toe_examples` directory.
 
 <img width="872" alt="image" src="https://github.com/user-attachments/assets/f23b02f7-640a-4a77-b22b-a8668c5dd161" />
 
 ### Known limitations
 
 * Only one Kinect device per machine is supported.
-
+* Only one FreenectTD OP can be active at a time.
 * Skeleton tracking is currently impossible to implement.
 
-## FAQ
-### Which features does FreenectTD support?
-Currently, RGB and Depth image streaming are supported, as well as tilt control from the TOP's properties panel. No more features (such as microphone or LED control) are currently planned to be implemented.
+## Uninstalling
 
-### Which devices does FreenectTD support?
-Only 1st gen Kinects are supported. Model numbers are 1414, 1473 and 1517.
-
-![Kinect for Xbox 360 (1414/1473)](https://github.com/user-attachments/assets/b2e3090d-9e72-45d2-9e9c-8439cfc2b3a8)
-![Kinect for Windows (1517)](https://github.com/user-attachments/assets/cb58beb9-3e5e-49be-8a4a-f5074fd8f723)
-
-FreenectTD has currently been tested only with a 1414 model (Xbox 360), but it should work regardless since all these models should be compatible with libfreenect.
+To uninstall all FreenectTD related files, run the following command in terminal:
+`sudo rm -rf ~/Library/Application\ Support/Derivative/TouchDesigner099/Plugins/Freenect*.plugin`
 
 
-### Will this ever work on Kinect V2?
-It's in the works, but currently there's no ETA for it.
-This is a side project, and it requires lots of time and money to maintain (I've already fried two Kinects in the process of modding them to work on USB).
+## Support
+Both Kinect V1 (Xbox 360) and Kinect V2 (Xbox One) are supported. Kinect for Windows devices of either generation are supported as well.
 
-Please consider donating!
+### Included features
+* RGB streaming
+* Depth map streaming
+* Tilt control (V1 only)
+* Depth undistortion (V2 only)
 
 ## Credits
-A very big thank you goes to libfreenect developers, who made a great work by creating a way to unofficially interface with Kinect devices on macOS and Linux.
-
-This project contains code from both libfreenect and libusb, licensed under GPL2.
+A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible.
 
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
+
 [You can donate here via PayPal.](https://www.paypal.com/donate/?hosted_button_id=PZXS4BCQJ9QMQ "You can donate here via PayPal.")
+
 
 ## Licensing
 
@@ -95,7 +99,7 @@ This project also includes the following third-party libraries, each under their
 - **libusb** – LGPL 2.1 License  
   [Full License Text](https://raw.githubusercontent.com/libusb/libusb/master/COPYING)
 
-- **OpenCV** – Apache 2.0 License  
-  [Full License Text](https://raw.githubusercontent.com/opencv/opencv/master/LICENSE)
+- **CImg** – CeCILL-C License  
+  [Full License Text](https://cecill.info/licences/Licence_CeCILL-C_V1-en.txt)
 
-By distributing this plugin, you agree to comply with the terms of both the **LGPL-2.1** license for the plugin itself and the respective licenses of the third-party libraries included.
+By downloading, using, modifying, or distributing this plugin, either as source-code or binary format, you agree to comply with the terms of both the **LGPL-2.1** license for the plugin itself and the respective licenses of the third-party libraries included.

@@ -4,6 +4,5 @@
 DerivedData/
 build/
 toe_examples/Backup/
-VendorLibs_backup/
-libfreenect/
 include_libs_build/
+logs/
