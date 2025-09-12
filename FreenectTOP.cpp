@@ -215,9 +215,11 @@ FreenectTOP::~FreenectTOP() {
 
 // Init for Kinect v1 (libfreenect)
 bool FreenectTOP::initDeviceV1() {
+    
     LOG("[FreenectTOP] initDeviceV1: start");
     PROFILE("initDeviceV1: start");
     LOG(std::string("[FreenectTOP] initDeviceV1: fn1_ctx before = ") + std::to_string(reinterpret_cast<uintptr_t>(fn1_ctx)));
+    
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (freenect_init(&fn1_ctx, nullptr) < 0) {
         PROFILE("initDeviceV1: freenect_init failed");
@@ -227,20 +229,23 @@ bool FreenectTOP::initDeviceV1() {
         LOG("[FreenectTOP] initDeviceV1: end (fail)");
         return false;
     }
-    freenect_set_log_level(fn1_ctx, FREENECT_LOG_WARNING);
+    
+    // Set libfreenect log level based on FNTD_DEBUG macro
+    if (FNTD_DEBUG == 1) {
+        freenect_set_log_level(fn1_ctx, FREENECT_LOG_WARNING);
+    }
     
     // Upload firmware to Kinect v1 if needed (models 1473 and Kinect for Windows)
     freenect_set_fw_address_nui
         (fn1_ctx, ofxKinectExtras::getFWData1473(), ofxKinectExtras::getFWSize1473());
-    
     freenect_set_fw_address_k4w
         (fn1_ctx, ofxKinectExtras::getFWDatak4w(), ofxKinectExtras::getFWSizek4w());
 
-        
-
     int numDevices = freenect_num_devices(fn1_ctx);
+    
     PROFILE(std::string("initDeviceV1: numDevices=") + std::to_string(numDevices));
     LOG("[FreenectTOP] initDeviceV1: numDevices = " + std::to_string(numDevices));
+    
     if (numDevices <= 0) {
         LOG("[FreenectTOP] No Kinect v1 devices found");
         errorString.clear();
