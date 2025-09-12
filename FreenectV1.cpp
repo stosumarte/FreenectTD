@@ -8,6 +8,8 @@
 #include "FreenectV1.h"
 #include <algorithm>
 #include <cstring>
+#include <iostream>
+#include <chrono>
 
 // MyFreenectDevice class constructor
 MyFreenectDevice::MyFreenectDevice(freenect_context* ctx, int index,
@@ -83,8 +85,22 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
 
 // Get color frame and flip it
 bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
+    static int frameCount = 0;
+    static auto lastTime = std::chrono::steady_clock::now();
+    
     std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
     if (!hasNewRGB) return false;                   // Check if new RGB data is available
+    
+    // Log FPS before processing
+    frameCount++;
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - lastTime).count();
+    if (elapsed >= 1) {
+        std::cout << "[FreenectV1] FPS BEFORE image manipulation: " << frameCount << std::endl;
+        frameCount = 0;
+        lastTime = now;
+    }
+    
     out.resize(WIDTH * HEIGHT * 4);
     for (int y = 0; y < HEIGHT; ++y) {
         int srcY = HEIGHT - 1 - y; // Always flip vertically
@@ -97,6 +113,19 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
             out[dstIdx + 3] = 255;
         }
     }
+    
+    // Log FPS after processing
+    static int afterFrameCount = 0;
+    static auto afterLastTime = std::chrono::steady_clock::now();
+    afterFrameCount++;
+    auto afterNow = std::chrono::steady_clock::now();
+    auto afterElapsed = std::chrono::duration_cast<std::chrono::seconds>(afterNow - afterLastTime).count();
+    if (afterElapsed >= 1) {
+        std::cout << "[FreenectV1] FPS AFTER image manipulation: " << afterFrameCount << std::endl;
+        afterFrameCount = 0;
+        afterLastTime = afterNow;
+    }
+    
     hasNewRGB = false;                              // Reset the flag indicating new RGB data
     return true;
 }

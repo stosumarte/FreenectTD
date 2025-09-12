@@ -10,8 +10,7 @@
 #include <algorithm>
 #include <iostream>
 #include <thread>
-#include <opencv.hpp>
-//#import <Accelerate/Accelerate.h>
+#include <Accelerate/Accelerate.h>
 
 // MyFreenect2Device class constructor
 MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
@@ -89,16 +88,6 @@ void MyFreenect2Device::processFrames() {
         }
     }
     listener->release(frames);
-    // Logging FPS
-    frameCount++;
-    auto now = std::chrono::steady_clock::now();
-    auto frameCountString = std::to_string(frameCount);
-    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - lastTime).count();
-    if (elapsed >= 1) {
-        LOG("[FreenectV2] processFrames FPS: " + frameCountString);
-        frameCount = 0;
-        lastTime = now;
-    }
 }
 
 // Get RGB data
@@ -123,26 +112,44 @@ bool MyFreenect2Device::getDepth(std::vector<float>& out) {
     }
 }
 
-// OPENCV - Get color frame with flipping and optional downscaling
+// Get color frame with flipping and optional downscaling
 bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale) {
     std::lock_guard<std::mutex> lock(mutex);
-    
-    if (!hasNewRGB) return false;
+        if (!hasNewRGB) return false;
 
-    cv::Mat src(HEIGHT, WIDTH, CV_8UC4, rgbBuffer.data());
-    cv::Mat dst;
-    
-    if (downscale) { // Downscale to 1280x720 if requested
-        cv::resize(src, dst, cv::Size(SCALED_WIDTH, SCALED_HEIGHT), 0, 0, cv::INTER_LINEAR);
-    } else {
-        dst = src;
-    }
-    
-    cv::flip(dst, dst, -1); // Flip both horizontally and vertically
-    cv::cvtColor(dst, dst, cv::COLOR_BGRA2RGBA); // Convert from BGRA to RGBA
-    out.assign(dst.data, dst.data + dst.total() * dst.elemSize());
-    hasNewRGB = false;
-    return true;
+        const int srcWidth = WIDTH;
+        const int srcHeight = HEIGHT;
+        const int dstWidth = downscale ? SCALED_WIDTH : WIDTH;
+        const int dstHeight = downscale ? SCALED_HEIGHT : HEIGHT;
+        const size_t dstSize = dstWidth * dstHeight * 4;
+        if (out.size() != dstSize) out.resize(dstSize);
+
+        vImage_Buffer src = {
+            .data = rgbBuffer.data(),
+            .height = (vImagePixelCount)srcHeight,
+            .width = (vImagePixelCount)srcWidth,
+            .rowBytes = srcWidth * 4
+        };
+
+    vImage_Buffer dst = {
+        .data = out.data(),
+        .height = (vImagePixelCount)dstHeight,
+        .width = (vImagePixelCount)dstWidth,
+        .rowBytes = static_cast<size_t>(dstWidth * 4)
+    };
+
+        // Resize (bilinear)
+        vImageScale_ARGB8888(&src, &dst, nullptr, kvImageHighQualityResampling);
+
+        // Flip vertically
+        vImageVerticalReflect_ARGB8888(&dst, &dst, kvImageNoFlags);
+
+        // BGRA -> RGBA (permute channels)
+        const uint8_t permuteMap[4] = {2, 1, 0, 3}; // B,G,R,A -> R,G,B,A
+        vImagePermuteChannels_ARGB8888(&dst, &dst, permuteMap, kvImageNoFlags);
+
+        hasNewRGB = false;
+        return true;
 }
 
 // Get depth frame
@@ -151,19 +158,34 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
 
     if (!hasNewDepth) return false;
 
-    int width = DEPTH_WIDTH, height = DEPTH_HEIGHT;
-    cv::Mat src(height, width, CV_32F, depthBuffer.data());
-    cv::Mat flipped;
-    cv::flip(src, flipped, -1); // Flip both horizontally and vertically
+    // Flip depthBuffer vertically using Accelerate
+    const size_t pixelCount = DEPTH_WIDTH * DEPTH_HEIGHT;
+    if (out.size() != pixelCount) out.resize(pixelCount);
 
-    out.resize(width * height);
-    for (int i = 0; i < width * height; ++i) {
-        float d = flipped.at<float>(i);
-        uint16_t val = 0;
-        if (d > 100.0f && d < 4500.0f) {
-            val = static_cast<uint16_t>(d / 4500.0f * 65535.0f);
-        }
-        out[i] = val;
+    vImage_Buffer src = {
+        .data = (void*)depthBuffer.data(),
+        .height = (vImagePixelCount)DEPTH_HEIGHT,
+        .width = (vImagePixelCount)DEPTH_WIDTH,
+        .rowBytes = DEPTH_WIDTH * sizeof(float)
+    };
+
+    std::vector<float> flipped(pixelCount);
+    vImage_Buffer dst = {
+        .data = flipped.data(),
+        .height = (vImagePixelCount)DEPTH_HEIGHT,
+        .width = (vImagePixelCount)DEPTH_WIDTH,
+        .rowBytes = DEPTH_WIDTH * sizeof(float)
+    };
+
+    vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+
+    // Convert to uint16_t
+    const float* flippedData = flipped.data();
+    #pragma omp parallel for if(pixelCount > 100000)
+    for (size_t i = 0; i < pixelCount; ++i) {
+        float d = flippedData[i];
+        out[i] = (d > 100.0f && d < 4500.0f) ?
+                 static_cast<uint16_t>(d / 4500.0f * 65535.0f) : 0;
     }
 
     hasNewDepth = false;
@@ -173,33 +195,52 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
 // Get undistorted depth frame using libfreenect2::Registration
 bool MyFreenect2Device::getUndistortedDepthFrame(std::vector<uint16_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
+
     if (!hasNewDepth || !device) return false;
-    // Get IR and color camera params
-    const libfreenect2::Freenect2Device::IrCameraParams& irParams = device->getIrCameraParams();
-    const libfreenect2::Freenect2Device::ColorCameraParams& colorParams = device->getColorCameraParams();
-    libfreenect2::Registration reg(irParams, colorParams);
-    // Create Frame for depth input and copy buffer
-    libfreenect2::Frame depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
-    std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
-    libfreenect2::Frame undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
-    // Only undistort, do not register
-    reg.undistortDepth(&depthFrame, &undistortedFrame);
-    
-    // Convert to OpenCV matrix for flipping
-    cv::Mat undistortedMat(DEPTH_HEIGHT, DEPTH_WIDTH, CV_32F, undistortedFrame.data);
-    cv::Mat flippedMat;
-    cv::flip(undistortedMat, flippedMat, -1); // Flip both horizontally and vertically
-    
-    // Convert flipped undistorted float depth to uint16_t
-    out.resize(DEPTH_WIDTH * DEPTH_HEIGHT);
-    for (size_t i = 0; i < DEPTH_WIDTH * DEPTH_HEIGHT; ++i) {
-        float d = flippedMat.at<float>(i);
-        uint16_t val = 0;
-        if (d > 100.0f && d < 4500.0f) {
-            val = static_cast<uint16_t>(d / 4500.0f * 65535.0f);
-        }
-        out[i] = val;
+
+    static libfreenect2::Registration* reg = nullptr;
+    static libfreenect2::Frame depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+    static libfreenect2::Frame undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+
+    if (!reg) {
+        const libfreenect2::Freenect2Device::IrCameraParams& irParams = device->getIrCameraParams();
+        const libfreenect2::Freenect2Device::ColorCameraParams& colorParams = device->getColorCameraParams();
+        reg = new libfreenect2::Registration(irParams, colorParams);
     }
+
+    std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
+    reg->undistortDepth(&depthFrame, &undistortedFrame);
+
+    // Flip undistortedFrame vertically using Accelerate
+    const size_t pixelCount = DEPTH_WIDTH * DEPTH_HEIGHT;
+    if (out.size() != pixelCount) out.resize(pixelCount);
+
+    vImage_Buffer src = {
+        .data = undistortedFrame.data,
+        .height = (vImagePixelCount)DEPTH_HEIGHT,
+        .width = (vImagePixelCount)DEPTH_WIDTH,
+        .rowBytes = DEPTH_WIDTH * sizeof(float)
+    };
+
+    std::vector<float> flipped(pixelCount);
+    vImage_Buffer dst = {
+        .data = flipped.data(),
+        .height = (vImagePixelCount)DEPTH_HEIGHT,
+        .width = (vImagePixelCount)DEPTH_WIDTH,
+        .rowBytes = DEPTH_WIDTH * sizeof(float)
+    };
+
+    vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+
+    // Convert to uint16_t
+    const float* flippedData = flipped.data();
+    #pragma omp parallel for if(pixelCount > 100000)
+    for (size_t i = 0; i < pixelCount; ++i) {
+        float d = flippedData[i];
+        out[i] = (d > 100.0f && d < 4500.0f) ?
+                 static_cast<uint16_t>(d / 4500.0f * 65535.0f) : 0;
+    }
+
     hasNewDepth = false;
     return true;
 }
