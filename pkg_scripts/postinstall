@@ -8,6 +8,9 @@ ls -l "$PWD"
 
 # Variables
 
+# Bundle name
+BUNDLE_NAME="FreenectTOP.plugin"
+
 # Currently logged-in user
 USER_NAME=$(stat -f%Su /dev/console)
 USER_HOME=$(dscl . -read /Users/$USER_NAME NFSHomeDirectory | awk '{print $2}')
@@ -15,10 +18,10 @@ echo "User=$USER_NAME, Home=$USER_HOME"
 
 # Staging directory and source plugin path
 STAGING_DIR="/tmp/FreenectTD-Installer"
-PLUGIN_SRC="${STAGING_DIR}/FreenectTOP.plugin"
+PLUGIN_SRC="${STAGING_DIR}/${BUNDLE_NAME}"
 
 # Final plugin destination
-PLUGIN_DEST="$USER_HOME/Library/Application Support/Derivative/TouchDesigner099/Plugins"
+PLUGIN_DEST="${USER_HOME}/Library/Application Support/Derivative/TouchDesigner099/Plugins"
 
 # Check if source plugin exists
 if [ ! -d "$PLUGIN_SRC" ]; then
@@ -27,16 +30,17 @@ if [ ! -d "$PLUGIN_SRC" ]; then
 fi
 
 # Create destination directory if it doesn't exist
-mkdir -p "$PLUGIN_DEST"
-cp -R "$PLUGIN_SRC" "$PLUGIN_DEST/"
+rm -rf "${PLUGIN_DEST}/${BUNDLE_NAME}"
+mkdir -p "${PLUGIN_DEST}"
+ditto "${PLUGIN_SRC}" "${PLUGIN_DEST}/${BUNDLE_NAME}"
 
 # Chown to the user
-chown -R "$USER_NAME" "$PLUGIN_DEST/FreenectTOP.plugin"
+chown -R "${USER_NAME}" "${PLUGIN_DEST}/${BUNDLE_NAME}"
 
 # Set permissions
-chmod -R 755 "$PLUGIN_DEST/FreenectTOP.plugin"
+chmod -R 755 "${PLUGIN_DEST}/${BUNDLE_NAME}"
 
 # Delete staging directory
-rm -rf "$STAGING_DIR"
+rm -rf "${STAGING_DIR}"
 
 exit 0
