@@ -62,8 +62,6 @@ void MyFreenect2Device::close() {
 
 // Set RGB buffer and mark as ready
 void MyFreenect2Device::processFrames() {
-    static int frameCount = 0;
-    static auto lastTime = std::chrono::steady_clock::now();
     if (!listener) return;
     if (!listener->hasNewFrame()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2)); // Prevent busy-waiting
@@ -112,24 +110,24 @@ bool MyFreenect2Device::getDepth(std::vector<float>& out) {
     }
 }
 
-// Get color frame with flipping and optional downscaling
+// Get color frame with flipping, downscaling, and always horizontal mirroring
 bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale) {
     std::lock_guard<std::mutex> lock(mutex);
-        if (!hasNewRGB) return false;
+    if (!hasNewRGB) return false;
 
-        const int srcWidth = WIDTH;
-        const int srcHeight = HEIGHT;
-        const int dstWidth = downscale ? SCALED_WIDTH : WIDTH;
-        const int dstHeight = downscale ? SCALED_HEIGHT : HEIGHT;
-        const size_t dstSize = dstWidth * dstHeight * 4;
-        if (out.size() != dstSize) out.resize(dstSize);
+    const int srcWidth = WIDTH;
+    const int srcHeight = HEIGHT;
+    const int dstWidth = downscale ? SCALED_WIDTH : WIDTH;
+    const int dstHeight = downscale ? SCALED_HEIGHT : HEIGHT;
+    const size_t dstSize = dstWidth * dstHeight * 4;
+    if (out.size() != dstSize) out.resize(dstSize);
 
-        vImage_Buffer src = {
-            .data = rgbBuffer.data(),
-            .height = (vImagePixelCount)srcHeight,
-            .width = (vImagePixelCount)srcWidth,
-            .rowBytes = srcWidth * 4
-        };
+    vImage_Buffer src = {
+        .data = rgbBuffer.data(),
+        .height = (vImagePixelCount)srcHeight,
+        .width = (vImagePixelCount)srcWidth,
+        .rowBytes = srcWidth * 4
+    };
 
     vImage_Buffer dst = {
         .data = out.data(),
@@ -138,21 +136,24 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale)
         .rowBytes = static_cast<size_t>(dstWidth * 4)
     };
 
-        // Resize (bilinear)
-        vImageScale_ARGB8888(&src, &dst, nullptr, kvImageHighQualityResampling);
+    // Resize (bilinear)
+    vImageScale_ARGB8888(&src, &dst, nullptr, kvImageHighQualityResampling);
 
-        // Flip vertically
-        vImageVerticalReflect_ARGB8888(&dst, &dst, kvImageNoFlags);
+    // Flip vertically
+    vImageVerticalReflect_ARGB8888(&dst, &dst, kvImageNoFlags);
 
-        // BGRA -> RGBA (permute channels)
-        const uint8_t permuteMap[4] = {2, 1, 0, 3}; // B,G,R,A -> R,G,B,A
-        vImagePermuteChannels_ARGB8888(&dst, &dst, permuteMap, kvImageNoFlags);
+    // Flip horizontally (mirror)
+    vImageHorizontalReflect_ARGB8888(&dst, &dst, kvImageNoFlags);
 
-        hasNewRGB = false;
-        return true;
+    // BGRA -> RGBA (permute channels)
+    const uint8_t permuteMap[4] = {2, 1, 0, 3}; // B,G,R,A -> R,G,B,A
+    vImagePermuteChannels_ARGB8888(&dst, &dst, permuteMap, kvImageNoFlags);
+
+    hasNewRGB = false;
+    return true;
 }
 
-// Get depth frame
+// Get depth frame with always horizontal mirroring
 bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
 
@@ -178,6 +179,9 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
     };
 
     vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+
+    // Flip horizontally (mirror)
+    vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
 
     // Convert to uint16_t
     const float* flippedData = flipped.data();

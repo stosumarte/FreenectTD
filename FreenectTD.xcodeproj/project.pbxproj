@@ -199,6 +199,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		81E200882E74291100CCB6AE /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -387,8 +388,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/include/libs",
-					"$(PROJECT_DIR)/include/libs/opencv",
+					"$(PROJECT_DIR)/include/libs/**",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = "1.0.0-beta";
@@ -428,8 +428,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/include/libs",
-					"$(PROJECT_DIR)/include/libs/opencv",
+					"$(PROJECT_DIR)/include/libs/**",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = "1.0.0-beta";

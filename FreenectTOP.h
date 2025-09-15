@@ -58,23 +58,22 @@ private:
     std::thread                             fn2_eventThread;
 
     // V2 background init members
-    //std::atomic<bool>                       v2InitInProgress{false};
-    //std::atomic<bool>                       v2InitDone{false};
-    //std::atomic<bool>                       v2InitSuccess{false};
-    //std::thread                             v2InitThread;
-    //std::string                             v2InitErrorString;
+    std::atomic<bool>                       fn2_InitInProgress{false};
+    //std::atomic<bool>                       fn2_InitDone{false};
+    std::atomic<bool>                       fn2_InitSuccess{false};
+    std::thread                             fn2_InitThread;
     
     // Add declarations for v2 enumeration thread helpers
-    void startV2EnumThread();
-    void stopV2EnumThread();
+    void fn2_startEnumThread();
+    void fn2_stopEnumThread();
 
     // Device init/cleanup methods
-    bool initDeviceV1();
-    void cleanupDeviceV1();
-    bool initDeviceV2();
-    void cleanupDeviceV2();
-    void startV2InitThread();
-    void waitV2InitThread();
+    bool fn1_initDevice();
+    void fn1_cleanupDevice();
+    bool fn2_initDevice();
+    void fn2_cleanupDevice();
+    void fn2_startInitThread();
+    void fn2_waitInitThread();
     std::mutex freenectMutex;
     
     // Execution methods for different device versions
@@ -84,14 +83,18 @@ private:
     
     // Error string handling
     std::string errorString;
-    void getErrorString(TD::OP_String *error, void *reserved1) override {
-        if (!errorString.empty())
-            error->setString(errorString.c_str());
-    }
+    void getErrorString(TD::OP_String* error, void* reserved1) override;
     
     // Current output pointer
     TD::TOP_Output* myCurrentOutput = nullptr;
 
     // Persistent fallback buffer for Metal safety
     TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer;
+
+    // V1 background init members
+    std::atomic<bool> fn1InitInProgress{false};
+    std::atomic<bool> fn1InitSuccess{false};
+    std::thread fn1InitThread;
+    void startV1InitThread();
+    void waitV1InitThread();
 };

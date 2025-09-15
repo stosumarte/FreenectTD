@@ -23,7 +23,6 @@ public:
     void DepthCallback(void* depth, uint32_t) override;
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<uint16_t>& out);
-    // New: unified processed frame methods
     bool getColorFrame(std::vector<uint8_t>& out);
     bool getDepthFrame(std::vector<uint16_t>& out);
     bool start();
