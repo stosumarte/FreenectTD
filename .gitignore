@@ -6,3 +6,4 @@ build/
 toe_examples/Backup/
 include_libs_build/
 logs/
+*.bin

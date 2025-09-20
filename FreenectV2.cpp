@@ -110,7 +110,7 @@ bool MyFreenect2Device::getDepth(std::vector<float>& out) {
     }
 }
 
-// Get color frame with flipping, downscaling, and always horizontal mirroring
+// Get color frame with flipping and optional downscaling
 bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewRGB) return false;
@@ -142,7 +142,7 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale)
     // Flip vertically
     vImageVerticalReflect_ARGB8888(&dst, &dst, kvImageNoFlags);
 
-    // Flip horizontally (mirror)
+    // Flip horizontally
     vImageHorizontalReflect_ARGB8888(&dst, &dst, kvImageNoFlags);
 
     // BGRA -> RGBA (permute channels)
@@ -179,8 +179,6 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out) {
     };
 
     vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
-
-    // Flip horizontally (mirror)
     vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
 
     // Convert to uint16_t

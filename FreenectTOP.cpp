@@ -818,30 +818,12 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
                 output->uploadBuffer(&buf, info, nullptr);
             } else {
                 LOG("[FreenectTOP] executeV2: failed to create visualized depth buffer");
+                errorString.clear();
+                errorString = "Failed to create visualized depth buffer";
             }
         }
     }
 }
-
-// DISABLED (probably blocked by TouchDesigner?) - Function to open a webpage (uncomment to use)
-
-/*#include <CoreServices/CoreServices.h> // for LSOpenCFURLRef
-#include <CoreFoundation/CoreFoundation.h>
-
-void openWebpage(const char* urlString)
-{
-    CFStringRef cfUrlString = CFStringCreateWithCString(NULL, urlString, kCFStringEncodingUTF8);
-    if (cfUrlString)
-    {
-        CFURLRef url = CFURLCreateWithString(NULL, cfUrlString, NULL);
-        if (url)
-        {
-            LSOpenCFURLRef(url, NULL); // This tells macOS to open in the default browser
-            CFRelease(url);
-        }
-        CFRelease(cfUrlString);
-    }
-}*/
 
 // Enable/disable parameters based on device type
 void dynamicParameterEnables(int deviceType, const TD::OP_Inputs* inputs) {
@@ -928,7 +910,7 @@ void FreenectTOP::uploadFallbackBuffer() {
         LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null, cannot upload fallback buffer");
         return;
     }
-    int fallbackWidth = 256, fallbackHeight = 256;
+    int fallbackWidth = 128, fallbackHeight = 128;
     if (!fallbackBuffer) {
         std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
         fallbackBuffer = fntdContext ? fntdContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
