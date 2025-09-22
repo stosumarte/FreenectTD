@@ -21,6 +21,8 @@
 #define FREENECTTOP_VERSION "dev"
 #endif
 
+#define FNTD_FALLBACK_BUFFER_ENABLED false
+
 // TouchDesigner Entrypoints
 extern "C" {
 
@@ -993,26 +995,31 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
 
 // Upload a fallback black buffer
 void FreenectTOP::uploadFallbackBuffer() {
-    if (!myCurrentOutput) {
-        LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null, cannot upload fallback buffer");
-        return;
-    }
-    int fallbackWidth = 128, fallbackHeight = 128;
-    if (!fallbackBuffer) {
-        std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
-        fallbackBuffer = fntdContext ? fntdContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-        if (fallbackBuffer) {
-            std::memcpy(fallbackBuffer->data, black.data(), fallbackWidth * fallbackHeight * 4);
+    if(FNTD_FALLBACK_BUFFER_ENABLED == true){
+        
+        if (!myCurrentOutput) {
+            LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null, cannot upload fallback buffer");
+            return;
         }
-    }
-    if (fallbackBuffer) {
-        TD::TOP_UploadInfo info;
-        info.textureDesc.width = fallbackWidth;
-        info.textureDesc.height = fallbackHeight;
-        info.textureDesc.texDim = TD::OP_TexDim::e2D;
-        info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
-        info.colorBufferIndex = 0; // Always upload to buffer index 0
-        myCurrentOutput->uploadBuffer(&fallbackBuffer, info, nullptr);
-        LOG("[FreenectTOP] uploadFallbackBuffer: uploaded persistent fallback black buffer");
+        int fallbackWidth = 128, fallbackHeight = 128;
+        if (!fallbackBuffer) {
+            std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
+            fallbackBuffer = fntdContext ? fntdContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            if (fallbackBuffer) {
+                std::memcpy(fallbackBuffer->data, black.data(), fallbackWidth * fallbackHeight * 4);
+            }
+        }
+        if (fallbackBuffer) {
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = fallbackWidth;
+            info.textureDesc.height = fallbackHeight;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
+            info.colorBufferIndex = 0; // Always upload to buffer index 0
+            myCurrentOutput->uploadBuffer(&fallbackBuffer, info, nullptr);
+            LOG("[FreenectTOP] uploadFallbackBuffer: uploaded persistent fallback black buffer");
+        }
+    } else {
+        return;
     }
 }
