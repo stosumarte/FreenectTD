@@ -914,21 +914,6 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
 }
 
-// Enable/disable parameters based on device type
-void dynamicParameterEnables(int deviceType, const TD::OP_Inputs* inputs) {
-    if (deviceType == 0) {
-        inputs->enablePar("Tilt", true);                // Enable Tilt for Kinect v1
-        inputs->enablePar("Resolutionlimit", false);    // Disable Resolutionlimit for Kinect v1
-        inputs->enablePar("Depthformat", false);        // Disable Depthformat for Kinect v1
-        inputs->enablePar("Depthdistortion", false);    // Disable Depthdistortion for Kinect v1
-    } else if (deviceType == 1) {
-        inputs->enablePar("Tilt", false);               // Disable Tilt for Kinect v2
-        inputs->enablePar("Resolutionlimit", true);     // Enable Resolutionlimit for Kinect v2
-        inputs->enablePar("Depthformat", true);         // Enable Depthformat for Kinect v2
-        inputs->enablePar("Depthdistortion", true);     // Enable Depthdistortion for Kinect v2
-    }
-}
-
 // Main execution method
 void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) {
     myCurrentOutput = output;
@@ -940,57 +925,56 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         return;
     }
     
-    // Get device type from parameter
+    // Get device type parameter as string
     const char* devTypeCStr = inputs->getParString("Hardwareversion");
-    std::string deviceTypeStr = devTypeCStr ? devTypeCStr : "Kinect v1";
-    int newDeviceType = (deviceTypeStr == "Kinect v2") ? 1 : 0;
-    deviceType = newDeviceType;
-    LOG("[FreenectTOP] execute: switching device type from " + lastDeviceTypeStr + " to " + deviceTypeStr);
+    std::string devType = devTypeCStr ? devTypeCStr : "Kinect v1";
+    static std::string lastDeviceType = "Kinect v1";
     
     // Check if Active parameter is set
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
     
+    // Enable/disable parameters based on device type string
+    if (devType == "Kinect v2") {
+        inputs->enablePar("Tilt", false);
+        inputs->enablePar("Resolutionlimit", true);
+        inputs->enablePar("Depthformat", true);
+        inputs->enablePar("Depthdistortion", true);
+    } else {
+        // Default to Kinect v1
+        inputs->enablePar("Tilt", true);
+        inputs->enablePar("Resolutionlimit", false);
+        inputs->enablePar("Depthformat", false);
+        inputs->enablePar("Depthdistortion", false);
+    }
+    
     // Check if the plugin is active
-    if (isActive == false) {
-        // If not active, upload a black buffer and return, keep dynamic parameters updated
+    if (!isActive) {
         LOG("[FreenectTOP] Not active, skipping device initialization and execution");
         uploadFallbackBuffer();
-        dynamicParameterEnables(deviceType, inputs);
         errorString.clear();
         return;
     }
     
-    else {
-        
-        dynamicParameterEnables(deviceType, inputs);
-        
-        
-        // If device type changed, re-init device
-        if (deviceTypeStr != lastDeviceTypeStr) {
-            LOG("[FreenectTOP] execute: device type changed, cleaning up devices");
-            fn2_cleanupDevice();
-            fn1_cleanupDevice();
-            lastDeviceTypeStr = deviceTypeStr;
-        }
-        
-        // Device type handling
-        if (deviceType == 0) {                  // Kinect v1
-            executeV1(output, inputs);
-        } else if (deviceType == 1) {           // Kinect v2
-            executeV2(output, inputs);
-        } else {                                // Invalid device type string (should not happen like EVER)
-            errorString.clear();
-            errorString = "Couldn't get device type - something went REALLY wrong";
-            LOG("ERROR: Couldn't get device type - something went REALLY wrong");
-            return;
-        }
-        
-        // Handle Checkforupdates button (uncomment to enable)
-        /*if (inputs->getParInt("Checkforupdates") == 1) {
-         openWebpage("github.com/stosumarte/FreenectTD/releases");
-         LOG("[FreenectTOP] Check for updates button pressed: opened update webpage");
-         }*/
+    // Check if device type changed - only clean up and log if it actually changed
+    if (devType != lastDeviceType) {
+        LOG("[FreenectTOP] Device type changed from " + lastDeviceType + " to " + devType + ", cleaning up devices");
+        fn1_cleanupDevice();
+        fn2_cleanupDevice();
+        lastDeviceType = devType;
     }
+    
+    // Execute based on current device type string
+    if (devType == "Kinect v2") {
+        executeV2(output, inputs);
+    } else {
+        executeV1(output, inputs);
+    }
+    
+    // Handle Checkforupdates button (uncomment to enable)
+    /*if (inputs->getParInt("Checkforupdates") == 1) {
+     openWebpage("github.com/stosumarte/FreenectTD/releases");
+     LOG("[FreenectTOP] Check for updates button pressed: opened update webpage");
+     }*/
 }
 
 // Upload a fallback black buffer

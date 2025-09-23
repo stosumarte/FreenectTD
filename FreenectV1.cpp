@@ -10,20 +10,23 @@
 #include <cstring>
 #include <iostream>
 #include <chrono>
+#include <Accelerate/Accelerate.h>
 
 // MyFreenectDevice class constructor
-MyFreenectDevice::MyFreenectDevice(freenect_context* ctx, int index,
-                                   std::atomic<bool>& rgbFlag,
-                                   std::atomic<bool>& depthFlag)
-    : FreenectDevice(ctx, index),
+MyFreenectDevice::MyFreenectDevice
+    (freenect_context* ctx, int index,
+     std::atomic<bool>& rgbFlag,
+     std::atomic<bool>& depthFlag) :
+      FreenectDevice(ctx, index),
       rgbReady(rgbFlag),
       depthReady(depthFlag),
       rgbBuffer(WIDTH * HEIGHT * 3),
       depthBuffer(WIDTH * HEIGHT),
       hasNewRGB(false),
-      hasNewDepth(false) {
+      hasNewDepth(false)
+{
     setVideoFormat(FREENECT_VIDEO_RGB);
-    setDepthFormat(FREENECT_DEPTH_11BIT);
+    setDepthFormat(FREENECT_DEPTH_REGISTERED);  // Changed from FREENECT_DEPTH_11BIT to FREENECT_DEPTH_REGISTERED
 }
 
 // MyFreenectDevice class destructor
@@ -130,25 +133,57 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
     return true;
 }
 
-// Get depth frame and apply scaling and flipping
+// Get depth frame for FREENECT_DEPTH_REGISTERED format (depth in mm, aligned to RGB) - Using Accelerate
 bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
-    int width = WIDTH, height = HEIGHT;
-    out.resize(width * height);
-    for (int y = 0; y < height; ++y) {
-        int srcY = height - 1 - y; // Always flip vertically
-        for (int x = 0; x < width; ++x) {
-            int idx = srcY * width + x;
-            uint16_t raw = depthBuffer[idx];
-            if (raw > 0 && raw < 2047) {
-                uint16_t scaled = raw << 5;
-                out[y * width + x] = scaled;
-            } else {
-                out[y * width + x] = 0;
-            }
+    
+    const size_t pixelCount = WIDTH * HEIGHT;
+    if (out.size() != pixelCount) out.resize(pixelCount);
+    
+    // Convert uint16_t depth buffer to float for vImage processing (similar to FreenectV2)
+    std::vector<float> floatDepth(pixelCount);
+    for (size_t i = 0; i < pixelCount; ++i) {
+        floatDepth[i] = static_cast<float>(depthBuffer[i]);
+    }
+    
+    // Use Accelerate framework for efficient flipping (like FreenectV2)
+    vImage_Buffer src = {
+        .data = floatDepth.data(),
+        .height = (vImagePixelCount)HEIGHT,
+        .width = (vImagePixelCount)WIDTH,
+        .rowBytes = WIDTH * sizeof(float)
+    };
+    
+    std::vector<float> flipped(pixelCount);
+    vImage_Buffer dst = {
+        .data = flipped.data(),
+        .height = (vImagePixelCount)HEIGHT,
+        .width = (vImagePixelCount)WIDTH,
+        .rowBytes = WIDTH * sizeof(float)
+    };
+    
+    // Flip vertically and horizontally using Accelerate (matching FreenectV2 behavior)
+    vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+    vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
+    
+    // Convert back to uint16_t with depth mapping similar to FreenectV2
+    const float* flippedData = flipped.data();
+    #pragma omp parallel for if(pixelCount > 100000)
+    for (size_t i = 0; i < pixelCount; ++i) {
+        float depth_mm = flippedData[i];
+        
+        // FREENECT_DEPTH_REGISTERED provides depth in mm (0-10000mm range)
+        // Map to 0-65535 range like FreenectV2, but use full FREENECT_DEPTH_MM_MAX_VALUE range
+        if (depth_mm > 100.0f && depth_mm <= static_cast<float>(FREENECT_DEPTH_MM_MAX_VALUE)) {
+            // Map from mm range to 16-bit range (similar to FreenectV2's approach)
+            out[i] = static_cast<uint16_t>(depth_mm / static_cast<float>(FREENECT_DEPTH_MM_MAX_VALUE) * 65535.0f);
+        } else {
+            // No valid depth data
+            out[i] = 0;
         }
     }
+    
     hasNewDepth = false;
     return true;
 }

@@ -32,12 +32,6 @@ private:
     const TD::OP_NodeInfo*                  fntdNodeInfo;
     TD::TOP_Context*                        fntdContext;
     
-    // Device type
-    // 0 = Kinect v1
-    // 1 = Kinect v2
-    int deviceType = 0;
-    std::string lastDeviceTypeStr;
-    
     // V1 device members
     freenect_context*                       fn1_ctx = nullptr;
     MyFreenectDevice*                       fn1_device = nullptr;
