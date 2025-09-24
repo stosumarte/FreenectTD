@@ -147,7 +147,6 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
         floatDepth[i] = static_cast<float>(depthBuffer[i]);
     }
     
-    // Use Accelerate framework for efficient flipping (like FreenectV2)
     vImage_Buffer src = {
         .data = floatDepth.data(),
         .height = (vImagePixelCount)HEIGHT,
@@ -163,11 +162,10 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
         .rowBytes = WIDTH * sizeof(float)
     };
     
-    // Flip vertically and horizontally using Accelerate (matching FreenectV2 behavior)
     vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
     vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
     
-    // Convert back to uint16_t with depth mapping similar to FreenectV2
+    // Convert back to uint16_t with depth mapping
     const float* flippedData = flipped.data();
     #pragma omp parallel for if(pixelCount > 100000)
     for (size_t i = 0; i < pixelCount; ++i) {
@@ -176,7 +174,7 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
         // FREENECT_DEPTH_REGISTERED provides depth in mm (0-10000mm range)
         // Map to 0-65535 range like FreenectV2, but use full FREENECT_DEPTH_MM_MAX_VALUE range
         if (depth_mm > 100.0f && depth_mm <= static_cast<float>(FREENECT_DEPTH_MM_MAX_VALUE)) {
-            // Map from mm range to 16-bit range (similar to FreenectV2's approach)
+            // Map from mm range to 16-bit range
             out[i] = static_cast<uint16_t>(depth_mm / static_cast<float>(FREENECT_DEPTH_MM_MAX_VALUE) * 65535.0f);
         } else {
             // No valid depth data

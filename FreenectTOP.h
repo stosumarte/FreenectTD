@@ -69,6 +69,7 @@ private:
     void fn2_startInitThread();
     void fn2_waitInitThread();
     std::mutex freenectMutex;
+    std::mutex fn1_eventMutex; // Separate mutex for v1 event thread
     
     // Execution methods for different device versions
     void executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs);

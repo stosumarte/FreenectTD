@@ -297,7 +297,7 @@ bool FreenectTOP::fn1_initDevice() {
             LOG("[FreenectTOP] fn1_eventThread: running");
             while (fn1_runEvents.load()) {
                 PROFILE("fn1_eventThread: iteration start");
-                std::lock_guard<std::mutex> lock(freenectMutex);
+                std::lock_guard<std::mutex> lock(fn1_eventMutex); // Use event mutex here
                 if (!fn1_ctx) break;
                 int err = freenect_process_events(fn1_ctx);
                 if (err < 0) {
