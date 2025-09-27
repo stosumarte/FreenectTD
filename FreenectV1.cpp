@@ -104,18 +104,42 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
         lastTime = now;
     }
     
-    out.resize(WIDTH * HEIGHT * 4);
-    for (int y = 0; y < HEIGHT; ++y) {
-        int srcY = HEIGHT - 1 - y; // Always flip vertically
-        for (int x = 0; x < WIDTH; ++x) {
-            int srcIdx = (srcY * WIDTH + x) * 3;
-            int dstIdx = (y * WIDTH + x) * 4;
-            out[dstIdx + 0] = rgbBuffer[srcIdx + 0];
-            out[dstIdx + 1] = rgbBuffer[srcIdx + 1];
-            out[dstIdx + 2] = rgbBuffer[srcIdx + 2];
-            out[dstIdx + 3] = 255;
-        }
+    const size_t pixelCount = WIDTH * HEIGHT;
+    out.resize(pixelCount * 4);
+    
+    // Create temporary buffer for RGB to RGBA conversion
+    std::vector<uint8_t> tempBuffer(pixelCount * 4);
+    
+    // Manual RGB to RGBA conversion (alpha set to 255)
+    for (size_t i = 0, j = 0; i < pixelCount; ++i, j += 4) {
+        tempBuffer[j + 0] = rgbBuffer[i * 3 + 0]; // R
+        tempBuffer[j + 1] = rgbBuffer[i * 3 + 1]; // G
+        tempBuffer[j + 2] = rgbBuffer[i * 3 + 2]; // B
+        tempBuffer[j + 3] = 255;                 // A
     }
+    
+    // Create a new buffer for the vertical reflection
+    std::vector<uint8_t> flippedBuffer(pixelCount * 4);
+
+    vImage_Buffer srcRGBA = {
+        .data = tempBuffer.data(),
+        .height = (vImagePixelCount)HEIGHT,
+        .width = (vImagePixelCount)WIDTH,
+        .rowBytes = WIDTH * 4
+    };
+
+    vImage_Buffer dstFlipped = {
+        .data = flippedBuffer.data(),
+        .height = (vImagePixelCount)HEIGHT,
+        .width = (vImagePixelCount)WIDTH,
+        .rowBytes = WIDTH * 4
+    };
+
+    // Perform vertical flip (using 4 channels since we now have RGBA data)
+    vImageVerticalReflect_ARGB8888(&srcRGBA, &dstFlipped, kvImageNoFlags);
+
+    // Copy the flipped RGBA data to the output buffer
+    std::memcpy(out.data(), flippedBuffer.data(), pixelCount * 4);
     
     // Log FPS after processing
     static int afterFrameCount = 0;
@@ -163,7 +187,6 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
     };
     
     vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
-    vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
     
     // Convert back to uint16_t with depth mapping
     const float* flippedData = flipped.data();
