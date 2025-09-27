@@ -229,7 +229,7 @@ FreenectTOP::~FreenectTOP() {
     fn2_cleanupDevice();
     LOG("[FreenectTOP] Calling fn1_cleanupDevice");
     fn1_cleanupDevice();
-    fallbackBuffer = nullptr; // Release fallback buffer
+    //fallbackBuffer = nullptr; // Release fallback buffer
 }
 
 // Init for Kinect v1 (libfreenect)
@@ -893,7 +893,8 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
 
 // Upload a fallback black buffer
 void FreenectTOP::uploadFallbackBuffer() {
-        if (!myCurrentOutput) {
+    return;
+        /*if (!myCurrentOutput) {
             LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null, cannot upload fallback buffer");
             return;
         }
@@ -914,5 +915,5 @@ void FreenectTOP::uploadFallbackBuffer() {
             info.colorBufferIndex = 0; // Always upload to buffer index 0
             myCurrentOutput->uploadBuffer(&fallbackBuffer, info, nullptr);
             LOG("[FreenectTOP] uploadFallbackBuffer: uploaded persistent fallback black buffer");
-        }
+        }*/
 }
