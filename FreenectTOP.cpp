@@ -316,38 +316,24 @@ bool FreenectTOP::fn1_initDevice() {
 void FreenectTOP::fn1_cleanupDevice() {
     LOG("[FreenectTOP] fn1_cleanupDevice: start");
     fn1_runEvents = false;
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(50));
     
     // Try to join event thread with timeout
     if (fn1_eventThread.joinable()) {
-        LOG("[FreenectTOP] fn1_cleanupDevice: attempting to join fn1_eventThread with timeout");
-        
-        auto future = std::async(std::launch::async, [&]() {
-            fn1_eventThread.join();
-        });
-        
-        if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
-            LOG("[FreenectTOP] fn1_cleanupDevice: fn1_eventThread join timed out after 500ms, detaching");
-            fn1_eventThread.detach();
-        } else {
-            LOG("[FreenectTOP] fn1_eventThread joined successfully");
-        }
+        LOG("[FreenectTOP] fn1_cleanupDevice: attempting to join fn1_eventThread");
+        fn1_eventThread.join();
+        LOG("[FreenectTOP] fn1_eventThread joined successfully");
+    } else {
+        LOG("[FreenectTOP] fn1_cleanupDevice: fn1_eventThread not joinable");
     }
     
     // Try to join init thread with timeout
     if (fn1InitThread.joinable()) {
         LOG("[FreenectTOP] fn1_cleanupDevice: attempting to join fn1InitThread with timeout");
-        
-        auto future = std::async(std::launch::async, [&]() {
-            fn1InitThread.join();
-        });
-        
-        if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
-            LOG("[FreenectTOP] fn1_cleanupDevice: fn1InitThread join timed out after 500ms, detaching");
-            fn1InitThread.detach();
-        } else {
-            LOG("[FreenectTOP] fn1InitThread joined successfully");
-        }
+        fn1InitThread.join();
+        LOG("[FreenectTOP] fn1InitThread joined successfully");
+    } else {
+        LOG("[FreenectTOP] fn1_cleanupDevice: fn1InitThread not joinable");
     }
     
     // Clean up device and context
@@ -402,18 +388,9 @@ void FreenectTOP::fn2_stopEnumThread() {
     LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThread joinable = " + std::to_string(v2EnumThread.joinable()));
     
     if (v2EnumThread.joinable()) {
-        LOG("[FreenectTOP] fn2_stopEnumThread: attempting to join v2EnumThread with timeout");
-        
-        auto future = std::async(std::launch::async, [&]() {
-            v2EnumThread.join();
-        });
-        
-        if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
-            LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThread join timed out after 500ms, detaching");
-            v2EnumThread.detach();
-        } else {
-            LOG("[FreenectTOP] v2EnumThread joined successfully");
-        }
+        LOG("[FreenectTOP] fn2_stopEnumThread: attempting to join v2EnumThread");
+        v2EnumThread.join();
+        LOG("[FreenectTOP] v2EnumThread joined successfully");
     }
     LOG("[FreenectTOP] fn2_stopEnumThread: end");
 }
@@ -540,7 +517,12 @@ void FreenectTOP::startV1InitThread() {
         fn1InitSuccess = result;
         fn1InitInProgress = false;
     });
-    fn1InitThread.detach(); // Or join later as needed
+    //fn1InitThread.detach(); // Or join later as needed
+    if (fn1InitThread.joinable()) {
+        fn1InitThread.join();
+    } else {
+        LOG("[FreenectTOP] startV1InitThread: fn1InitThread not joinable after creation");
+    }
 }
 
 void FreenectTOP::waitV1InitThread() {
