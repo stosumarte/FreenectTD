@@ -236,15 +236,12 @@ FreenectTOP::~FreenectTOP() {
 bool FreenectTOP::fn1_initDevice() {
     
     LOG("[FreenectTOP] fn1_initDevice: start");
-    PROFILE("fn1_initDevice: start");
     LOG(std::string("[FreenectTOP] fn1_initDevice: fn1_ctx before = ") + std::to_string(reinterpret_cast<uintptr_t>(fn1_ctx)));
     
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (freenect_init(&fn1_ctx, nullptr) < 0) {
-        PROFILE("fn1_initDevice: freenect_init failed");
         LOG("[FreenectTOP] freenect_init failed");
         LOG(std::string("[FreenectTOP] fn1_initDevice: fn1_ctx after fail = ") + std::to_string(reinterpret_cast<uintptr_t>(fn1_ctx)));
-        PROFILE("fn1_initDevice: end");
         LOG("[FreenectTOP] fn1_initDevice: end (fail)");
         return false;
     }
@@ -262,7 +259,6 @@ bool FreenectTOP::fn1_initDevice() {
 
     int numDevices = freenect_num_devices(fn1_ctx);
     
-    PROFILE(std::string("fn1_initDevice: numDevices=") + std::to_string(numDevices));
     LOG("[FreenectTOP] fn1_initDevice: numDevices = " + std::to_string(numDevices));
     
     if (numDevices <= 0) {
@@ -272,7 +268,6 @@ bool FreenectTOP::fn1_initDevice() {
         freenect_shutdown(fn1_ctx);
         fn1_ctx = nullptr;
         LOG(std::string("[FreenectTOP] fn1_initDevice: fn1_ctx shutdown, now = ") + std::to_string(reinterpret_cast<uintptr_t>(fn1_ctx)));
-        PROFILE("fn1_initDevice: end");
         LOG("[FreenectTOP] fn1_initDevice: end (no devices)");
         return false;
     }
@@ -282,7 +277,6 @@ bool FreenectTOP::fn1_initDevice() {
         fn1_depthReady = false;
         LOG(std::string("[FreenectTOP] fn1_initDevice: device before = ") + std::to_string(reinterpret_cast<uintptr_t>(fn1_device)));
         fn1_device = new MyFreenectDevice(fn1_ctx, 0, fn1_rgbReady, fn1_depthReady);
-        PROFILE("fn1_initDevice: device created");
         LOG(std::string("[FreenectTOP] fn1_initDevice: device after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn1_device)));
         fn1_device->startVideo();
         fn1_device->startDepth();
@@ -290,13 +284,10 @@ bool FreenectTOP::fn1_initDevice() {
 
         fn1_runEvents = true;
         LOG("[FreenectTOP] fn1_initDevice: fn1_runEvents set to true");
-        PROFILE("fn1_initDevice: starting fn1_eventThread");
         LOG(std::string("[FreenectTOP] fn1_initDevice: fn1_eventThread joinable before = ") + std::to_string(fn1_eventThread.joinable()));
         fn1_eventThread = std::thread([this]() {
-            PROFILE("fn1_eventThread: started");
             LOG("[FreenectTOP] fn1_eventThread: running");
             while (fn1_runEvents.load()) {
-                PROFILE("fn1_eventThread: iteration start");
                 std::lock_guard<std::mutex> lock(fn1_eventMutex); // Use event mutex here
                 if (!fn1_ctx) break;
                 int err = freenect_process_events(fn1_ctx);
@@ -304,24 +295,19 @@ bool FreenectTOP::fn1_initDevice() {
                     LOG("[FreenectTOP] Error in freenect_process_events");
                     break;
                 }
-                PROFILE("fn1_eventThread: iteration end");
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
-            PROFILE("fn1_eventThread: exiting");
             LOG("[FreenectTOP] fn1_eventThread: exiting");
         });
         LOG(std::string("[FreenectTOP] fn1_initDevice: fn1_eventThread joinable after = ") + std::to_string(fn1_eventThread.joinable()));
-        PROFILE("fn1_initDevice: fn1_eventThread started");
     } catch (...) {
         LOG("[FreenectTOP] Failed to start device");
         errorString.clear();
         errorString = "Failed to start Kinect v1 device";
         fn1_cleanupDevice();
-        PROFILE("fn1_initDevice: end");
         LOG("[FreenectTOP] fn1_initDevice: end (exception)");
         return false;
     }
-    PROFILE("fn1_initDevice: end");
     LOG("[FreenectTOP] fn1_initDevice: end (success)");
     return true;
 }
@@ -329,13 +315,11 @@ bool FreenectTOP::fn1_initDevice() {
 // Cleanup for Kinect v1 (libfreenect)
 void FreenectTOP::fn1_cleanupDevice() {
     LOG("[FreenectTOP] fn1_cleanupDevice: start");
-    PROFILE("fn1_cleanupDevice: start");
     fn1_runEvents = false;
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     
     // Try to join event thread with timeout
     if (fn1_eventThread.joinable()) {
-        PROFILE("fn1_cleanupDevice: attempting to join fn1_eventThread with timeout");
         LOG("[FreenectTOP] fn1_cleanupDevice: attempting to join fn1_eventThread with timeout");
         
         auto future = std::async(std::launch::async, [&]() {
@@ -344,18 +328,15 @@ void FreenectTOP::fn1_cleanupDevice() {
         
         if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
             LOG("[FreenectTOP] fn1_cleanupDevice: fn1_eventThread join timed out after 500ms, detaching");
-            PROFILE("fn1_cleanupDevice: fn1_eventThread join timed out, detaching");
             fn1_eventThread.detach();
         } else {
             LOG("[FreenectTOP] fn1_eventThread joined successfully");
-            PROFILE("fn1_cleanupDevice: fn1_eventThread joined successfully");
         }
     }
     
     // Try to join init thread with timeout
     if (fn1InitThread.joinable()) {
         LOG("[FreenectTOP] fn1_cleanupDevice: attempting to join fn1InitThread with timeout");
-        PROFILE("fn1_cleanupDevice: attempting to join fn1InitThread with timeout");
         
         auto future = std::async(std::launch::async, [&]() {
             fn1InitThread.join();
@@ -363,11 +344,9 @@ void FreenectTOP::fn1_cleanupDevice() {
         
         if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
             LOG("[FreenectTOP] fn1_cleanupDevice: fn1InitThread join timed out after 500ms, detaching");
-            PROFILE("fn1_cleanupDevice: fn1InitThread join timed out, detaching");
             fn1InitThread.detach();
         } else {
             LOG("[FreenectTOP] fn1InitThread joined successfully");
-            PROFILE("fn1_cleanupDevice: fn1InitThread joined successfully");
         }
     }
     
@@ -385,7 +364,6 @@ void FreenectTOP::fn1_cleanupDevice() {
     }
     fn1InitInProgress = false;
     fn1InitSuccess = false;
-    PROFILE("fn1_cleanupDevice: end");
     LOG("[FreenectTOP] fn1_cleanupDevice: end");
 }
 
@@ -397,18 +375,13 @@ static std::atomic<bool> v2EnumThreadRunning(false);
 // Start the background enumeration thread for Kinect v2
 void FreenectTOP::fn2_startEnumThread() {
     LOG("[FreenectTOP] fn2_startEnumThread: start");
-    PROFILE("fn2_startEnumThread: start");
     LOG("[FreenectTOP] fn2_startEnumThread: v2EnumThreadRunning before = " + std::to_string(v2EnumThreadRunning.load()));
     if (v2EnumThreadRunning.load()) {
-        PROFILE("fn2_startEnumThread: already running");
-        LOG("[FreenectTOP] fn2_startEnumThread: already running");
-        PROFILE("fn2_startEnumThread: end");
-        LOG("[FreenectTOP] fn2_startEnumThread: end (already running)");
+        LOG("[FreenectTOP] fn2_startEnumThread: end, already running");
         return;
     }
     v2EnumThreadRunning = true;
     LOG("[FreenectTOP] fn2_startEnumThread: v2EnumThreadRunning after = " + std::to_string(v2EnumThreadRunning.load()));
-    PROFILE("fn2_startEnumThread: launching thread");
     v2EnumThread = std::thread([]() {
         while (v2EnumThreadRunning.load()) {
             libfreenect2::Freenect2 ctx;
@@ -417,22 +390,18 @@ void FreenectTOP::fn2_startEnumThread() {
         }
     });
     LOG("[FreenectTOP] fn2_startEnumThread: v2EnumThread joinable after = " + std::to_string(v2EnumThread.joinable()));
-    PROFILE("fn2_startEnumThread: thread launched");
-    PROFILE("fn2_startEnumThread: end");
     LOG("[FreenectTOP] fn2_startEnumThread: end");
 }
 
 // Stop the background enumeration thread for Kinect v2
 void FreenectTOP::fn2_stopEnumThread() {
     LOG("[FreenectTOP] fn2_stopEnumThread: start");
-    PROFILE("fn2_stopEnumThread: start");
     LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThreadRunning before = " + std::to_string(v2EnumThreadRunning.load()));
     v2EnumThreadRunning = false;
     LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThreadRunning after = " + std::to_string(v2EnumThreadRunning.load()));
     LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThread joinable = " + std::to_string(v2EnumThread.joinable()));
     
     if (v2EnumThread.joinable()) {
-        PROFILE("fn2_stopEnumThread: attempting to join v2EnumThread with timeout");
         LOG("[FreenectTOP] fn2_stopEnumThread: attempting to join v2EnumThread with timeout");
         
         auto future = std::async(std::launch::async, [&]() {
@@ -441,41 +410,31 @@ void FreenectTOP::fn2_stopEnumThread() {
         
         if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
             LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThread join timed out after 500ms, detaching");
-            PROFILE("fn2_stopEnumThread: v2EnumThread join timed out, detaching");
             v2EnumThread.detach();
         } else {
             LOG("[FreenectTOP] v2EnumThread joined successfully");
-            PROFILE("fn2_stopEnumThread: v2EnumThread joined successfully");
         }
     }
-    
-    PROFILE("fn2_stopEnumThread: end");
     LOG("[FreenectTOP] fn2_stopEnumThread: end");
 }
 
 // Init for Kinect v2 (libfreenect2)
 bool FreenectTOP::fn2_initDevice() {
     LOG("[FreenectTOP] fn2_initDevice: start");
-    PROFILE("fn2_initDevice: start");
     LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_ctx before = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_ctx)));
     std::lock_guard<std::mutex> lock(freenectMutex);
     fn2_startEnumThread();
     if (!v2DeviceAvailable.load()) {
-        PROFILE("fn2_initDevice: no device available");
         LOG("[FreenectTOP] fn2_initDevice: no device available");
-        PROFILE("fn2_initDevice: end");
         LOG("[FreenectTOP] fn2_initDevice: end (no device)");
         return false;
     }
     if (fn2_ctx) {
-        PROFILE("fn2_initDevice: already initialized");
         LOG("[FreenectTOP] fn2_initDevice: already initialized");
-        PROFILE("fn2_initDevice: end");
         LOG("[FreenectTOP] fn2_initDevice: end (already initialized)");
         return true;
     }
     fn2_ctx = new libfreenect2::Freenect2();
-    PROFILE("fn2_initDevice: fn2_ctx created");
     LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_ctx after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_ctx)));
     if (fn2_ctx->enumerateDevices() == 0) {
         LOG("[FreenectTOP] No Kinect v2 devices found");
@@ -484,7 +443,6 @@ bool FreenectTOP::fn2_initDevice() {
         delete fn2_ctx;
         fn2_ctx = nullptr;
         LOG("[FreenectTOP] fn2_initDevice: fn2_ctx deleted and set to nullptr");
-        PROFILE("fn2_initDevice: end");
         LOG("[FreenectTOP] fn2_initDevice: end (no devices)");
         return false;
     }
@@ -492,13 +450,11 @@ bool FreenectTOP::fn2_initDevice() {
     try {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
         LOG("[FreenectTOP] Using CPU pipeline for Kinect v2");
-        PROFILE("fn2_initDevice: CPU pipeline created");
         LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_pipeline after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_pipeline)));
     } catch (...) {
         errorString.clear();
         errorString = "Couldn't create CPU pipeline for Kinect v2";
         LOG("Couldn't create CPU pipeline for Kinect v2");
-        PROFILE("fn2_initDevice: CPU pipeline creation failed");
         LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_pipeline after fail = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_pipeline)));
     }
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
@@ -521,13 +477,11 @@ bool FreenectTOP::fn2_initDevice() {
         }
         fn2_device = nullptr;
         LOG("[FreenectTOP] fn2_initDevice: fn2_device set to nullptr");
-        PROFILE("fn2_initDevice: end");
         LOG("[FreenectTOP] fn2_initDevice: end (openDevice fail)");
         return false;
     }
     if (!fn2_device) {
         fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady);
-        PROFILE("fn2_initDevice: fn2_device created");
         LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_device after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_device)));
     }
     if (!fn2_device->start()) {
@@ -548,40 +502,31 @@ bool FreenectTOP::fn2_initDevice() {
         }
         fn2_device = nullptr;
         LOG("[FreenectTOP] fn2_initDevice: fn2_device set to nullptr");
-        PROFILE("fn2_initDevice: end");
         LOG("[FreenectTOP] fn2_initDevice: end (start fail)");
         return false;
     }
     // **Stop enumeration thread after successful device start**
     fn2_stopEnumThread();
-    PROFILE("fn2_initDevice: device started and enum thread stopped");
     LOG("[FreenectTOP] fn2_initDevice: device started and enum thread stopped");
     // Start event thread for v2
     LOG("[FreenectTOP] fn2_initDevice: fn2_eventThread joinable before = " + std::to_string(fn2_eventThread.joinable()));
     if (!fn2_eventThread.joinable()) {
         fn2_runEvents = true;
         LOG("[FreenectTOP] fn2_initDevice: fn2_runEvents set to true");
-        PROFILE("fn2_initDevice: starting fn2_eventThread");
         fn2_eventThread = std::thread([this]() {
-            PROFILE("fn2_eventThread: started");
             LOG("[FreenectTOP] fn2_eventThread: running");
             while (fn2_runEvents.load()) {
-                PROFILE("fn2_eventThread: iteration start");
                 std::lock_guard<std::mutex> lock(freenectMutex);
                 if (fn2_device) {
                     fn2_device->processFrames();
                 } else {
                     LOG("[FreenectTOP] fn2_device is null in event thread");
                 }
-                PROFILE("fn2_eventThread: iteration end");
             }
-            PROFILE("fn2_eventThread: exiting");
             LOG("[FreenectTOP] fn2_eventThread: exiting");
         });
         LOG("[FreenectTOP] fn2_initDevice: fn2_eventThread joinable after = " + std::to_string(fn2_eventThread.joinable()));
-        PROFILE("fn2_initDevice: fn2_eventThread started");
     }
-    PROFILE("fn2_initDevice: end");
     LOG("[FreenectTOP] fn2_initDevice: end (success)");
     return true;
 }
@@ -625,14 +570,12 @@ void FreenectTOP::fn2_waitInitThread() {
 // Cleanup for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_cleanupDevice() {
     LOG("[FreenectTOP] fn2_cleanupDevice: start");
-    PROFILE("fn2_cleanupDevice: start");
     fn2_runEvents = false;
     // Wait a short time for the event thread to exit
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     
     // Try to join event thread with timeout
     if (fn2_eventThread.joinable()) {
-        PROFILE("fn2_cleanupDevice: attempting to join fn2_eventThread with timeout");
         LOG("[FreenectTOP] fn2_cleanupDevice: attempting to join fn2_eventThread with timeout");
         
         auto future = std::async(std::launch::async, [&]() {
@@ -641,18 +584,15 @@ void FreenectTOP::fn2_cleanupDevice() {
         
         if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
             LOG("[FreenectTOP] fn2_cleanupDevice: fn2_eventThread join timed out after 500ms, detaching");
-            PROFILE("fn2_cleanupDevice: fn2_eventThread join timed out, detaching");
             fn2_eventThread.detach();
         } else {
             LOG("[FreenectTOP] fn2_eventThread joined successfully");
-            PROFILE("fn2_cleanupDevice: fn2_eventThread joined successfully");
         }
     }
     
     // Try to join init thread with timeout
     if (fn2_InitThread.joinable()) {
         LOG("[FreenectTOP] fn2_cleanupDevice: attempting to join fn2_InitThread with timeout");
-        PROFILE("fn2_cleanupDevice: attempting to join fn2_InitThread with timeout");
         
         auto future = std::async(std::launch::async, [&]() {
             fn2_InitThread.join();
@@ -660,11 +600,9 @@ void FreenectTOP::fn2_cleanupDevice() {
         
         if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
             LOG("[FreenectTOP] fn2_cleanupDevice: fn2_InitThread join timed out after 500ms, detaching");
-            PROFILE("fn2_cleanupDevice: fn2_InitThread join timed out, detaching");
             fn2_InitThread.detach();
         } else {
             LOG("[FreenectTOP] fn2_InitThread joined successfully");
-            PROFILE("fn2_cleanupDevice: fn2_InitThread joined successfully");
         }
     }
     
@@ -688,7 +626,6 @@ void FreenectTOP::fn2_cleanupDevice() {
     }
     fn2_InitInProgress = false;
     fn2_InitSuccess = false;
-    PROFILE("fn2_cleanupDevice: end");
     LOG("[FreenectTOP] fn2_cleanupDevice: end");
 }
 
@@ -820,6 +757,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             LOG("[FreenectTOP] executeV2: failed to create color output buffer");
         }
     }
+    
     // --- Output depth according to Depthformat and Depthdistortion parameter ---
     std::string depthDistortStr = inputs->getParString("Depthdistortion") ? inputs->getParString("Depthdistortion") : "Distorted";
     std::string depthFormatStr = inputs->getParString("Depthformat") ? inputs->getParString("Depthformat") : "Raw (16-bit)";
@@ -969,18 +907,10 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     } else {
         executeV1(output, inputs);
     }
-    
-    // Handle Checkforupdates button (uncomment to enable)
-    /*if (inputs->getParInt("Checkforupdates") == 1) {
-     openWebpage("github.com/stosumarte/FreenectTD/releases");
-     LOG("[FreenectTOP] Check for updates button pressed: opened update webpage");
-     }*/
 }
 
 // Upload a fallback black buffer
 void FreenectTOP::uploadFallbackBuffer() {
-    if(FNTD_FALLBACK_BUFFER_ENABLED == true){
-        
         if (!myCurrentOutput) {
             LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null, cannot upload fallback buffer");
             return;
@@ -1003,7 +933,4 @@ void FreenectTOP::uploadFallbackBuffer() {
             myCurrentOutput->uploadBuffer(&fallbackBuffer, info, nullptr);
             LOG("[FreenectTOP] uploadFallbackBuffer: uploaded persistent fallback black buffer");
         }
-    } else {
-        return;
-    }
 }
