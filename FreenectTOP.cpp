@@ -353,11 +353,6 @@ void FreenectTOP::fn1_cleanupDevice() {
     LOG("[FreenectTOP] fn1_cleanupDevice: end");
 }
 
-// Add static atomic flag and thread for v2 device search
-static std::atomic<bool> v2DeviceAvailable(false);
-static std::thread v2EnumThread;
-static std::atomic<bool> v2EnumThreadRunning(false);
-
 // Start the background enumeration thread for Kinect v2
 void FreenectTOP::fn2_startEnumThread() {
     LOG("[FreenectTOP] fn2_startEnumThread: start");
@@ -368,7 +363,7 @@ void FreenectTOP::fn2_startEnumThread() {
     }
     v2EnumThreadRunning = true;
     LOG("[FreenectTOP] fn2_startEnumThread: v2EnumThreadRunning after = " + std::to_string(v2EnumThreadRunning.load()));
-    v2EnumThread = std::thread([]() {
+    v2EnumThread = std::thread([this]() {
         while (v2EnumThreadRunning.load()) {
             libfreenect2::Freenect2 ctx;
             v2DeviceAvailable = (ctx.enumerateDevices() > 0);

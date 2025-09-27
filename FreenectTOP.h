@@ -50,6 +50,10 @@ private:
     std::atomic<bool>                       fn2_runEvents{false};
     //libfreenect2::Registration*             fn2_registration = nullptr;
     std::thread                             fn2_eventThread;
+    
+    std::atomic<bool>                       v2DeviceAvailable{false};
+    std::thread                             v2EnumThread;
+    std::atomic<bool>                       v2EnumThreadRunning;
 
     // V2 background init members
     std::atomic<bool>                       fn2_InitInProgress{false};
