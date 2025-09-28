@@ -26,19 +26,22 @@ public:
     static constexpr int DEPTH_HEIGHT = 424;
     
     MyFreenect2Device(libfreenect2::Freenect2Device* device,
-                     std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag);
+                     std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag, std::atomic<bool>& irFlag);
     ~MyFreenect2Device();
     bool start();
     void stop();
     void close();
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<float>& out);
+    bool getIR(std::vector<float>& out);
     void processFrames();
     // Unified processed frame methods for v2
     bool getColorFrame(std::vector<uint8_t>& out, bool downscale);
     //bool getDepthFrame(std::vector<uint16_t>& out, bool invert, bool undistort);
     bool getDepthFrame(std::vector<uint16_t>& out);
     bool getUndistortedDepthFrame(std::vector<uint16_t>& out);
+    bool getRegisteredDepthFrame(std::vector<uint16_t>& out);
+    bool getIRFrame(std::vector<uint16_t>& out);
     // Setters for buffer injection
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
@@ -50,9 +53,12 @@ private:
     libfreenect2::SyncMultiFrameListener* listener;
     std::atomic<bool>&    rgbReady;
     std::atomic<bool>&    depthReady;
+    std::atomic<bool>&    irReady;
     std::vector<uint8_t>  rgbBuffer;
     std::vector<float>    depthBuffer;
+    std::vector<float>    irBuffer;
     std::mutex            mutex;
     bool                  hasNewRGB;
     bool                  hasNewDepth;
+    bool                  hasNewIR;
 };

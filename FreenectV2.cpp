@@ -14,8 +14,8 @@
 
 // MyFreenect2Device class constructor
 MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev,
-                                     std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag)
-    : device(dev), listener(nullptr), rgbReady(rgbFlag), depthReady(depthFlag),
+                                     std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag, std::atomic<bool>& irFlag)
+    : device(dev), listener(nullptr), rgbReady(rgbFlag), depthReady(depthFlag), irReady(irFlag),
       rgbBuffer(WIDTH * HEIGHT * 4, 0), depthBuffer(DEPTH_WIDTH * DEPTH_HEIGHT, 0),
       hasNewRGB(false), hasNewDepth(false) {
     listener = new libfreenect2::SyncMultiFrameListener
@@ -41,7 +41,7 @@ MyFreenect2Device::~MyFreenect2Device() {
 // Start the device streams using libfreenect2 API
 bool MyFreenect2Device::start() {
     if (!device) return false;
-    return device->startStreams(true,true);
+    return device->startStreams(true, true);
 }
 
 // Stop the device streams using libfreenect2 API
@@ -71,6 +71,7 @@ void MyFreenect2Device::processFrames() {
     listener->waitForNewFrame(frames, 1000); // Immediately get the frame if available
     libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
     libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
+    libfreenect2::Frame* ir = frames[libfreenect2::Frame::Ir];
     {
         std::lock_guard<std::mutex> lock(mutex);
         if (rgb && rgb->data && rgb->width == WIDTH && rgb->height == HEIGHT) {
@@ -84,6 +85,15 @@ void MyFreenect2Device::processFrames() {
             hasNewDepth = true;
             depthReady = true;
         }
+        if (ir && ir->data && ir->width == DEPTH_WIDTH && ir->height == DEPTH_HEIGHT) {
+            const float* src = reinterpret_cast<const float*>(ir->data);
+            if (irBuffer.size() != DEPTH_WIDTH * DEPTH_HEIGHT)
+                irBuffer.resize(DEPTH_WIDTH * DEPTH_HEIGHT);
+            std::copy(src, src + DEPTH_WIDTH * DEPTH_HEIGHT, irBuffer.begin());
+            hasNewIR = true;
+            irReady = true;
+        }
+
     }
     listener->release(frames);
 }
@@ -106,6 +116,19 @@ bool MyFreenect2Device::getDepth(std::vector<float>& out) {
     else {
         out = depthBuffer;
         hasNewDepth = false;
+        return true;
+    }
+}
+
+// Get IR data
+bool MyFreenect2Device::getIR(std::vector<float>& out) {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!hasNewIR) {
+        return false;
+    }
+    else {
+        out = irBuffer;
+        hasNewIR = false;
         return true;
     }
 }
@@ -247,6 +270,160 @@ bool MyFreenect2Device::getUndistortedDepthFrame(std::vector<uint16_t>& out) {
     hasNewDepth = false;
     return true;
 }
+
+// Get registered depth frame
+bool MyFreenect2Device::getRegisteredDepthFrame(std::vector<uint16_t>& out) {
+    std::lock_guard<std::mutex> lock(mutex);
+
+    if (!hasNewDepth || !device) return false;
+
+    static libfreenect2::Registration* reg = nullptr;
+    static libfreenect2::Frame depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+    static libfreenect2::Frame undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+    static libfreenect2::Frame registeredFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+    static libfreenect2::Frame rgbFrame(WIDTH, HEIGHT, sizeof(uint8_t) * 4);
+
+    if (!reg) {
+        const libfreenect2::Freenect2Device::IrCameraParams& irParams = device->getIrCameraParams();
+        const libfreenect2::Freenect2Device::ColorCameraParams& colorParams = device->getColorCameraParams();
+        reg = new libfreenect2::Registration(irParams, colorParams);
+    }
+
+    std::ostringstream oss;
+    oss << "[getRegisteredDepthFrame] rgbBuffer size: " << rgbBuffer.size() << ", depthBuffer size: " << depthBuffer.size();
+    LOG(oss.str());
+    if (!rgbBuffer.empty()) {
+        std::ostringstream oss2;
+        oss2 << "[getRegisteredDepthFrame] rgbBuffer sample: " << (int)rgbBuffer[0] << " " << (int)rgbBuffer[1] << " " << (int)rgbBuffer[2] << " " << (int)rgbBuffer[3];
+        LOG(oss2.str());
+    }
+    if (!depthBuffer.empty()) {
+        std::ostringstream oss3;
+        oss3 << "[getRegisteredDepthFrame] depthBuffer sample: " << depthBuffer[0] << " " << depthBuffer[1] << " " << depthBuffer[2] << " " << depthBuffer[3];
+        LOG(oss3.str());
+    }
+
+    std::memcpy(rgbFrame.data, rgbBuffer.data(), WIDTH * HEIGHT * 4);
+    std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
+
+    // Log min/max/mean of depthFrame before registration
+    float* depthData = reinterpret_cast<float*>(depthFrame.data);
+    float minDepth = 99999.0f, maxDepth = -99999.0f, sumDepth = 0.0f;
+    size_t validDepthCount = 0;
+    for (size_t i = 0; i < DEPTH_WIDTH * DEPTH_HEIGHT; ++i) {
+        float d = depthData[i];
+        if (d > 0.0f) {
+            minDepth = std::min(minDepth, d);
+            maxDepth = std::max(maxDepth, d);
+            sumDepth += d;
+            ++validDepthCount;
+        }
+    }
+    std::ostringstream oss4;
+    oss4 << "[getRegisteredDepthFrame] depthFrame stats: min=" << minDepth << " max=" << maxDepth << " mean=" << (validDepthCount ? sumDepth/validDepthCount : 0.0f) << " valid=" << validDepthCount;
+    LOG(oss4.str());
+
+    reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame, true);
+    LOG("[getRegisteredDepthFrame] reg->apply() called");
+
+    // Log min/max/mean of registeredFrame after registration
+    float* regData = reinterpret_cast<float*>(registeredFrame.data);
+    minDepth = 99999.0f; maxDepth = -99999.0f; sumDepth = 0.0f; validDepthCount = 0;
+    for (size_t i = 0; i < DEPTH_WIDTH * DEPTH_HEIGHT; ++i) {
+        float d = regData[i];
+        if (d > 0.0f) {
+            minDepth = std::min(minDepth, d);
+            maxDepth = std::max(maxDepth, d);
+            sumDepth += d;
+            ++validDepthCount;
+        }
+    }
+    std::ostringstream oss5;
+    oss5 << "[getRegisteredDepthFrame] registeredFrame stats: min=" << minDepth << " max=" << maxDepth << " mean=" << (validDepthCount ? sumDepth/validDepthCount : 0.0f) << " valid=" << validDepthCount;
+    LOG(oss5.str());
+
+    // Flip frame using Accelerate
+    const size_t pixelCount = DEPTH_WIDTH * DEPTH_HEIGHT;
+    if (out.size() != pixelCount) out.resize(pixelCount);
+
+    vImage_Buffer src = {
+        .data = registeredFrame.data,
+        .height = (vImagePixelCount)DEPTH_HEIGHT,
+        .width = (vImagePixelCount)DEPTH_WIDTH,
+        .rowBytes = DEPTH_WIDTH * sizeof(float)
+    };
+
+    std::vector<float> flipped(pixelCount);
+    vImage_Buffer dst = {
+        .data = flipped.data(),
+        .height = (vImagePixelCount)DEPTH_HEIGHT,
+        .width = (vImagePixelCount)DEPTH_WIDTH,
+        .rowBytes = DEPTH_WIDTH * sizeof(float)
+    };
+
+    vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+    vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
+    LOG("[getRegisteredDepthFrame] Frame flipped");
+
+    // Convert to uint16_t and log nonzero count
+    const float* flippedData = flipped.data();
+    size_t nonzeroCount = 0;
+    #pragma omp parallel for if(pixelCount > 100000) reduction(+:nonzeroCount)
+    for (size_t i = 0; i < pixelCount; ++i) {
+        float d = flippedData[i];
+        out[i] = (d > 100.0f && d < 4500.0f) ?
+                 static_cast<uint16_t>(d / 4500.0f * 65535.0f) : 0;
+        if (out[i] > 0) ++nonzeroCount;
+    }
+    std::ostringstream oss6;
+    oss6 << "[getRegisteredDepthFrame] Output nonzero pixels: " << nonzeroCount << "/" << pixelCount;
+    LOG(oss6.str());
+
+    hasNewDepth = false;
+    return true;
+}
+
+// Get IR frame
+bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out) {
+    std::lock_guard<std::mutex> lock(mutex);
+
+    if (!hasNewIR) return false;
+
+    // Flip irBuffer vertically using Accelerate
+    const size_t pixelCount = DEPTH_WIDTH * DEPTH_HEIGHT;
+    if (out.size() != pixelCount) out.resize(pixelCount);
+
+    vImage_Buffer src = {
+        .data = (void*)irBuffer.data(),
+        .height = (vImagePixelCount)DEPTH_HEIGHT,
+        .width = (vImagePixelCount)DEPTH_WIDTH,
+        .rowBytes = DEPTH_WIDTH * sizeof(float)
+    };
+
+    std::vector<float> flipped(pixelCount);
+    vImage_Buffer dst = {
+        .data = flipped.data(),
+        .height = (vImagePixelCount)DEPTH_HEIGHT,
+        .width = (vImagePixelCount)DEPTH_WIDTH,
+        .rowBytes = DEPTH_WIDTH * sizeof(float)
+    };
+
+    vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+    vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
+
+    // Convert to uint16_t
+    const float* flippedData = flipped.data();
+    #pragma omp parallel for if(pixelCount > 100000)
+    for (size_t i = 0; i < pixelCount; ++i) {
+        float d = flippedData[i];
+        out[i] = (d > 0.0f) ?
+        static_cast<uint16_t>(std::min(d, 65535.0f)) : 0;
+    }
+    hasNewIR = false;
+    return true;
+}
+
+
 
 // Set RGB buffer and mark as ready
 void MyFreenect2Device::setRGBBuffer(const std::vector<uint8_t>& buffer, bool markReady) {

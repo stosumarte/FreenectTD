@@ -47,6 +47,7 @@ private:
     std::string                             fn2_serial;
     std::atomic<bool>                       fn2_rgbReady{false};
     std::atomic<bool>                       fn2_depthReady{false};
+    std::atomic<bool>                       fn2_irReady{false};
     std::atomic<bool>                       fn2_runEvents{false};
     //libfreenect2::Registration*             fn2_registration = nullptr;
     std::thread                             fn2_eventThread;

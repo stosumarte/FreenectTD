@@ -467,7 +467,7 @@ bool FreenectTOP::fn2_initDevice() {
         return false;
     }
     if (!fn2_device) {
-        fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady);
+        fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady, fn2_irReady);
         LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_device after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_device)));
     }
     if (!fn2_device->start()) {
@@ -751,19 +751,27 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     
     // --- Output depth according to Depthformat and Depthdistortion parameter ---
     std::string depthDistortStr = inputs->getParString("Depthdistortion") ? inputs->getParString("Depthdistortion") : "Distorted";
+    bool registrationEnabled = (inputs->getParInt("Depthregistration") != 0);
     std::string depthFormatStr = inputs->getParString("Depthformat") ? inputs->getParString("Depthformat") : "Mono 16-bit";
     int outDW = depthWidth, outDH = depthHeight;
     std::vector<uint16_t> depthFrame;
     bool gotDepth = false;
-    if (depthDistortStr == "Undistorted") {
-        // Get undistorted depth using MyFreenect2Device method
+    if (registrationEnabled) {
         if (fn2_device) {
-            gotDepth = fn2_device->getUndistortedDepthFrame(depthFrame);
+            gotDepth = fn2_device->getRegisteredDepthFrame(depthFrame);
         }
     } else {
-        // Distorted: use raw depth
-        gotDepth = fn2_device->getDepthFrame(depthFrame);
+        if (depthDistortStr == "Undistorted") {
+            if (fn2_device) {
+                gotDepth = fn2_device->getUndistortedDepthFrame(depthFrame);
+            }
+        } else {
+            if (fn2_device) {
+                gotDepth = fn2_device->getDepthFrame(depthFrame);
+            }
+        }
     }
+            
     if (gotDepth) {
         errorString.clear();
         if (depthFormatStr == "Mono 16-bit") {
@@ -840,6 +848,27 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
                 errorString.clear();
                 errorString = "Failed to create visualized depth buffer";
             }
+        }
+    }
+    bool gotIR = false;
+    std::vector<uint16_t> irFrame;
+    gotIR = fn2_device->getIRFrame(irFrame);
+    if (gotIR) {
+        errorString.clear();
+        LOG("[FreenectTOP] executeV2: outputting IR depth");
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        if (buf) {
+            std::memcpy(buf->data, irFrame.data(), outDW * outDH * 2);
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = outDW;
+            info.textureDesc.height = outDH;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+            info.colorBufferIndex = 2;
+            LOG("[FreenectTOP] executeV2: uploading IR buffer");
+            output->uploadBuffer(&buf, info, nullptr);
+        } else {
+            LOG("[FreenectTOP] executeV2: failed to create IR output buffer");
         }
     }
 }
