@@ -82,13 +82,13 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
     manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
     
-    // Kinect V1 firmware binary file path
-    OP_StringParameter fn1FirmwarePathParam;
+    // DISABLED - Kinect V1 firmware binary file path
+    /*OP_StringParameter fn1FirmwarePathParam;
     fn1FirmwarePathParam.name = "Firmwarepathv1";
     fn1FirmwarePathParam.label = "Firmware Path";
     fn1FirmwarePathParam.page = "Freenect";
     fn1FirmwarePathParam.defaultValue = "";
-    manager->appendFile(fn1FirmwarePathParam);
+    manager->appendFile(fn1FirmwarePathParam);*/
     
     // TO DO - Enable Depth toggle
     /*OP_NumericParameter enableDepthParam;
@@ -149,10 +149,24 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     depthFormatParam.name = "Depthformat";
     depthFormatParam.label = "Depth Format";
     depthFormatParam.page = "Freenect";
-    depthFormatParam.defaultValue = "Raw (16-bit)";
-    const char* depthFormatNames[] = {"Raw (16-bit)", "Visualized (8-bit)"};
-    const char* depthFormatLabels[] = {"Raw (16-bit)", "Visualized (8-bit)"};
+    depthFormatParam.defaultValue = "Mono 16-bit";
+    const char* depthFormatNames[] = {"Mono 16-bit", "RGB 8-bit (Remapped)"};
+    const char* depthFormatLabels[] = {"Mono 16-bit", "RGB 8-bit (Remapped)"};
     manager->appendMenu(depthFormatParam, 2, depthFormatNames, depthFormatLabels);
+    
+    // Depth registration toggle
+    OP_NumericParameter depthRegParam;
+    depthRegParam.name = "Depthregistration";
+    depthRegParam.label = "Depth Registration";
+    depthRegParam.page = "Freenect";
+    depthRegParam.defaultValues[0] = 0.0; // Default to disabled
+    depthRegParam.minValues[0] = 0.0;
+    depthRegParam.maxValues[0] = 1.0;
+    depthRegParam.minSliders[0] = 0.0;
+    depthRegParam.maxSliders[0] = 1.0;
+    depthRegParam.clampMins[0] = true;
+    depthRegParam.clampMaxes[0] = true;
+    manager->appendToggle(depthRegParam);
     
     // TO DO - Distorted / undistorted depth dropdown
     OP_StringParameter depthDistortParam;
@@ -520,12 +534,6 @@ void FreenectTOP::startV1InitThread() {
     }
 }
 
-void FreenectTOP::waitV1InitThread() {
-    if (fn1InitThread.joinable()) {
-        fn1InitThread.join();
-    }
-}
-
 // Threaded initialization for Kinect v2
 void FreenectTOP::fn2_startInitThread() {
     if (fn2_InitInProgress.load()) return; // Already running
@@ -543,12 +551,6 @@ void FreenectTOP::fn2_startInitThread() {
     }
 }
 
-void FreenectTOP::fn2_waitInitThread() {
-    if (fn2_InitThread.joinable()) {
-        fn2_InitThread.join();
-    }
-}
-
 // Cleanup for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_cleanupDevice() {
     LOG("[FreenectTOP] fn2_cleanupDevice: start");
@@ -556,36 +558,18 @@ void FreenectTOP::fn2_cleanupDevice() {
     // Wait a short time for the event thread to exit
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     
-    // Try to join event thread with timeout
+    // Try to join event thread
     if (fn2_eventThread.joinable()) {
-        LOG("[FreenectTOP] fn2_cleanupDevice: attempting to join fn2_eventThread with timeout");
-        
-        auto future = std::async(std::launch::async, [&]() {
-            fn2_eventThread.join();
-        });
-        
-        if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
-            LOG("[FreenectTOP] fn2_cleanupDevice: fn2_eventThread join timed out after 500ms, detaching");
-            fn2_eventThread.detach();
-        } else {
-            LOG("[FreenectTOP] fn2_eventThread joined successfully");
-        }
+        fn2_eventThread.join();
+    } else {
+        LOG("[FreenectTOP] fn2_cleanupDevice: couldn't join fn2_eventThread");
     }
     
-    // Try to join init thread with timeout
+    // Try to join init thread
     if (fn2_InitThread.joinable()) {
-        LOG("[FreenectTOP] fn2_cleanupDevice: attempting to join fn2_InitThread with timeout");
-        
-        auto future = std::async(std::launch::async, [&]() {
-            fn2_InitThread.join();
-        });
-        
-        if (future.wait_for(std::chrono::milliseconds(500)) == std::future_status::timeout) {
-            LOG("[FreenectTOP] fn2_cleanupDevice: fn2_InitThread join timed out after 500ms, detaching");
-            fn2_InitThread.detach();
-        } else {
-            LOG("[FreenectTOP] fn2_InitThread joined successfully");
-        }
+        fn2_InitThread.join();
+    } else {
+        LOG("[FreenectTOP] fn2_cleanupDevice: couldn't join fn2_InitThread");
     }
     
     fn2_stopEnumThread();
@@ -614,6 +598,9 @@ void FreenectTOP::fn2_cleanupDevice() {
 // Execute method for Kinect v1 (libfreenect)
 void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
     int colorWidth = MyFreenectDevice::WIDTH, colorHeight = MyFreenectDevice::HEIGHT, depthWidth = MyFreenectDevice::WIDTH, depthHeight = MyFreenectDevice::HEIGHT;
+    
+    bool registrationEnabled = (inputs->getParInt("Depthregistration") != 0);
+    
     if (!fn1_device) {
         LOG("[FreenectTOP] executeV1: device is null, initializing device in thread");
         startV1InitThread();
@@ -668,23 +655,45 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         }
     }
     std::vector<uint16_t> depthFrame;
-    if (fn1_device->getDepthFrame(depthFrame)) {
-        errorString.clear();
-        LOG("[FreenectTOP] executeV1: creating depth output buffer");
-        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-        if (buf) {
-            LOG("[FreenectTOP] executeV1: copying depth frame data to buffer");
-            std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = depthWidth;
-            info.textureDesc.height = depthHeight;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 1;
-            LOG("[FreenectTOP] executeV1: uploading depth buffer");
-            output->uploadBuffer(&buf, info, nullptr);
-        } else {
-            LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
+    if (registrationEnabled) {
+        if (fn1_device->getDepthFrameRegistered(depthFrame)) {
+            errorString.clear();
+            LOG("[FreenectTOP] executeV1: creating depth output buffer");
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                LOG("[FreenectTOP] executeV1: copying depth frame data to buffer");
+                std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = depthWidth;
+                info.textureDesc.height = depthHeight;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex = 1;
+                LOG("[FreenectTOP] executeV1: uploading depth buffer");
+                output->uploadBuffer(&buf, info, nullptr);
+            } else {
+                LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
+            }
+        }
+    } else {
+        if (fn1_device->getDepthFrame(depthFrame)) {
+            errorString.clear();
+            LOG("[FreenectTOP] executeV1: creating depth output buffer");
+            TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                LOG("[FreenectTOP] executeV1: copying depth frame data to buffer");
+                std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = depthWidth;
+                info.textureDesc.height = depthHeight;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex = 1;
+                LOG("[FreenectTOP] executeV1: uploading depth buffer");
+                output->uploadBuffer(&buf, info, nullptr);
+            } else {
+                LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
+            }
         }
     }
 }
@@ -742,7 +751,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     
     // --- Output depth according to Depthformat and Depthdistortion parameter ---
     std::string depthDistortStr = inputs->getParString("Depthdistortion") ? inputs->getParString("Depthdistortion") : "Distorted";
-    std::string depthFormatStr = inputs->getParString("Depthformat") ? inputs->getParString("Depthformat") : "Raw (16-bit)";
+    std::string depthFormatStr = inputs->getParString("Depthformat") ? inputs->getParString("Depthformat") : "Mono 16-bit";
     int outDW = depthWidth, outDH = depthHeight;
     std::vector<uint16_t> depthFrame;
     bool gotDepth = false;
@@ -757,7 +766,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
     if (gotDepth) {
         errorString.clear();
-        if (depthFormatStr == "Raw (16-bit)") {
+        if (depthFormatStr == "Mono 16-bit") {
             LOG("[FreenectTOP] executeV2: outputting raw depth");
             TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
             if (buf) {
@@ -773,9 +782,13 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             } else {
                 LOG("[FreenectTOP] executeV2: failed to create raw depth output buffer");
             }
-        } else if (depthFormatStr == "Visualized (8-bit)") {
-            LOG("[FreenectTOP] executeV2: outputting visualized depth as RGB");
+        } else if (depthFormatStr == "RGB 8-bit (Remapped)") {
+            LOG("[FreenectTOP] executeV2: outputting depth as XYZ-mapped RGB");
+
+            // Allocate output buffer (RGBA)
             std::vector<uint8_t> visualized(outDW * outDH * 4);
+
+            // Compute min/max depth
             uint16_t minDepth = 65535, maxDepth = 0;
             for (size_t i = 0; i < depthFrame.size(); ++i) {
                 uint16_t d = depthFrame[i];
@@ -786,25 +799,22 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
                 minDepth = 500;
                 maxDepth = 4500;
             }
+
+            // Iterate pixels
             for (int y = 0; y < outDH; ++y) {
                 for (int x = 0; x < outDW; ++x) {
-                    int i = (y * outDW + x);
+                    int i = y * outDW + x;
                     uint16_t d = depthFrame[i];
-                    float norm = (float)(d - minDepth) / (maxDepth - minDepth);
-                    if (norm < 0.0f) norm = 0.0f;
-                    if (norm > 1.0f) norm = 1.0f;
-                    uint8_t r, g, b;
-                    if (norm < 0.5f) {
-                        float t = norm / 0.5f;
-                        r = 0;
-                        g = static_cast<uint8_t>(t * 255);
-                        b = static_cast<uint8_t>((1.0f - t) * 255);
-                    } else {
-                        float t = (norm - 0.5f) / 0.5f;
-                        r = static_cast<uint8_t>(t * 255);
-                        g = static_cast<uint8_t>((1.0f - t) * 255);
-                        b = 0;
-                    }
+
+                    // Normalize X, Y, Z to [0,255]
+                    uint8_t r = static_cast<uint8_t>((float)x / (outDW - 1) * 255.0f);
+                    uint8_t g = static_cast<uint8_t>((float)y / (outDH - 1) * 255.0f);
+                    float normZ = (float)(d - minDepth) / (maxDepth - minDepth);
+                    if (normZ < 0.0f) normZ = 0.0f;
+                    if (normZ > 1.0f) normZ = 1.0f;
+                    uint8_t b = static_cast<uint8_t>(normZ * 255.0f);
+
+                    // Write RGBA
                     int vi = i * 4;
                     visualized[vi + 0] = r;
                     visualized[vi + 1] = g;

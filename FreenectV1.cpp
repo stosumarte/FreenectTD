@@ -157,12 +157,79 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
     return true;
 }
 
-// Get depth frame for FREENECT_DEPTH_REGISTERED format (depth in mm, aligned to RGB) - Using Accelerate
+// Get depth frame for FREENECT_DEPTH_11BIT format (depth already float)
 bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
+    
+    MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_11BIT); // Ensure depth format is 11-bit
+    
+    const int width = WIDTH, height = HEIGHT;
+
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!hasNewDepth) return false;
+
+    const size_t pixelCount = width * height;
+    if (out.size() != pixelCount) out.resize(pixelCount);
+
+    // Convert 11-bit depth values (already unpacked) to float
+    std::vector<float> floatDepth(pixelCount);
+    std::vector<float> inverted(pixelCount);
+    
+    for (size_t i = 0; i < pixelCount; ++i) {
+        // Depth values are 0–2047 (11 bits)
+        uint16_t raw = depthBuffer[i] & 0x07FF;
+        floatDepth[i] = static_cast<float>(raw);
+    }
+
+    vImage_Buffer src = {
+        .data = floatDepth.data(),
+        .height = (vImagePixelCount)height,
+        .width  = (vImagePixelCount)width,
+        .rowBytes = WIDTH * sizeof(float)
+    };
+
+    std::vector<float> flipped(pixelCount);
+    vImage_Buffer dst = {
+        .data = flipped.data(),
+        .height = (vImagePixelCount)height,
+        .width  = (vImagePixelCount)width,
+        .rowBytes = WIDTH * sizeof(float)
+    };
+
+    vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+    
+
+    // Map back to 16-bit range
+    const float* flippedData = flipped.data();
+    #pragma omp parallel for if(pixelCount > 100000)
+    for (size_t i = 0; i < pixelCount; ++i) {
+        float depth_val = flippedData[i];
+
+        if (depth_val > 0.0f && depth_val <= 2047.0f) {
+            float inv = 2047.0f - depth_val;
+            //inv = 2047.0f - inv;
+            out[i] = static_cast<uint16_t>(inv / 2047.0f * 65535.0f);
+            //out[i] = static_cast<uint16_t>(2047.0f * 65535.0f);
+        } else {
+            out[i] = 0;
+        }
+    }
+
+    hasNewDepth = false;
+    return true;
+    
+}
+
+// Get depth frame for FREENECT_DEPTH_REGISTERED format (depth in mm, aligned to RGB) - Using Accelerate
+bool MyFreenectDevice::getDepthFrameRegistered(std::vector<uint16_t>& out) {
+    
+    MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_REGISTERED); // Ensure depth format is REGISTERED
+    
+    const int width = WIDTH, height = HEIGHT;
+    
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
     
-    const size_t pixelCount = WIDTH * HEIGHT;
+    const size_t pixelCount = width * height;
     if (out.size() != pixelCount) out.resize(pixelCount);
     
     // Convert uint16_t depth buffer to float for vImage processing (similar to FreenectV2)
@@ -173,16 +240,16 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
     
     vImage_Buffer src = {
         .data = floatDepth.data(),
-        .height = (vImagePixelCount)HEIGHT,
-        .width = (vImagePixelCount)WIDTH,
+        .height = (vImagePixelCount)height,
+        .width = (vImagePixelCount)width,
         .rowBytes = WIDTH * sizeof(float)
     };
     
     std::vector<float> flipped(pixelCount);
     vImage_Buffer dst = {
         .data = flipped.data(),
-        .height = (vImagePixelCount)HEIGHT,
-        .width = (vImagePixelCount)WIDTH,
+        .height = (vImagePixelCount)height,
+        .width = (vImagePixelCount)width,
         .rowBytes = WIDTH * sizeof(float)
     };
     
@@ -193,14 +260,15 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
     #pragma omp parallel for if(pixelCount > 100000)
     for (size_t i = 0; i < pixelCount; ++i) {
         float depth_mm = flippedData[i];
-        
-        // FREENECT_DEPTH_REGISTERED provides depth in mm (0-10000mm range)
-        // Map to 0-65535 range like FreenectV2, but use full FREENECT_DEPTH_MM_MAX_VALUE range
-        if (depth_mm > 100.0f && depth_mm <= static_cast<float>(FREENECT_DEPTH_MM_MAX_VALUE)) {
-            // Map from mm range to 16-bit range
-            out[i] = static_cast<uint16_t>(depth_mm / static_cast<float>(FREENECT_DEPTH_MM_MAX_VALUE) * 65535.0f);
+
+        const float min_mm = 400.0f;   // lower threshold (mm)
+        const float max_mm = 4500.0f;  // upper threshold (mm)
+
+        if (depth_mm >= min_mm && depth_mm <= max_mm) {
+            out[i] = static_cast<uint16_t>(
+                (depth_mm - min_mm) / (max_mm - min_mm) * 65535.0f
+            );
         } else {
-            // No valid depth data
             out[i] = 0;
         }
     }
