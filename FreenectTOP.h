@@ -88,7 +88,7 @@ private:
     TD::TOP_Output* myCurrentOutput = nullptr;
 
     // Persistent fallback buffer for Metal safety
-    //TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer;
+    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer;
 
     // V1 background init members
     std::atomic<bool> fn1InitInProgress{false};

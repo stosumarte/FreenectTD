@@ -233,6 +233,7 @@ bool MyFreenect2Device::getUndistortedDepthFrame(std::vector<uint16_t>& out) {
     };
 
     vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+    vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
 
     // Convert to uint16_t
     const float* flippedData = flipped.data();

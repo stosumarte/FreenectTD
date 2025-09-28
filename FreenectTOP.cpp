@@ -535,7 +535,12 @@ void FreenectTOP::fn2_startInitThread() {
         fn2_InitSuccess = result;
         fn2_InitInProgress = false;
     });
-    fn2_InitThread.detach(); // Or join later as needed
+    //fn2_InitThread.detach(); // Or join later as needed
+    if (fn2_InitThread.joinable()) {
+        fn2_InitThread.join();
+    } else {
+        LOG("[FreenectTOP] fn2_startInitThread: fn2_InitThread not joinable after creation");
+    }
 }
 
 void FreenectTOP::fn2_waitInitThread() {
@@ -888,8 +893,8 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
 
 // Upload a fallback black buffer
 void FreenectTOP::uploadFallbackBuffer() {
-    return;
-        /*if (!myCurrentOutput) {
+    //return;
+        if (!myCurrentOutput) {
             LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null, cannot upload fallback buffer");
             return;
         }
@@ -910,5 +915,5 @@ void FreenectTOP::uploadFallbackBuffer() {
             info.colorBufferIndex = 0; // Always upload to buffer index 0
             myCurrentOutput->uploadBuffer(&fallbackBuffer, info, nullptr);
             LOG("[FreenectTOP] uploadFallbackBuffer: uploaded persistent fallback black buffer");
-        }*/
+        }
 }
