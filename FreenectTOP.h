@@ -90,6 +90,9 @@ private:
 
     // Persistent fallback buffer for Metal safety
     TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer;
+    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer0;
+    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer1;
+    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer2;
 
     // V1 background init members
     std::atomic<bool> fn1InitInProgress{false};
