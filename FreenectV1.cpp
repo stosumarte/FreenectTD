@@ -156,7 +156,7 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
     hasNewRGB = false;                              // Reset the flag indicating new RGB data
     return true;
 }
-
+/*
 // Get depth frame for FREENECT_DEPTH_11BIT format (depth already float)
 bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out) {
     
@@ -276,3 +276,80 @@ bool MyFreenectDevice::getDepthFrameRegistered(std::vector<uint16_t>& out) {
     hasNewDepth = false;
     return true;
 }
+*/
+
+bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type) {
+    // Select format
+    if (type == fn1_depthType::Raw) {
+        MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_11BIT);
+    } else if (type == fn1_depthType::Registered) {
+        MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_REGISTERED);
+    }
+
+    const int width = WIDTH, height = HEIGHT;
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!hasNewDepth) return false;
+
+    const size_t pixelCount = width * height;
+    if (out.size() != pixelCount) out.resize(pixelCount);
+
+    // Convert depth buffer to float for vImage
+    std::vector<float> floatDepth(pixelCount);
+    if (type == fn1_depthType::Raw) {
+        for (size_t i = 0; i < pixelCount; ++i) {
+            uint16_t raw = depthBuffer[i] & 0x07FF; // 11 bits
+            floatDepth[i] = static_cast<float>(raw);
+        }
+    } else {
+        for (size_t i = 0; i < pixelCount; ++i) {
+            floatDepth[i] = static_cast<float>(depthBuffer[i]);
+        }
+    }
+
+    vImage_Buffer src = {
+        .data = floatDepth.data(),
+        .height = (vImagePixelCount)height,
+        .width  = (vImagePixelCount)width,
+        .rowBytes = width * sizeof(float)
+    };
+
+    std::vector<float> flipped(pixelCount);
+    vImage_Buffer dst = {
+        .data = flipped.data(),
+        .height = (vImagePixelCount)height,
+        .width  = (vImagePixelCount)width,
+        .rowBytes = width * sizeof(float)
+    };
+
+    vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+
+    // Convert back to uint16_t with mapping
+    const float* flippedData = flipped.data();
+    #pragma omp parallel for if(pixelCount > 100000)
+    for (size_t i = 0; i < pixelCount; ++i) {
+        float val = flippedData[i];
+
+        if (type == fn1_depthType::Raw) {
+            if (val > 0.0f && val <= 2047.0f) {
+                float inv = 2047.0f - val;
+                out[i] = static_cast<uint16_t>(inv / 2047.0f * 65535.0f);
+            } else {
+                out[i] = 0;
+            }
+        } else if (type == fn1_depthType::Registered) {
+            const float min_mm = 400.0f;
+            const float max_mm = 4500.0f;
+            if (val >= min_mm && val <= max_mm) {
+                out[i] = static_cast<uint16_t>(
+                    (val - min_mm) / (max_mm - min_mm) * 65535.0f
+                );
+            } else {
+                out[i] = 0;
+            }
+        }
+    }
+
+    hasNewDepth = false;
+    return true;
+}
+
