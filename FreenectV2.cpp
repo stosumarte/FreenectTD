@@ -134,7 +134,7 @@ bool MyFreenect2Device::getIR(std::vector<float>& out) {
 }
 
 // Get color frame with flipping and optional downscaling
-bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale) {
+bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale, int& width, int& height) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewRGB) return false;
 
@@ -173,6 +173,10 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale)
     vImagePermuteChannels_ARGB8888(&dst, &dst, permuteMap, kvImageNoFlags);
 
     hasNewRGB = false;
+    
+    width  = dstWidth;
+    height = dstHeight;
+    
     return true;
 }
 
@@ -333,8 +337,8 @@ bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out, int& width, int& 
         .rowBytes = srcWidth * sizeof(float)
     };
 
-    vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
-    vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageNoFlags);
+    //vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+    vImageHorizontalReflect_PlanarF(&src, &dst, kvImageNoFlags);
 
     // Convert to uint16_t
     const float* flippedData = flipped.data();

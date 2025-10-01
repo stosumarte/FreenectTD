@@ -81,9 +81,11 @@ private:
     void executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void uploadFallbackBuffer();
     
-    // Error string handling
+    // Error/warning string handling
     std::string errorString;
+    std::string warningString;
     void getErrorString(TD::OP_String* error, void* reserved1) override;
+    void getWarningString(TD::OP_String* warning, void* reserved1) override;
     
     // Current output pointer
     TD::TOP_Output* myCurrentOutput = nullptr;

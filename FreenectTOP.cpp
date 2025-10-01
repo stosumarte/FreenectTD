@@ -213,6 +213,12 @@ void FreenectTOP::getErrorString(TD::OP_String* error, void* reserved1) {
         error->setString(errorString.c_str());
 }
 
+// TD - Warning string handling
+void FreenectTOP::getWarningString(TD::OP_String* warning, void* reserved1) {
+    if (!warningString.empty())
+        warning->setString(warningString.c_str());
+}
+
 // Constructor for FreenectTOP
 FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     : fntdNodeInfo(info),
@@ -582,9 +588,6 @@ void FreenectTOP::fn2_cleanupDevice() {
 
 // Execute method for Kinect v1 (libfreenect)
 void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-    int colorWidth = MyFreenectDevice::WIDTH, colorHeight = MyFreenectDevice::HEIGHT, depthWidth = MyFreenectDevice::WIDTH, depthHeight = MyFreenectDevice::HEIGHT;
-    
-    float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     std::string depthFormat = (inputs->getParString("Depthformat"));
     
     if (!fn1_device) {
@@ -598,6 +601,7 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             return;
         }
     }
+    
     if (!fn1_device) {
         LOG("[FreenectTOP] ERROR: device is null after init! Uploading fallback black buffer");
         errorString = "Device is null after initialization";
@@ -605,13 +609,8 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         return;
     }
     
-    // If device is not available, do not proceed further
-    if (!fn1_device) {
-        LOG("[FreenectTOP] executeV1: device is still null, aborting frame");
-        return;
-    }
-    
-    // Set tilt angle
+    // --- Set tilt angle ---
+    float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     try {
         fn1_device->setTiltDegrees(tilt);
     } catch (const std::exception& e) {
@@ -625,19 +624,22 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
-    if (fn1_device->getColorFrame(colorFrame)) {
+    int outCW, outCH;
+    
+    if (fn1_device->getColorFrame(colorFrame, outCW, outCH)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating color output buffer");
-        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(colorWidth * colorHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(outCW * outCH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
             LOG("[FreenectTOP] executeV1: copying color frame data to buffer");
-            std::memcpy(buf->data, colorFrame.data(), colorWidth * colorHeight * 4);
+            std::memcpy(buf->data, colorFrame.data(), outCW * outCH * 4);
             TD::TOP_UploadInfo info;
-            info.textureDesc.width = colorWidth;
-            info.textureDesc.height = colorHeight;
+            info.textureDesc.width = outCW;
+            info.textureDesc.height = outCH;
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             LOG("[FreenectTOP] executeV1: uploading color buffer");
             output->uploadBuffer(&buf, info, nullptr);
         } else {
@@ -647,7 +649,8 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     
     // --- Depth frame ---
     std::vector<uint16_t> depthFrame;
-    fn1_depthType depthType = fn1_depthType::Raw;
+    int outDW, outDH;
+    fn1_depthType depthType = fn1_depthType::Raw; // Default to Raw
     
     if (depthFormat == "Raw") {
         depthType = fn1_depthType::Raw;
@@ -658,24 +661,25 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         depthType = fn1_depthType::Raw;
     }
 
-    if (fn1_device->getDepthFrame(depthFrame, depthType)) {
+    if (fn1_device->getDepthFrame(depthFrame, depthType, outDW, outDH)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating depth output buffer");
 
         TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext
-            ? fntdContext->createOutputBuffer(depthWidth * depthHeight * 2, TD::TOP_BufferFlags::None, nullptr)
+            ? fntdContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr)
             : nullptr;
 
         if (buf) {
             LOG("[FreenectTOP] executeV1: copying depth frame data to buffer");
-            std::memcpy(buf->data, depthFrame.data(), depthWidth * depthHeight * 2);
+            std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
 
             TD::TOP_UploadInfo info;
-            info.textureDesc.width = depthWidth;
-            info.textureDesc.height = depthHeight;
+            info.textureDesc.width = outDW;
+            info.textureDesc.height = outDH;
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
 
             LOG("[FreenectTOP] executeV1: uploading depth buffer");
             output->uploadBuffer(&buf, info, nullptr);
@@ -690,17 +694,6 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     std::string depthFormat = inputs->getParString("Depthformat");
 
     bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
-    
-    int colorWidth = MyFreenect2Device::RGB_WIDTH;
-    int colorHeight = MyFreenect2Device::RGB_HEIGHT;
-    int colorScaledWidth = MyFreenect2Device::SCALED_WIDTH;
-    int colorScaledHeight = MyFreenect2Device::SCALED_HEIGHT;
-    //int depthWidth = MyFreenect2Device::DEPTH_WIDTH;
-    //int depthHeight = MyFreenect2Device::DEPTH_HEIGHT;
-    //int irWidth = MyFreenect2Device::IR_WIDTH;
-    //int irHeight = MyFreenect2Device::IR_HEIGHT;
-    int colorOutputWidth = downscale ? colorScaledWidth : colorWidth;
-    int colorOutputHeight = downscale ? colorScaledHeight : colorHeight;
 
     if (!fn2_device) {
         LOG("[FreenectTOP] executeV2: fn2_device is null, initializing device");
@@ -714,15 +707,17 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
-    if (fn2_device->getColorFrame(colorFrame, downscale)) {
+    int outCW, outCH;
+    
+    if (fn2_device->getColorFrame(colorFrame, downscale, outCW, outCH)) {
         errorString.clear();
         TD::OP_SmartRef<TD::TOP_Buffer> buf =
-            fntdContext ? fntdContext->createOutputBuffer(colorOutputWidth * colorOutputHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            fntdContext ? fntdContext->createOutputBuffer(outCW * outCH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
         if (buf) {
-            std::memcpy(buf->data, colorFrame.data(), colorOutputWidth * colorOutputHeight * 4);
+            std::memcpy(buf->data, colorFrame.data(), outCW * outCH * 4);
             TD::TOP_UploadInfo info;
-            info.textureDesc.width = colorOutputWidth;
-            info.textureDesc.height = colorOutputHeight;
+            info.textureDesc.width = outCW;
+            info.textureDesc.height = outCH;
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
@@ -732,9 +727,8 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
 
     // --- Depth frame ---
-    int outDW;
-    int outDH;
     std::vector<uint16_t> depthFrame;
+    int outDW, outDH;
     
     // Map string to DepthType enum
     fn2_depthType depthTypeEnum = fn2_depthType::Raw; // Default
@@ -760,9 +754,9 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
 
     // --- IR frame ---
-    int outIRW;
-    int outIRH;
     std::vector<uint16_t> irFrame;
+    int outIRW, outIRH;
+    
     if (fn2_device->getIRFrame(irFrame, outIRW, outIRH)) {
         errorString.clear();
         TD::OP_SmartRef<TD::TOP_Buffer> buf =
@@ -775,6 +769,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 2;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             output->uploadBuffer(&buf, info, nullptr);
         }
     }
@@ -821,10 +816,12 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     // Check if the plugin is active
     if (!isActive) {
-        LOG("[FreenectTOP] Not active, skipping device initialization and execution");
+        warningString = "FreenectTOP is inactive";
         uploadFallbackBuffer();
         errorString.clear();
         return;
+    } else {
+        warningString.clear();
     }
     
     // Check if device type changed - only clean up and log if it actually changed

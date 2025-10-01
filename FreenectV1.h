@@ -28,10 +28,8 @@ public:
     void DepthCallback(void* depth, uint32_t) override;
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<uint16_t>& out);
-    bool getColorFrame(std::vector<uint8_t>& out);
-    //bool getDepthFrame(std::vector<uint16_t>& out);
-    //bool getDepthFrameRegistered(std::vector<uint16_t>& out);
-    bool getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type);
+    bool getColorFrame(std::vector<uint8_t>& out, int& width, int& height);
+    bool getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type, int& width, int& height);
     bool start();
     void stop();
 private:
