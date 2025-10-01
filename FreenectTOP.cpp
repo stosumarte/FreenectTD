@@ -726,6 +726,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             output->uploadBuffer(&buf, info, nullptr);
         }
     }
@@ -753,6 +754,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             output->uploadBuffer(&buf, info, nullptr);
         }
     }
