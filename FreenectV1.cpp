@@ -11,7 +11,6 @@
 #include <iostream>
 #include <chrono>
 #include <Accelerate/Accelerate.h>
-//#include <vImage/vImage.h>
 
 // MyFreenectDevice class constructor
 MyFreenectDevice::MyFreenectDevice
@@ -87,9 +86,10 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
     return true;
 }
 
-// Get color frame and flip it
+// Get color frame
 bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, int& width, int& height) {
-    int srcWidth = WIDTH, srcHeight = HEIGHT;
+    const int srcWidth = WIDTH, srcHeight = HEIGHT;
+    const int dstWidth = srcWidth, dstHeight = srcHeight;
     
     std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
     if (!hasNewRGB) return false;                   // Check if new RGB data is available
@@ -97,46 +97,46 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, int& width, int&
     const size_t pixelCount = srcWidth * srcHeight;
     out.resize(pixelCount * 4);
     
-    // Create RGBA buffer
+    // Convert RGB to RGBA using Accelerate
     std::vector<uint8_t> rgbaBuffer(pixelCount * 4);
-    
-    // Manual RGB to RGBA conversion (alpha set to 255)
-    for (size_t i = 0, j = 0; i < pixelCount; ++i, j += 4) {
-        rgbaBuffer[j + 0] = rgbBuffer[i * 3 + 0]; // R
-        rgbaBuffer[j + 1] = rgbBuffer[i * 3 + 1]; // G
-        rgbaBuffer[j + 2] = rgbBuffer[i * 3 + 2]; // B
-        rgbaBuffer[j + 3] = 255;                  // A
-    }
-
-    /*vImage_Buffer srcRGB = {
+    vImage_Buffer vImage_RGB = {
         .data = rgbBuffer.data(),
-        .height = (vImagePixelCount)srcWidth,
-        .width = (vImagePixelCount)srcHeight,
-        .rowBytes = WIDTH * 3
-    };
-    
-    vImage_Buffer srcRGBA = {
-        .data = rgbaBuffer.data(),
         .height = (vImagePixelCount)srcHeight,
         .width = (vImagePixelCount)srcWidth,
-        .rowBytes = WIDTH * 4
+        .rowBytes = srcWidth * 3
     };
-    
-    vImageConvert_RGB888toRGBA8888(&srcRGB, &srcRGBA, 255, kvImageNoFlags);*/
+    vImage_Buffer vImage_RGBA = {
+        .data = rgbaBuffer.data(),
+        .height = (vImagePixelCount)dstHeight,
+        .width = (vImagePixelCount)dstWidth,
+        .rowBytes = dstWidth * 4
+    };
+    vImage_Error vImageErr = vImageConvert_RGB888toRGBA8888(
+        &vImage_RGB,    // RGB source
+        NULL,           // no alpha plane, use constant instead
+        255,            // constant alpha
+        &vImage_RGBA,   // RGBA destination
+        false,          // premultiply = false
+        kvImageNoFlags  // flags
+    );
+    if (vImageErr != kvImageNoError) {
+        printf("vImage error: %ld\n", vImageErr);
+    }
+
 
     // Copy the flipped RGBA data to the output buffer
     std::memcpy(out.data(), rgbaBuffer.data(), pixelCount * 4);
     
     hasNewRGB = false;
     
-    width  = srcWidth;
-    height = srcHeight;
+    width  = dstWidth;
+    height = dstHeight;
     
     return true;
 }
 
 bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type, int& width, int& height) {
-    int srcWidth = WIDTH, srcHeight = HEIGHT;
+    const int srcWidth = WIDTH, srcHeight = HEIGHT;
 
     // Select format
     if (type == fn1_depthType::Raw) {

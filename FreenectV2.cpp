@@ -144,7 +144,8 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale,
     const int dstHeight = downscale ? SCALED_HEIGHT : RGB_HEIGHT;
     const size_t dstSize = dstWidth * dstHeight * 4;
     if (out.size() != dstSize) out.resize(dstSize);
-
+    
+    // Flip and downscale with Accelerate
     vImage_Buffer src = {
         .data = rgbBuffer.data(),
         .height = (vImagePixelCount)srcHeight,
@@ -161,9 +162,6 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale,
 
     // Resize (bilinear)
     vImageScale_ARGB8888(&src, &dst, nullptr, kvImageHighQualityResampling);
-
-    // Flip vertically
-    //vImageVerticalReflect_ARGB8888(&dst, &dst, kvImageNoFlags);
 
     // Flip horizontally
     vImageHorizontalReflect_ARGB8888(&dst, &dst, kvImageNoFlags);
