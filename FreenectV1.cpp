@@ -91,9 +91,6 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
 bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, int& width, int& height) {
     int srcWidth = WIDTH, srcHeight = HEIGHT;
     
-    static int frameCount = 0;
-    static auto lastTime = std::chrono::steady_clock::now();
-    
     std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
     if (!hasNewRGB) return false;                   // Check if new RGB data is available
     

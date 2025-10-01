@@ -83,14 +83,6 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
     manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
     
-    // DISABLED - Kinect V1 firmware binary file path
-    /*OP_StringParameter fn1FirmwarePathParam;
-    fn1FirmwarePathParam.name = "Firmwarepathv1";
-    fn1FirmwarePathParam.label = "Firmware Path";
-    fn1FirmwarePathParam.page = "Freenect";
-    fn1FirmwarePathParam.defaultValue = "";
-    manager->appendFile(fn1FirmwarePathParam);*/
-    
     // TO DO - Enable Depth toggle
     /*OP_NumericParameter enableDepthParam;
     enableDepthParam.name = "Enabledepth";
@@ -146,24 +138,38 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     manager->appendToggle(resLimitParam);
     
     // Depth visualization dropdown
-    OP_StringParameter depthVisualizeParam;
+    /*OP_StringParameter depthVisualizeParam;
     depthVisualizeParam.name = "Depthvisualize";
     depthVisualizeParam.label = "Visualize Depth As";
     depthVisualizeParam.page = "Freenect";
     depthVisualizeParam.defaultValue = "Mono 16-bit";
     const char* depthVisualizeNames[] = {"Mono 16-bit", "RGB 8-bit (Remapped)"};
     const char* depthVisualizeLabels[] = {"Mono 16-bit", "RGB 8-bit (Remapped)"};
-    manager->appendMenu(depthVisualizeParam, 2, depthVisualizeNames, depthVisualizeLabels);
+    manager->appendMenu(depthVisualizeParam, 2, depthVisualizeNames, depthVisualizeLabels);*/
     
     // Depth format dropdown
-    OP_StringParameter depthDistortParam;
-    depthDistortParam.name = "Depthformat";
-    depthDistortParam.label = "Depth Format";
-    depthDistortParam.page = "Freenect";
-    depthDistortParam.defaultValue = "Raw";
-    const char* depthDistortNames[] = {"Raw", "Undistorted", "Registered"};
-    const char* depthDistortLabels[] = {"Raw", "Undistorted (V2 only)", "Registered"};
-    manager->appendMenu(depthDistortParam, 3, depthDistortNames, depthDistortLabels);
+    OP_StringParameter depthFormatParam;
+    depthFormatParam.name = "Depthformat";
+    depthFormatParam.label = "Depth Format";
+    depthFormatParam.page = "Freenect";
+    depthFormatParam.defaultValue = "Raw";
+    const char* depthFormatNames[] = {"Raw", "Registered"};
+    const char* depthFormatLabels[] = {"Raw", "Registered"};
+    manager->appendMenu(depthFormatParam, 2, depthFormatNames, depthFormatLabels);
+    
+    // Undistort toggle
+    OP_NumericParameter depthUndistortParam;
+    depthUndistortParam.name = "Depthundistort";
+    depthUndistortParam.label = "Depth Undistortion";
+    depthUndistortParam.page = "Freenect";
+    depthUndistortParam.defaultValues[0] = 0.0; // Default to disabled
+    depthUndistortParam.minValues[0] = 0.0;
+    depthUndistortParam.maxValues[0] = 1.0;
+    depthUndistortParam.minSliders[0] = 0.0;
+    depthUndistortParam.maxSliders[0] = 1.0;
+    depthUndistortParam.clampMins[0] = true;
+    depthUndistortParam.clampMaxes[0] = true;
+    manager->appendToggle(depthUndistortParam);
     
     // ----------
     // ABOUT PAGE
@@ -193,6 +199,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     updateHeader.label = updateLabel.c_str();
     manager->appendHeader(updateHeader);
     
+    // Update URL (needs to be copied manually)
     OP_StringParameter updateURLParam;
     updateURLParam.name = "Updateurl";
     updateURLParam.label = "Copy this → ";
@@ -691,7 +698,6 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-    std::string depthFormat = inputs->getParString("Depthformat");
 
     bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
 
@@ -731,10 +737,14 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     int outDW, outDH;
     
     // Map string to DepthType enum
+    std::string depthFormat = inputs->getParString("Depthformat");
+    bool depthUndistort = (inputs->getParInt("Depthundistort") != 0);
     fn2_depthType depthTypeEnum = fn2_depthType::Raw; // Default
-    if (depthFormat == "Raw") depthTypeEnum = fn2_depthType::Raw;
-    else if (depthFormat == "Undistorted") depthTypeEnum = fn2_depthType::Undistorted;
-    else if (depthFormat == "Registered") depthTypeEnum = fn2_depthType::Registered;
+    if (depthFormat == "Raw") {
+        depthTypeEnum = depthUndistort ? fn2_depthType::Undistorted : fn2_depthType::Raw;
+    } else if (depthFormat == "Registered") {
+        depthTypeEnum = fn2_depthType::Registered;
+    }
     
     if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum, downscale, outDW, outDH)) {
         errorString.clear();
@@ -792,6 +802,9 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     std::string devType = devTypeCStr ? devTypeCStr : "Kinect v1";
     static std::string lastDeviceType = "Kinect v1";
     
+    // Get depth format parameter as string
+    std::string depthFormat = inputs->getParString("Depthformat");
+    
     // Check if Active parameter is set
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
     
@@ -799,20 +812,28 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     if (devType == "Kinect v2") {
         inputs->enablePar("Tilt", false);
         inputs->enablePar("Resolutionlimit", true);
-        inputs->enablePar("Depthvisualize", true);
+        //inputs->enablePar("Depthvisualize", true);
         inputs->enablePar("Depthformat", true);
     } else if (devType == "Kinect v1") {
         inputs->enablePar("Tilt", true);
         inputs->enablePar("Resolutionlimit", false);
-        inputs->enablePar("Depthvisualize", false);
+        //inputs->enablePar("Depthvisualize", false);
         inputs->enablePar("Depthformat", true);
     } else {
         // Unknown device type, enable all parameters
         inputs->enablePar("Tilt", true);
         inputs->enablePar("Resolutionlimit", true);
-        inputs->enablePar("Depthvisualize", true);
+        //inputs->enablePar("Depthvisualize", true);
         inputs->enablePar("Depthformat", true);
     }
+    
+    // Enable/disable depthUndistort based on device type and depthFormat
+    if (devType == "Kinect v2" && depthFormat == "Raw") {
+        inputs->enablePar("Depthundistort", true);
+    } else {
+        inputs->enablePar("Depthundistort", false);
+    }
+        
     
     // Check if the plugin is active
     if (!isActive) {
