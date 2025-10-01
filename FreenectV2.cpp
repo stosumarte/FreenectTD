@@ -351,10 +351,10 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
     }
 
     static libfreenect2::Frame depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
-    static libfreenect2::Frame undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
-    static libfreenect2::Frame registeredFrame(RGB_WIDTH, RGB_HEIGHT, sizeof(float));
-    static libfreenect2::Frame rgbFrame(RGB_WIDTH, RGB_HEIGHT, sizeof(uint8_t) * 4);
-    static libfreenect2::Frame bigdepthFrame(BIGDEPTH_WIDTH, BIGDEPTH_HEIGHT, sizeof(float));
+    libfreenect2::Frame undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
+    libfreenect2::Frame registeredFrame(DEPTH_WIDTH, DEPTH_HEIGHT, 4);
+    static libfreenect2::Frame rgbFrame(RGB_WIDTH, RGB_HEIGHT, 4);
+    libfreenect2::Frame bigdepthFrame(BIGDEPTH_WIDTH, BIGDEPTH_HEIGHT, sizeof(float));
 
     const float* srcData = nullptr;
     int srcWidth;
@@ -376,12 +376,24 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
             break;
 
         case fn2_depthType::Registered:
+            //LOG("[FreenectV2.cpp] getDepthFrame: Registered depth requested");
             std::memcpy(rgbFrame.data, rgbBuffer.data(), RGB_WIDTH * RGB_HEIGHT * 4);
             std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
             reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame, true, &bigdepthFrame);
+            //LOG("[FreenectV2.cpp] getDepthFrame: Registration applied");
             srcData = reinterpret_cast<float*>(bigdepthFrame.data);
             srcWidth = BIGDEPTH_WIDTH;
             srcHeight = BIGDEPTH_HEIGHT;
+            // Remove top and bottom 1 pixel rows from bigdepthFrame
+            int croppedHeight = srcHeight - 2;
+            int croppedWidth  = srcWidth;
+            std::vector<float> cropped(croppedWidth * croppedHeight);
+            for (int y = 0; y < croppedHeight; ++y) {
+                const float* srcRow = srcData + (y + 1) * srcWidth; // +1 skips top row
+                float* dstRow       = cropped.data() + y * croppedWidth;
+                std::memcpy(dstRow, srcRow, croppedWidth * sizeof(float));
+            }
+
             break;
     }
 
@@ -409,8 +421,6 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
     int outHeight = srcHeight;
     std::vector<float> downscaled;
     
-    //downscale = true; // TEMPORARY - Force downscale for registered depth to 1280x720
-
     if (type == fn2_depthType::Registered && downscale) {
         outWidth = SCALED_WIDTH;
         outHeight = SCALED_HEIGHT;

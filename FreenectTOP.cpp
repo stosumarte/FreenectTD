@@ -228,7 +228,7 @@ FreenectTOP::~FreenectTOP() {
     fn2_cleanupDevice();
     LOG("[FreenectTOP] Calling fn1_cleanupDevice");
     fn1_cleanupDevice();
-    //fallbackBuffer = nullptr; // Release fallback buffer
+    fallbackBuffer = nullptr; // Release fallback buffer
 }
 
 // Init for Kinect v1 (libfreenect)
@@ -850,7 +850,6 @@ void FreenectTOP::uploadFallbackBuffer() {
 
     int fallbackWidth = 128, fallbackHeight = 128;
 
-    // Step 1 — crea un buffer di fallback se non esiste
     if (!fallbackBuffer) {
         std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
         fallbackBuffer = fntdContext ? fntdContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
@@ -866,19 +865,16 @@ void FreenectTOP::uploadFallbackBuffer() {
         info.textureDesc.texDim = TD::OP_TexDim::e2D;
         info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
 
-        // Step 2 — assicurati che ogni fallback buffer sia inizializzato
         if (!fallbackBuffer0) fallbackBuffer0 = fallbackBuffer;
         if (!fallbackBuffer1) fallbackBuffer1 = fallbackBuffer;
         if (!fallbackBuffer2) fallbackBuffer2 = fallbackBuffer;
 
-        // Step 3 — array di riferimenti ai buffer
         std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 3> fallbackBuffers = {
             fallbackBuffer0,
             fallbackBuffer1,
             fallbackBuffer2
         };
 
-        // Step 4 — upload sui diversi index
         for (int i = 0; i < 3; i++) {
             info.colorBufferIndex = i;
             myCurrentOutput->uploadBuffer(&fallbackBuffers[i], info, nullptr);
