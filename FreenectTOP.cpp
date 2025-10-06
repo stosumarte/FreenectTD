@@ -88,7 +88,8 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // TO DO - Enable Depth toggle
     /*OP_NumericParameter enableDepthParam;
     enableDepthParam.name = "Enabledepth";
-    enableDepthParam.label = "Enable Depth Stream";
+    enableDepthParam.label = "Enable Depth";
+    enableDepthParam.page = "Freenect";
     enableDepthParam.defaultValues[0] = 1.0; // Default to enabled
     enableDepthParam.minValues[0] = 0.0;
     enableDepthParam.maxValues[0] = 1.0;
@@ -101,7 +102,8 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // TO DO - Enable IR toggle
     /*OP_NumericParameter enableIRParam;
     enableIRParam.name = "Enableir";
-    enableIRParam.label = "Enable IR Stream";
+    enableIRParam.label = "Enable IR";
+    enableIRParam.page = "Freenect";
     enableIRParam.defaultValues[0] = 0.0; // Default to disabled
     enableIRParam.minValues[0] = 0.0;
     enableIRParam.maxValues[0] = 1.0;
@@ -138,16 +140,6 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     resLimitParam.clampMins[0] = true;
     resLimitParam.clampMaxes[0] = true;
     manager->appendToggle(resLimitParam);
-    
-    // Depth visualization dropdown
-    /*OP_StringParameter depthVisualizeParam;
-    depthVisualizeParam.name = "Depthvisualize";
-    depthVisualizeParam.label = "Visualize Depth As";
-    depthVisualizeParam.page = "Freenect";
-    depthVisualizeParam.defaultValue = "Mono 16-bit";
-    const char* depthVisualizeNames[] = {"Mono 16-bit", "RGB 8-bit (Remapped)"};
-    const char* depthVisualizeLabels[] = {"Mono 16-bit", "RGB 8-bit (Remapped)"};
-    manager->appendMenu(depthVisualizeParam, 2, depthVisualizeNames, depthVisualizeLabels);*/
     
     // Depth format dropdown
     OP_StringParameter depthFormatParam;
@@ -702,6 +694,12 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
 
     bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
+    
+    //bool streamEnabledIR = (inputs->getParInt("Enableir") != 0);
+    //bool streamEnabledDepth = (inputs->getParInt("Enabledepth") != 0);
+    
+    bool streamEnabledIR = true;
+    bool streamEnabledDepth = true;
 
     if (!fn2_device) {
         LOG("[FreenectTOP] executeV2: fn2_device is null, initializing device");
@@ -739,51 +737,58 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     int outDW, outDH;
     
     // Map string to DepthType enum
-    std::string depthFormat = inputs->getParString("Depthformat");
-    bool depthUndistort = (inputs->getParInt("Depthundistort") != 0);
-    fn2_depthType depthTypeEnum = fn2_depthType::Raw; // Default
-    if (depthFormat == "Raw") {
-        depthTypeEnum = depthUndistort ? fn2_depthType::Undistorted : fn2_depthType::Raw;
-    } else if (depthFormat == "Registered") {
-        depthTypeEnum = fn2_depthType::Registered;
-    }
-    
-    if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum, downscale, outDW, outDH)) {
-        errorString.clear();
-        TD::OP_SmartRef<TD::TOP_Buffer> buf =
-            fntdContext ? fntdContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-        if (buf) {
-            std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = outDW;
-            info.textureDesc.height = outDH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 1;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&buf, info, nullptr);
+    if (streamEnabledDepth) {
+        std::string depthFormat = inputs->getParString("Depthformat");
+        bool depthUndistort = (inputs->getParInt("Depthundistort") != 0);
+        fn2_depthType depthTypeEnum = fn2_depthType::Raw; // Default
+        if (depthFormat == "Raw") {
+            depthTypeEnum = depthUndistort ? fn2_depthType::Undistorted : fn2_depthType::Raw;
+        } else if (depthFormat == "Registered") {
+            depthTypeEnum = fn2_depthType::Registered;
         }
+        
+        if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum, downscale, outDW, outDH)) {
+            errorString.clear();
+            TD::OP_SmartRef<TD::TOP_Buffer> buf =
+            fntdContext ? fntdContext->createOutputBuffer(outDW * outDH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            if (buf) {
+                std::memcpy(buf->data, depthFrame.data(), outDW * outDH * 2);
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = outDW;
+                info.textureDesc.height = outDH;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex = 1;
+                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
+        }
+    } else {
+        uploadFallbackBuffer(1);
     }
 
     // --- IR frame ---
-    std::vector<uint16_t> irFrame;
-    int outIRW, outIRH;
-    
-    if (fn2_device->getIRFrame(irFrame, outIRW, outIRH)) {
-        errorString.clear();
-        TD::OP_SmartRef<TD::TOP_Buffer> buf =
+    if (streamEnabledIR) {
+        std::vector<uint16_t> irFrame;
+        int outIRW, outIRH;
+        if (fn2_device->getIRFrame(irFrame, outIRW, outIRH)) {
+            errorString.clear();
+            TD::OP_SmartRef<TD::TOP_Buffer> buf =
             fntdContext ? fntdContext->createOutputBuffer(outIRW * outIRH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-        if (buf) {
-            std::memcpy(buf->data, irFrame.data(), outIRW * outIRH * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = outIRW;
-            info.textureDesc.height = outIRH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 2;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&buf, info, nullptr);
+            if (buf) {
+                std::memcpy(buf->data, irFrame.data(), outIRW * outIRH * 2);
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = outIRW;
+                info.textureDesc.height = outIRH;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex = 2;
+                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
         }
+    } else {
+        uploadFallbackBuffer(2);
     }
 }
 
@@ -864,44 +869,53 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
 }
 
 // Upload a fallback black buffer
-void FreenectTOP::uploadFallbackBuffer() {
+void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
     if (!myCurrentOutput) {
         LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null, cannot upload fallback buffer");
         return;
     }
 
-    int fallbackWidth = 128, fallbackHeight = 128;
+    const int fallbackWidth = 128, fallbackHeight = 128;
 
     if (!fallbackBuffer) {
         std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
-        fallbackBuffer = fntdContext ? fntdContext->createOutputBuffer(fallbackWidth * fallbackHeight * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+        fallbackBuffer = fntdContext ? fntdContext->createOutputBuffer(
+            fallbackWidth * fallbackHeight * 4,
+            TD::TOP_BufferFlags::None,
+            nullptr
+        ) : nullptr;
+
         if (fallbackBuffer) {
             std::memcpy(fallbackBuffer->data, black.data(), fallbackWidth * fallbackHeight * 4);
         }
     }
 
-    if (fallbackBuffer) {
-        TD::TOP_UploadInfo info;
-        info.textureDesc.width = fallbackWidth;
-        info.textureDesc.height = fallbackHeight;
-        info.textureDesc.texDim = TD::OP_TexDim::e2D;
-        info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
+    if (!fallbackBuffer) return;
 
-        if (!fallbackBuffer0) fallbackBuffer0 = fallbackBuffer;
-        if (!fallbackBuffer1) fallbackBuffer1 = fallbackBuffer;
-        if (!fallbackBuffer2) fallbackBuffer2 = fallbackBuffer;
+    TD::TOP_UploadInfo info;
+    info.textureDesc.width = fallbackWidth;
+    info.textureDesc.height = fallbackHeight;
+    info.textureDesc.texDim = TD::OP_TexDim::e2D;
+    info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
 
-        std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 3> fallbackBuffers = {
-            fallbackBuffer0,
-            fallbackBuffer1,
-            fallbackBuffer2
-        };
+    if (!fallbackBuffer0) fallbackBuffer0 = fallbackBuffer;
+    if (!fallbackBuffer1) fallbackBuffer1 = fallbackBuffer;
+    if (!fallbackBuffer2) fallbackBuffer2 = fallbackBuffer;
 
-        for (int i = 0; i < 3; i++) {
+    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 3> fallbackBuffers = {
+        fallbackBuffer0, fallbackBuffer1, fallbackBuffer2
+    };
+
+    if (targetIndex >= 0 && targetIndex < 3) {
+        info.colorBufferIndex = targetIndex;
+        myCurrentOutput->uploadBuffer(&fallbackBuffers[targetIndex], info, nullptr);
+    } else {
+        for (int i = 0; i < 3; ++i) {
             info.colorBufferIndex = i;
             myCurrentOutput->uploadBuffer(&fallbackBuffers[i], info, nullptr);
         }
     }
 }
+
 
 

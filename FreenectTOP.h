@@ -79,7 +79,7 @@ private:
     // Execution methods for different device versions
     void executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
-    void uploadFallbackBuffer();
+    void uploadFallbackBuffer(int targetIndex = -1);
     
     // Error/warning string handling
     std::string errorString;
