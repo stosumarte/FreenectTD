@@ -22,7 +22,7 @@
 #define FREENECTTOP_VERSION "dev"
 #endif
 
-#define FNTD_FALLBACK_BUFFER_ENABLED false
+//#define FNTD_FALLBACK_BUFFER_ENABLED false
 
 // TouchDesigner Entrypoints
 extern "C" {
@@ -39,6 +39,8 @@ extern "C" {
         info->customOPInfo.authorEmail->setString("ciao@marte.ee");
         info->customOPInfo.minInputs = 0;
         info->customOPInfo.maxInputs = 0;
+        info->customOPInfo.majorVersion = 1;
+        info->customOPInfo.minorVersion = 0;
     }
 
     DLLEXPORT TOP_CPlusPlusBase* CreateTOPInstance(const OP_NodeInfo* info, TOP_Context* context) {
