@@ -66,6 +66,7 @@ private:
     std::vector<uint8_t>  rgbBuffer;
     std::vector<float>    depthBuffer;
     std::vector<float>    irBuffer;
+    std::vector<float>    downscaledDepthBuffer;
     std::mutex            mutex;
     bool                  hasNewRGB;
     bool                  hasNewDepth;
