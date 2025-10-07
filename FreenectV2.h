@@ -60,6 +60,7 @@ public:
 private:
     libfreenect2::Freenect2Device* device;
     libfreenect2::SyncMultiFrameListener* listener;
+    std::unique_ptr<libfreenect2::Registration> reg;
     std::atomic<bool>&    rgbReady;
     std::atomic<bool>&    depthReady;
     std::atomic<bool>&    irReady;
