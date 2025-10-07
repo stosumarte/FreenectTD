@@ -303,7 +303,7 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
                 flipHeight = dstScaleHeight;
             } else {
                 flipWidth = bigdepthWidthCropped;
-                flipHeight = bigdepthWidthCropped;
+                flipHeight = bigdepthHeightCropped;
             }
 
 
