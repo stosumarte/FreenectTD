@@ -99,7 +99,4 @@ This project also includes the following third-party libraries, each under their
 - **libusb** – LGPL 2.1 License  
   [Full License Text](https://raw.githubusercontent.com/libusb/libusb/master/COPYING)
 
-- **CImg** – CeCILL-C License  
-  [Full License Text](https://cecill.info/licences/Licence_CeCILL-C_V1-en.txt)
-
 By downloading, using, modifying, or distributing this plugin, either as source-code or binary format, you agree to comply with the terms of both the **LGPL-2.1** license for the plugin itself and the respective licenses of the third-party libraries included.
