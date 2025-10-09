@@ -21,6 +21,7 @@ MyFreenect2Device::MyFreenect2Device(
  ):
     device(dev),
     listener(nullptr),
+    reg(nullptr),
     rgbReady(rgbFlag),
     depthReady(depthFlag),
     irReady(irFlag),
@@ -29,8 +30,8 @@ MyFreenect2Device::MyFreenect2Device(
     hasNewRGB(false), hasNewDepth(false) {
         listener = new libfreenect2::SyncMultiFrameListener
             (libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
-    device->setColorFrameListener(listener);
-    device->setIrAndDepthFrameListener(listener);
+        device->setColorFrameListener(listener);
+        device->setIrAndDepthFrameListener(listener);
     }
 
 // MyFreenect2Device class destructor
@@ -192,13 +193,14 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth || !device) return false;
     
-    const auto& irParams = device->getIrCameraParams();
-    const auto& colorParams = device->getColorCameraParams();
-    reg = std::make_unique<libfreenect2::Registration>(irParams, colorParams);
-    
     if (!reg) {
-        LOG("Failed to create Registration object");
-        return false;
+        const auto& irParams = device->getIrCameraParams();
+        const auto& colorParams = device->getColorCameraParams();
+        reg = std::make_unique<libfreenect2::Registration>(irParams, colorParams);
+        if (!reg) {
+            LOG("Failed to create Registration object");
+            return false;
+        }
     }
     
     libfreenect2::Frame depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
@@ -282,8 +284,8 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
         .rowBytes = flipDstWidth * sizeof(float)
     };
     
-    vImageScale_PlanarF(&flipSrc, &flipDst, nullptr, kvImageHighQualityResampling);
-    vImageHorizontalReflect_PlanarF(&flipDst, &flipDst, kvImageNoFlags);
+    vImageScale_PlanarF(&flipSrc, &flipDst, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
+    vImageHorizontalReflect_PlanarF(&flipDst, &flipDst, kvImageDoNotTile);
     
     LOG("flipSrcWidth: " << flipSrcWidth << ", flipSrcHeight: " << flipSrcHeight);
     LOG("flipDstWidth: " << flipDstWidth << ", flipDstHeight: " << flipDstHeight);

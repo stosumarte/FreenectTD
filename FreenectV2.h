@@ -68,6 +68,8 @@ private:
     std::vector<float>    depthBuffer;
     std::vector<float>    irBuffer;
     std::vector<float>    downscaledDepthBuffer;
+    std::vector<float>    bigdepthBufferCropped;
+    std::vector<float>    flipDstBuffer;
     std::mutex            mutex;
     bool                  hasNewRGB;
     bool                  hasNewDepth;
