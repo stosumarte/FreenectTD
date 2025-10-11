@@ -169,47 +169,106 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // RESOLUTION PAGE
     // ---------------
     
-    // RGB resolution
+    // V1 header
+    OP_StringParameter fn1_resHeader;
+    fn1_resHeader.name = "Kinectv1resolution";
+    fn1_resHeader.page = "Resolution";
+    fn1_resHeader.label = "Kinect V1";
+    manager->appendHeader(fn1_resHeader);
+    
+    // V1 RGB resolution
+    OP_NumericParameter fn1_rgbResParam;
+    fn1_rgbResParam.name = "V1rgbresolution";
+    fn1_rgbResParam.label = "RGB Resolution";
+    fn1_rgbResParam.page = "Resolution";
+    fn1_rgbResParam.defaultValues[0] = MyFreenectDevice::WIDTH;
+    fn1_rgbResParam.defaultValues[1] = MyFreenectDevice::HEIGHT;
+    fn1_rgbResParam.minValues[0] = fn1_rgbResParam.minSliders[0] = 1.0;
+    fn1_rgbResParam.maxValues[0] = fn1_rgbResParam.maxSliders[0] = MyFreenectDevice::WIDTH;
+    fn1_rgbResParam.clampMins[0] = fn1_rgbResParam.clampMaxes[0] = true;
+    fn1_rgbResParam.minValues[1] = fn1_rgbResParam.minSliders[1] = 1.0;
+    fn1_rgbResParam.maxValues[1] = fn1_rgbResParam.maxSliders[1] = MyFreenectDevice::HEIGHT;
+    fn1_rgbResParam.clampMins[1] = fn1_rgbResParam.clampMaxes[1] = true;
+    manager->appendXY(fn1_rgbResParam);
+    
+    // V1 depth resolution
+    OP_NumericParameter fn1_depthResParam;
+    fn1_depthResParam.name = "V1depthresolution";
+    fn1_depthResParam.label = "Depth Resolution";
+    fn1_depthResParam.page = "Resolution";
+    fn1_depthResParam.defaultValues[0] = MyFreenectDevice::WIDTH;
+    fn1_depthResParam.defaultValues[1] = MyFreenectDevice::HEIGHT;
+    fn1_depthResParam.minValues[0] = fn1_depthResParam.minSliders[0] = 1.0;
+    fn1_depthResParam.maxValues[0] = fn1_depthResParam.maxSliders[0] = MyFreenectDevice::WIDTH;
+    fn1_depthResParam.clampMins[0] = fn1_depthResParam.clampMaxes[0] = true;
+    fn1_depthResParam.minValues[1] = fn1_depthResParam.minSliders[1] = 1.0;
+    fn1_depthResParam.maxValues[1] = fn1_depthResParam.maxSliders[1] = MyFreenectDevice::HEIGHT;
+    fn1_depthResParam.clampMins[1] = fn1_depthResParam.clampMaxes[1] = true;
+    manager->appendXY(fn1_depthResParam);
+    
+    // V1 IR resolution
+    OP_NumericParameter fn1_irResParam;
+    fn1_irResParam.name = "V1irresolution";
+    fn1_irResParam.label = "IR Resolution";
+    fn1_irResParam.page = "Resolution";
+    fn1_irResParam.defaultValues[0] = MyFreenectDevice::WIDTH;
+    fn1_irResParam.defaultValues[1] = MyFreenectDevice::HEIGHT;
+    fn1_irResParam.minValues[0] = fn1_irResParam.minSliders[0] = 1.0;
+    fn1_irResParam.maxValues[0] = fn1_irResParam.maxSliders[0] = MyFreenectDevice::WIDTH;
+    fn1_irResParam.clampMins[0] = fn1_irResParam.clampMaxes[0] = true;
+    fn1_irResParam.minValues[1] = fn1_irResParam.minSliders[1] = 1.0;
+    fn1_irResParam.maxValues[1] = fn1_irResParam.maxSliders[1] = MyFreenectDevice::HEIGHT;
+    fn1_irResParam.clampMins[1] = fn1_irResParam.clampMaxes[1] = true;
+    manager->appendXY(fn1_irResParam);
+    
+    // V2 header
+    OP_StringParameter fn2_resHeader;
+    fn2_resHeader.name = "Kinectv2resolution";
+    fn2_resHeader.page = "Resolution";
+    fn2_resHeader.label = "Kinect V2";
+    manager->appendHeader(fn2_resHeader);
+    
+    // V2 RGB resolution
     OP_NumericParameter fn2_rgbResParam;
     fn2_rgbResParam.name = "V2rgbresolution";
     fn2_rgbResParam.label = "RGB Resolution";
-    fn2_rgbResParam.page = "V2 Resolution";
+    fn2_rgbResParam.page = "Resolution";
     fn2_rgbResParam.defaultValues[0] = 1280.0;
     fn2_rgbResParam.defaultValues[1] = 720.0;
-    fn2_rgbResParam.minValues[0] = fn2_rgbResParam.minSliders[0] = 320.0;
+    fn2_rgbResParam.minValues[0] = fn2_rgbResParam.minSliders[0] = 1.0;
     fn2_rgbResParam.maxValues[0] = fn2_rgbResParam.maxSliders[0] = MyFreenect2Device::RGB_WIDTH;
     fn2_rgbResParam.clampMins[0] = fn2_rgbResParam.clampMaxes[0] = true;
-    fn2_rgbResParam.minValues[1] = fn2_rgbResParam.minSliders[1] = 240.0;
+    fn2_rgbResParam.minValues[1] = fn2_rgbResParam.minSliders[1] = 1.0;
     fn2_rgbResParam.maxValues[1] = fn2_rgbResParam.maxSliders[1] = MyFreenect2Device::RGB_HEIGHT;
     fn2_rgbResParam.clampMins[1] = fn2_rgbResParam.clampMaxes[1] = true;
     manager->appendXY(fn2_rgbResParam);
     
-    // Depth resolution
+    // V2 Depth resolution
     OP_NumericParameter fn2_depthResParam;
     fn2_depthResParam.name = "V2depthresolution";
     fn2_depthResParam.label = "Depth Resolution";
-    fn2_depthResParam.page = "V2 Resolution";
+    fn2_depthResParam.page = "Resolution";
     fn2_depthResParam.defaultValues[0] = MyFreenect2Device::DEPTH_WIDTH;
     fn2_depthResParam.defaultValues[1] = MyFreenect2Device::DEPTH_HEIGHT;
-    fn2_depthResParam.minValues[0] = fn2_depthResParam.minSliders[0] = 320.0;
+    fn2_depthResParam.minValues[0] = fn2_depthResParam.minSliders[0] = 1.0;
     fn2_depthResParam.maxValues[0] = fn2_depthResParam.maxSliders[0] = MyFreenect2Device::DEPTH_WIDTH;
     fn2_depthResParam.clampMins[0] = fn2_depthResParam.clampMaxes[0] = true;
-    fn2_depthResParam.minValues[1] = fn2_depthResParam.minSliders[1] = 240.0;
+    fn2_depthResParam.minValues[1] = fn2_depthResParam.minSliders[1] = 1.0;
     fn2_depthResParam.maxValues[1] = fn2_depthResParam.maxSliders[1] = MyFreenect2Device::DEPTH_HEIGHT;
     fn2_depthResParam.clampMins[1] = fn2_depthResParam.clampMaxes[1] = true;
     manager->appendXY(fn2_depthResParam);
     
-    // IR resolution
+    // V2 IR resolution
     OP_NumericParameter fn2_irResParam;
     fn2_irResParam.name = "V2irresolution";
     fn2_irResParam.label = "IR Resolution";
-    fn2_irResParam.page = "V2 Resolution";
+    fn2_irResParam.page = "Resolution";
     fn2_irResParam.defaultValues[0] = MyFreenect2Device::IR_WIDTH;
     fn2_irResParam.defaultValues[1] = MyFreenect2Device::IR_HEIGHT;
-    fn2_irResParam.minValues[0] = fn2_irResParam.minSliders[0] = 320.0;
+    fn2_irResParam.minValues[0] = fn2_irResParam.minSliders[0] = 1.0;
     fn2_irResParam.maxValues[0] = fn2_irResParam.maxSliders[0] = MyFreenect2Device::IR_WIDTH;
     fn2_irResParam.clampMins[0] = fn2_irResParam.clampMaxes[0] = true;
-    fn2_irResParam.minValues[1] = fn2_irResParam.minSliders[1] = 240.0;
+    fn2_irResParam.minValues[1] = fn2_irResParam.minSliders[1] = 1.0;
     fn2_irResParam.maxValues[1] = fn2_irResParam.maxSliders[1] = MyFreenect2Device::IR_HEIGHT;
     fn2_irResParam.clampMins[1] = fn2_irResParam.clampMaxes[1] = true;
     manager->appendXY(fn2_irResParam);
@@ -638,7 +697,6 @@ void FreenectTOP::fn2_cleanupDevice() {
 
 // Execute method for Kinect v1 (libfreenect)
 void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-    std::string depthFormat = (inputs->getParString("Depthformat"));
     
     if (!fn1_device) {
         LOG("[FreenectTOP] executeV1: device is null, initializing device in thread");
@@ -659,12 +717,14 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         return;
     }
     
-    int fn1_rgbW        = 640;
-    int fn1_rgbH        = 480;
-    int fn1_depthW      = 640;
-    int fn1_depthH      = 480;
-    int fn1_irW         = 640;
-    int fn1_irH         = 480;
+    std::string depthFormat = (inputs->getParString("Depthformat"));
+    
+    int fn1_rgbW    = static_cast<int>(inputs->getParDouble("V1rgbresolution", 0));
+    int fn1_rgbH    = static_cast<int>(inputs->getParDouble("V1rgbresolution", 1));
+    int fn1_depthW  = static_cast<int>(inputs->getParDouble("V1depthresolution", 0));
+    int fn1_depthH  = static_cast<int>(inputs->getParDouble("V1depthresolution", 1));
+    int fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
+    int fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
     
     if(fn1_device) {
         fn1_device->setResolutions(fn1_rgbW, fn1_rgbH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
@@ -904,21 +964,23 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     // Check if Active parameter is set
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
     
-    // Enable/disable parameters based on device type string
-    if (devType == "Kinect v2") {
-        inputs->enablePar("Tilt", false);
-        //inputs->enablePar("Resolutionlimit", true);
-        inputs->enablePar("Depthformat", true);
-    } else if (devType == "Kinect v1") {
-        inputs->enablePar("Tilt", true);
-        //inputs->enablePar("Resolutionlimit", false);
-        inputs->enablePar("Depthformat", true);
-    } else {
-        // Unknown device type, enable all parameters
-        inputs->enablePar("Tilt", true);
-        //inputs->enablePar("Resolutionlimit", true);
-        inputs->enablePar("Depthformat", true);
-    }
+    // Enable/disable parameters based on device type
+    auto enablePar = [&](const char* name, bool v1, bool v2, bool other = true) {
+        bool enabled = (devType == "Kinect v1") ? v1 :
+                       (devType == "Kinect v2") ? v2 : other;
+        inputs->enablePar(name, enabled);
+    };
+    
+    // V1 only parameters
+    enablePar("Tilt", true, false);
+    enablePar("V1rgbresolution", true, false);
+    enablePar("V1depthresolution", true, false);
+    enablePar("V1irresolution", true, false);
+    
+    // V2 only parameters
+    enablePar("V2rgbresolution", false, true);
+    enablePar("V2depthresolution", false, true);
+    enablePar("V2irresolution", false, true);
     
     // Enable/disable depthUndistort based on device type and depthFormat
     if (devType == "Kinect v2" && depthFormat == "Raw") {
