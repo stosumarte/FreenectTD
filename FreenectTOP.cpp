@@ -719,18 +719,19 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     
     std::string depthFormat = (inputs->getParString("Depthformat"));
     
-    int fn1_rgbW    = static_cast<int>(inputs->getParDouble("V1rgbresolution", 0));
-    int fn1_rgbH    = static_cast<int>(inputs->getParDouble("V1rgbresolution", 1));
+    // V1 resolution values
+    int fn1_colorW  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 0));
+    int fn1_colorH  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 1));
     int fn1_depthW  = static_cast<int>(inputs->getParDouble("V1depthresolution", 0));
     int fn1_depthH  = static_cast<int>(inputs->getParDouble("V1depthresolution", 1));
     int fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
     int fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
     
     if(fn1_device) {
-        fn1_device->setResolutions(fn1_rgbW, fn1_rgbH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
+        fn1_device->setResolutions(fn1_colorW, fn1_colorH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
     }
     
-    // --- Set tilt angle ---
+    // Set tilt angle
     float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     try {
         fn1_device->setTiltDegrees(tilt);
@@ -743,55 +744,48 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         return;
     }
     
+    // Create output buffers
+    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+    TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_depthW * fn1_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+    
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
-    
     if (fn1_device->getColorFrame(colorFrame)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating color output buffer");
-        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext ? fntdContext->createOutputBuffer(fn1_rgbW * fn1_rgbH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-        if (buf) {
+        if (colorFrameBuffer) {
             LOG("[FreenectTOP] executeV1: copying color frame data to buffer");
-            std::memcpy(buf->data, colorFrame.data(), fn1_rgbW * fn1_rgbH * 4);
+            std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn1_colorW * fn1_colorH * 4);
             TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn1_rgbW;
-            info.textureDesc.height = fn1_rgbH;
+            info.textureDesc.width = fn1_colorW;
+            info.textureDesc.height = fn1_colorH;
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             LOG("[FreenectTOP] executeV1: uploading color buffer");
-            output->uploadBuffer(&buf, info, nullptr);
+            output->uploadBuffer(&colorFrameBuffer, info, nullptr);
         } else {
             LOG("[FreenectTOP] executeV1: failed to create color output buffer");
         }
     }
     
-    // --- Depth frame ---
-    std::vector<uint16_t> depthFrame;
+    // Set depth type based on parameter
     fn1_depthType depthType = fn1_depthType::Raw; // Default to Raw
-    
     if (depthFormat == "Raw") {
         depthType = fn1_depthType::Raw;
     } else if (depthFormat == "Registered") {
         depthType = fn1_depthType::Registered;
-    } else {
-        // "undistorted" gets ignored for Kinect v1, default to Raw
-        depthType = fn1_depthType::Raw;
     }
-
+    
+    // --- Depth frame ---
+    std::vector<uint16_t> depthFrame;
     if (fn1_device->getDepthFrame(depthFrame, depthType)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating depth output buffer");
-
-        TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext
-            ? fntdContext->createOutputBuffer(fn1_depthW * fn1_depthH * 2, TD::TOP_BufferFlags::None, nullptr)
-            : nullptr;
-
-        if (buf) {
+        if (depthFrameBuffer) {
             LOG("[FreenectTOP] executeV1: copying depth frame data to buffer");
-            std::memcpy(buf->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
-
+            std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
             TD::TOP_UploadInfo info;
             info.textureDesc.width = fn1_depthW;
             info.textureDesc.height = fn1_depthH;
@@ -799,9 +793,8 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 1;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-
             LOG("[FreenectTOP] executeV1: uploading depth buffer");
-            output->uploadBuffer(&buf, info, nullptr);
+            output->uploadBuffer(&depthFrameBuffer, info, nullptr);
         } else {
             LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
         }
@@ -810,8 +803,6 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-
-    //bool downscale = (inputs->getParInt("Resolutionlimit") != 0);
     
     //bool streamEnabledIR = (inputs->getParInt("Enableir") != 0);
     //bool streamEnabledDepth = (inputs->getParInt("Enabledepth") != 0);
@@ -842,16 +833,17 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     if (fn2_device) {
         fn2_device->setResolutions(fn2_rgbW, fn2_rgbH, fn2_depthW, fn2_depthH, fn2_irW, fn2_irH, fn2_bigdepthW, fn2_bigdepthH);
     }
+    
+    // Create output buffers
+    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_rgbW * fn2_rgbH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
 
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
     
     if (fn2_device->getColorFrame(colorFrame)) {
         errorString.clear();
-        TD::OP_SmartRef<TD::TOP_Buffer> buf =
-            fntdContext ? fntdContext->createOutputBuffer(fn2_rgbW * fn2_rgbH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-        if (buf) {
-            std::memcpy(buf->data, colorFrame.data(), fn2_rgbW * fn2_rgbH * 4);
+        if (colorFrameBuffer) {
+            std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn2_rgbW * fn2_rgbH * 4);
             TD::TOP_UploadInfo info;
             info.textureDesc.width = fn2_rgbW;
             info.textureDesc.height = fn2_rgbH;
@@ -859,7 +851,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
             info.colorBufferIndex = 0;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&buf, info, nullptr);
+            output->uploadBuffer(&colorFrameBuffer, info, nullptr);
         }
     }
 
