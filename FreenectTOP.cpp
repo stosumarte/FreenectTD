@@ -170,25 +170,49 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // ---------------
     
     // RGB resolution
-    OP_NumericParameter rgbResParam;
-    rgbResParam.name = "Rgbresolution";
-    rgbResParam.label = "RGB Resolution";
-    rgbResParam.page = "Resolution";
-    rgbResParam.defaultValues[0] = 1920.0;
-    rgbResParam.minValues[0] = 320.0;
-    rgbResParam.maxValues[0] = 1920.0;
-    rgbResParam.minSliders[0] = 320.0;
-    rgbResParam.maxSliders[0] = 1920.0;
-    rgbResParam.clampMins[0] = true;
-    rgbResParam.clampMaxes[0] = true;
-    rgbResParam.defaultValues[1] = 1080.0;
-    rgbResParam.minValues[1] = 240.0;
-    rgbResParam.maxValues[1] = 1080.0;
-    rgbResParam.minSliders[1] = 240.0;
-    rgbResParam.maxSliders[1] = 1080.0;
-    rgbResParam.clampMins[1] = true;
-    rgbResParam.clampMaxes[1] = true;
-    manager->appendXY(rgbResParam);
+    OP_NumericParameter fn2_rgbResParam;
+    fn2_rgbResParam.name = "V2rgbresolution";
+    fn2_rgbResParam.label = "RGB Resolution";
+    fn2_rgbResParam.page = "V2 Resolution";
+    fn2_rgbResParam.defaultValues[0] = 1280.0;
+    fn2_rgbResParam.defaultValues[1] = 720.0;
+    fn2_rgbResParam.minValues[0] = fn2_rgbResParam.minSliders[0] = 320.0;
+    fn2_rgbResParam.maxValues[0] = fn2_rgbResParam.maxSliders[0] = MyFreenect2Device::RGB_WIDTH;
+    fn2_rgbResParam.clampMins[0] = fn2_rgbResParam.clampMaxes[0] = true;
+    fn2_rgbResParam.minValues[1] = fn2_rgbResParam.minSliders[1] = 240.0;
+    fn2_rgbResParam.maxValues[1] = fn2_rgbResParam.maxSliders[1] = MyFreenect2Device::RGB_HEIGHT;
+    fn2_rgbResParam.clampMins[1] = fn2_rgbResParam.clampMaxes[1] = true;
+    manager->appendXY(fn2_rgbResParam);
+    
+    // Depth resolution
+    OP_NumericParameter fn2_depthResParam;
+    fn2_depthResParam.name = "V2depthresolution";
+    fn2_depthResParam.label = "Depth Resolution";
+    fn2_depthResParam.page = "V2 Resolution";
+    fn2_depthResParam.defaultValues[0] = MyFreenect2Device::DEPTH_WIDTH;
+    fn2_depthResParam.defaultValues[1] = MyFreenect2Device::DEPTH_HEIGHT;
+    fn2_depthResParam.minValues[0] = fn2_depthResParam.minSliders[0] = 320.0;
+    fn2_depthResParam.maxValues[0] = fn2_depthResParam.maxSliders[0] = MyFreenect2Device::DEPTH_WIDTH;
+    fn2_depthResParam.clampMins[0] = fn2_depthResParam.clampMaxes[0] = true;
+    fn2_depthResParam.minValues[1] = fn2_depthResParam.minSliders[1] = 240.0;
+    fn2_depthResParam.maxValues[1] = fn2_depthResParam.maxSliders[1] = MyFreenect2Device::DEPTH_HEIGHT;
+    fn2_depthResParam.clampMins[1] = fn2_depthResParam.clampMaxes[1] = true;
+    manager->appendXY(fn2_depthResParam);
+    
+    // IR resolution
+    OP_NumericParameter fn2_irResParam;
+    fn2_irResParam.name = "V2irresolution";
+    fn2_irResParam.label = "IR Resolution";
+    fn2_irResParam.page = "V2 Resolution";
+    fn2_irResParam.defaultValues[0] = MyFreenect2Device::IR_WIDTH;
+    fn2_irResParam.defaultValues[1] = MyFreenect2Device::IR_HEIGHT;
+    fn2_irResParam.minValues[0] = fn2_irResParam.minSliders[0] = 320.0;
+    fn2_irResParam.maxValues[0] = fn2_irResParam.maxSliders[0] = MyFreenect2Device::IR_WIDTH;
+    fn2_irResParam.clampMins[0] = fn2_irResParam.clampMaxes[0] = true;
+    fn2_irResParam.minValues[1] = fn2_irResParam.minSliders[1] = 240.0;
+    fn2_irResParam.maxValues[1] = fn2_irResParam.maxSliders[1] = MyFreenect2Device::IR_HEIGHT;
+    fn2_irResParam.clampMins[1] = fn2_irResParam.clampMaxes[1] = true;
+    manager->appendXY(fn2_irResParam);
     
     // ----------
     // ABOUT PAGE
@@ -745,17 +769,15 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         }
     }
     
-    // V2 resolution values (fixed for now)
-    //int fn2_rgbW    = 1920;
-    //int fn2_rgbH    = 1080;
-    int fn2_rgbW        = 1280;
-    int fn2_rgbH        = 720;
-    int fn2_depthW      = 512;
-    int fn2_depthH      = 424;
-    int fn2_irW         = 512;
-    int fn2_irH         = 424;
-    int fn2_bigdepthW   = 1280;
-    int fn2_bigdepthH   = 720;
+    // V2 resolution values
+    int fn2_rgbW = static_cast<int>(inputs->getParDouble("V2rgbresolution", 0));
+    int fn2_rgbH = static_cast<int>(inputs->getParDouble("V2rgbresolution", 1));
+    int fn2_depthW = static_cast<int>(inputs->getParDouble("V2depthresolution", 0));
+    int fn2_depthH = static_cast<int>(inputs->getParDouble("V2depthresolution", 1));
+    int fn2_irW = static_cast<int>(inputs->getParDouble("V2irresolution", 0));
+    int fn2_irH = static_cast<int>(inputs->getParDouble("V2irresolution", 1));
+    int fn2_bigdepthW = fn2_rgbW;
+    int fn2_bigdepthH = fn2_rgbH;
     
     if (fn2_device) {
         fn2_device->setResolutions(fn2_rgbW, fn2_rgbH, fn2_depthW, fn2_depthH, fn2_irW, fn2_irH, fn2_bigdepthW, fn2_bigdepthH);
