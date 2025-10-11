@@ -28,10 +28,11 @@ public:
     void DepthCallback(void* depth, uint32_t) override;
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<uint16_t>& out);
-    bool getColorFrame(std::vector<uint8_t>& out, int& width, int& height);
-    bool getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type, int& width, int& height);
+    bool getColorFrame(std::vector<uint8_t>& out);
+    bool getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type);
     bool start();
     void stop();
+    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight);
 private:
     std::atomic<bool>&    rgbReady;
     std::atomic<bool>&    depthReady;
@@ -40,5 +41,10 @@ private:
     std::mutex            mutex;
     bool                  hasNewRGB;
     bool                  hasNewDepth;
-    
+    int rgbWidth_ = WIDTH;
+    int rgbHeight_ = HEIGHT;
+    int depthWidth_ = WIDTH;
+    int depthHeight_ = HEIGHT;
+    int irWidth_ = WIDTH;
+    int irHeight_ = HEIGHT;
 };

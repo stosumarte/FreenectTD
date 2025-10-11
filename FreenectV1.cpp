@@ -67,6 +67,15 @@ void MyFreenectDevice::stop() {
     stopDepth();
 }
 
+// Set RGB, depth and IR resolutions
+void MyFreenectDevice::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight) {
+    rgbWidth_ = rgbWidth;
+    rgbHeight_ = rgbHeight;
+    depthWidth_ = depthWidth;
+    depthHeight_ = depthHeight;
+    irWidth_ = irWidth;
+    irHeight_ = irHeight;
+}
 
 // Get RGB data
 bool MyFreenectDevice::getRGB(std::vector<uint8_t>& out) {
@@ -87,8 +96,8 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
 }
 
 // Get color frame
-bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, int& width, int& height) {
-    const int srcWidth = WIDTH, srcHeight = HEIGHT;
+bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
+    const int srcWidth = rgbWidth_, srcHeight = rgbHeight_;
     const int dstWidth = srcWidth, dstHeight = srcHeight;
     
     std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
@@ -103,13 +112,13 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, int& width, int&
         .data = rgbBuffer.data(),
         .height = (vImagePixelCount)srcHeight,
         .width = (vImagePixelCount)srcWidth,
-        .rowBytes = srcWidth * 3
+        .rowBytes = static_cast<size_t>(srcWidth * 3)
     };
     vImage_Buffer vImage_RGBA = {
         .data = rgbaBuffer.data(),
         .height = (vImagePixelCount)dstHeight,
         .width = (vImagePixelCount)dstWidth,
-        .rowBytes = dstWidth * 4
+        .rowBytes = static_cast<size_t>(dstWidth * 4)
     };
     vImage_Error vImageErr = vImageConvert_RGB888toRGBA8888(
         &vImage_RGB,    // RGB source
@@ -129,14 +138,11 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, int& width, int&
     
     hasNewRGB = false;
     
-    width  = dstWidth;
-    height = dstHeight;
-    
     return true;
 }
 
-bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type, int& width, int& height) {
-    const int srcWidth = WIDTH, srcHeight = HEIGHT;
+bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type) {
+    const int srcWidth = depthWidth_, srcHeight = depthHeight_;
 
     // Select format
     if (type == fn1_depthType::Raw) {
@@ -177,8 +183,6 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType t
     }
 
     hasNewDepth = false;
-    width  = srcWidth;
-    height = srcHeight;
 
     return true;
 }

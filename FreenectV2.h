@@ -48,14 +48,14 @@ public:
     bool getIR(std::vector<float>& out);
     void processFrames();
     // Unified processed frame methods for v2
-    bool getColorFrame(std::vector<uint8_t>& out, bool downscale, int& width, int& height);
-    bool getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type, bool downscale, int& width, int& height);
-    bool getIRFrame(std::vector<uint16_t>& out, int& width, int& height);
+    bool getColorFrame(std::vector<uint8_t>& out);
+    bool getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type);
+    bool getIRFrame(std::vector<uint16_t>& out);
     // Setters for buffer injection
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
     // Set resolutions
-    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight);
+    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight, int bigdepthWidth, int bigdepthHeight);
     
     libfreenect2::Freenect2Device* getDevice() { return device; }
     
@@ -76,5 +76,12 @@ private:
     bool                  hasNewRGB;
     bool                  hasNewDepth;
     bool                  hasNewIR;
-    int rgbWidth_, rgbHeight_, depthWidth_, depthHeight_, irWidth_, irHeight_;
+    int rgbWidth_ = RGB_WIDTH,
+        rgbHeight_ = RGB_HEIGHT,
+        depthWidth_ = DEPTH_WIDTH,
+        depthHeight_ = DEPTH_HEIGHT,
+        irWidth_ = IR_WIDTH,
+        irHeight_ = IR_HEIGHT,
+        bigdepthWidth_ = BIGDEPTH_WIDTH,
+        bigdepthHeight_ = BIGDEPTH_HEIGHT - 2; // Crop to 1080 from 1082
 };

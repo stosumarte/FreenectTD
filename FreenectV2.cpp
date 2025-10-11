@@ -70,14 +70,16 @@ void MyFreenect2Device::close() {
     }
 }
 
-// Get RGB, depth and IR resolutions
-void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight) {
+// Set RGB, depth and IR resolutions
+void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight, int bigdepthWidth, int bigdepthHeight) {
     rgbWidth_ = rgbWidth;
     rgbHeight_ = rgbHeight;
     depthWidth_ = depthWidth;
     depthHeight_ = depthHeight;
     irWidth_ = irWidth;
     irHeight_ = irHeight;
+    bigdepthWidth_ = bigdepthWidth;
+    bigdepthHeight_ = bigdepthHeight;
 }
 
 // Set RGB buffer and mark as ready
@@ -154,14 +156,14 @@ bool MyFreenect2Device::getIR(std::vector<float>& out) {
 }
 
 // Get color frame with flipping and optional downscaling
-bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale, int& width, int& height) {
+bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewRGB) return false;
 
     const int srcWidth = RGB_WIDTH;
     const int srcHeight = RGB_HEIGHT;
-    const int dstWidth = downscale ? SCALED_WIDTH : RGB_WIDTH;
-    const int dstHeight = downscale ? SCALED_HEIGHT : RGB_HEIGHT;
+    const int dstWidth = rgbWidth_;
+    const int dstHeight = rgbHeight_;
     const size_t dstSize = dstWidth * dstHeight * 4;
     if (out.size() != dstSize) out.resize(dstSize);
     
@@ -192,14 +194,11 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out, bool downscale,
 
     hasNewRGB = false;
     
-    width  = dstWidth;
-    height = dstHeight;
-    
     return true;
 }
 
 // All-in-one depth frame retrieval (raw/undistorted/registered)
-bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type, bool downscale, int& width, int& height) {
+bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth || !device) return false;
     
@@ -233,8 +232,8 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
             flipSrcData = depthBuffer.data();
             flipSrcWidth = DEPTH_WIDTH;
             flipSrcHeight = DEPTH_HEIGHT;
-            flipDstWidth = DEPTH_WIDTH;
-            flipDstHeight = DEPTH_HEIGHT;
+            flipDstWidth = depthWidth_;
+            flipDstHeight = depthHeight_;
             break;
 
         case fn2_depthType::Undistorted:
@@ -243,8 +242,8 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
             flipSrcData = reinterpret_cast<float*>(undistortedFrame.data);
             flipSrcWidth = DEPTH_WIDTH;
             flipSrcHeight = DEPTH_HEIGHT;
-            flipDstWidth = DEPTH_WIDTH;
-            flipDstHeight = DEPTH_HEIGHT;
+            flipDstWidth = depthWidth_;
+            flipDstHeight = depthHeight_;
             break;
 
         case fn2_depthType::Registered:
@@ -270,8 +269,8 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
             
             flipSrcWidth  = bigdepthWidthCropped;
             flipSrcHeight = bigdepthHeightCropped;
-            flipDstWidth  = downscale ? SCALED_WIDTH : bigdepthWidthCropped;
-            flipDstHeight = downscale ? SCALED_HEIGHT : bigdepthHeightCropped;
+            flipDstWidth  = bigdepthWidth_;
+            flipDstHeight = bigdepthHeight_;
             flipSrcData = bigdepthBufferCropped.data();
 
             break;
@@ -317,19 +316,17 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
     }
 
     hasNewDepth = false;
-    
-    width  = flipDstWidth;
-    height = flipDstHeight;
 
     return true;
 }
 
 
 // Get IR frame
-bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out, int& width, int& height) {
+bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
     
     int srcWidth = IR_WIDTH, srcHeight = IR_HEIGHT;
+    int dstWidth = irWidth_, dstHeight = irHeight_;
 
     if (!hasNewIR) return false;
 
@@ -347,13 +344,13 @@ bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out, int& width, int& 
     std::vector<float> flipped(pixelCount);
     vImage_Buffer dst = {
         .data = flipped.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = srcWidth * sizeof(float)
+        .height = (vImagePixelCount)dstHeight,
+        .width = (vImagePixelCount)dstWidth,
+        .rowBytes = dstWidth * sizeof(float)
     };
 
-    //vImageVerticalReflect_PlanarF(&src, &dst, kvImageNoFlags);
-    vImageHorizontalReflect_PlanarF(&src, &dst, kvImageNoFlags);
+    vImageScale_PlanarF(&src, &dst, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
+    vImageHorizontalReflect_PlanarF(&dst, &dst, kvImageDoNotTile);
 
     // Convert to uint16_t
     const float* flippedData = flipped.data();
@@ -364,9 +361,6 @@ bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out, int& width, int& 
         static_cast<uint16_t>(std::min(d, 65535.0f)) : 0;
     }
     hasNewIR = false;
-    
-    width  = srcWidth;
-    height = srcHeight;
     
     return true;
 }
