@@ -765,6 +765,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         }
     } else {
         uploadFallbackBuffer(1);
+        //fntdContext->returnBuffer(&buf)
     }
 
     // --- IR frame ---
@@ -796,6 +797,17 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 // Main execution method
 void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) {
     myCurrentOutput = output;
+    
+    //int fn2_rgbW    = 1920;
+    //int fn2_rgbH    = 1080;
+    int fn2_rgbW    = 1280;
+    int fn2_rgbH    = 720;
+    int fn2_depthW  = 512;
+    int fn2_depthH  = 424;
+    int fn2_irW     = 512;
+    int fn2_irH     = 424;
+    
+    fn2_device->setResolutions(fn2_rgbW, fn2_rgbH, fn2_depthW, fn2_depthH, fn2_irW, fn2_irH);
     
     // Validate inputs
     if (!inputs) {

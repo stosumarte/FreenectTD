@@ -54,6 +54,8 @@ public:
     // Setters for buffer injection
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
+    // Set resolutions
+    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight);
     
     libfreenect2::Freenect2Device* getDevice() { return device; }
     
@@ -74,4 +76,5 @@ private:
     bool                  hasNewRGB;
     bool                  hasNewDepth;
     bool                  hasNewIR;
+    int rgbWidth_, rgbHeight_, depthWidth_, depthHeight_, irWidth_, irHeight_;
 };

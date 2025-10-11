@@ -70,6 +70,16 @@ void MyFreenect2Device::close() {
     }
 }
 
+// Get RGB, depth and IR resolutions
+void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight) {
+    rgbWidth_ = rgbWidth;
+    rgbHeight_ = rgbHeight;
+    depthWidth_ = depthWidth;
+    depthHeight_ = depthHeight;
+    irWidth_ = irWidth;
+    irHeight_ = irHeight;
+}
+
 // Set RGB buffer and mark as ready
 void MyFreenect2Device::processFrames() {
     if (!listener) return;

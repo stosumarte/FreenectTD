@@ -57,6 +57,7 @@
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
 		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
 		81FD1DEB2E36519700900396 /* FreenectV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV2.h; sourceTree = "<group>"; };
+		81FF21B52E99655C00DF4A33 /* notes.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = notes.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -124,6 +125,7 @@
 			children = (
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
+				81FF21B52E99655C00DF4A33 /* notes.txt */,
 				81FD1DEA2E36517700900396 /* FreenectV1.h */,
 				81FD1DE52E3630A700900396 /* FreenectV1.cpp */,
 				81FD1DEB2E36519700900396 /* FreenectV2.h */,
