@@ -748,9 +748,12 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
     TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_depthW * fn1_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
     
+    // Set color type based on parameter (not implemented yet, default to RGB)
+    fn1_colorType colorType = fn1_colorType::RGB; // Default to RGB
+    
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
-    if (fn1_device->getColorFrame(colorFrame)) {
+    if (fn1_device->getColorFrame(colorFrame, colorType)) {
         errorString.clear();
         LOG("[FreenectTOP] executeV1: creating color output buffer");
         if (colorFrameBuffer) {

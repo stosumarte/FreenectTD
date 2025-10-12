@@ -18,21 +18,32 @@ MyFreenect2Device::MyFreenect2Device(
     std::atomic<bool>& rgbFlag,
     std::atomic<bool>& depthFlag,
     std::atomic<bool>& irFlag
- ):
-    device(dev),
-    listener(nullptr),
-    reg(nullptr),
-    rgbReady(rgbFlag),
-    depthReady(depthFlag),
-    irReady(irFlag),
-    rgbBuffer(RGB_WIDTH * RGB_HEIGHT * 4, 0),
-    depthBuffer(DEPTH_WIDTH * DEPTH_HEIGHT, 0),
-    hasNewRGB(false), hasNewDepth(false) {
-        listener = new libfreenect2::SyncMultiFrameListener
-            (libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
-        device->setColorFrameListener(listener);
-        device->setIrAndDepthFrameListener(listener);
-    }
+)
+: device(dev),
+  listener(nullptr),
+  reg(nullptr),
+  rgbReady(rgbFlag),
+  depthReady(depthFlag),
+  irReady(irFlag),
+  rgbBuffer(RGB_WIDTH * RGB_HEIGHT * 4, 0),
+  depthBuffer(DEPTH_WIDTH * DEPTH_HEIGHT, 0),
+  hasNewRGB(false),
+  hasNewDepth(false),
+  // Persistent frame buffers
+  depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, 4),
+  rgbFrame(RGB_WIDTH, RGB_HEIGHT, 4),
+  undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, 4),
+  registeredFrame(DEPTH_WIDTH, DEPTH_HEIGHT, 4),
+  bigdepthFrame(1920, 1082, 4)
+{
+    listener = new libfreenect2::SyncMultiFrameListener(
+        libfreenect2::Frame::Color |
+        libfreenect2::Frame::Ir |
+        libfreenect2::Frame::Depth
+    );
+    device->setColorFrameListener(listener);
+    device->setIrAndDepthFrameListener(listener);
+}
 
 // MyFreenect2Device class destructor
 MyFreenect2Device::~MyFreenect2Device() {
@@ -227,12 +238,6 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
         }
     }
 
-    libfreenect2::Frame depthFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
-    libfreenect2::Frame rgbFrame(RGB_WIDTH, RGB_HEIGHT, 4);
-    libfreenect2::Frame undistortedFrame(DEPTH_WIDTH, DEPTH_HEIGHT, sizeof(float));
-    libfreenect2::Frame registeredFrame(DEPTH_WIDTH, DEPTH_HEIGHT, 4);
-    libfreenect2::Frame bigdepthFrame(BIGDEPTH_WIDTH, BIGDEPTH_HEIGHT, sizeof(float));
-
     const float* srcData = nullptr;
     int srcWidth = 0, srcHeight = 0;
     int dstWidth = 0, dstHeight = 0;
@@ -266,18 +271,36 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
             const int bigH = BIGDEPTH_HEIGHT;
             const int croppedH = bigH - 2;
 
-            std::vector<float> cropped(bigW * croppedH);
+            // Resize persistent buffer
+            if (registeredCroppedBuffer.size() != bigW * croppedH)
+                registeredCroppedBuffer.resize(bigW * croppedH);
+
+            // Crop and copy
             for (int y = 0; y < croppedH; ++y) {
                 const float* srcRow = bigDepthData + (y + 1) * bigW;
-                float* dstRow = cropped.data() + y * bigW;
+                float* dstRow = registeredCroppedBuffer.data() + y * bigW;
                 std::memcpy(dstRow, srcRow, bigW * sizeof(float));
             }
 
-            for (float& v : cropped) {
+            // Clean up NaNs/Infs
+            int validPixels = 0;
+            for (float& v : registeredCroppedBuffer) {
                 if (!std::isfinite(v)) v = 0.f;
+                if (v > 100.0f && v < 4500.0f) validPixels++;
             }
-
-            srcData = cropped.data();
+            int totalPixels = bigW * croppedH;
+            int requiredValidPixels = totalPixels / 10; // At least 10% valid
+            lastRegisteredDepthValid = (validPixels >= requiredValidPixels);
+            if (!lastRegisteredDepthValid) {
+                LOG("[FreenectV2.cpp] Not enough valid pixels in registered depth: " + std::to_string(validPixels) + "/" + std::to_string(totalPixels));
+                return false;
+            }
+            static int frameCounter = 0;
+            frameCounter++;
+            if (frameCounter % 30 == 0) {
+                LOG("[FreenectV2.cpp] Frame " + std::to_string(frameCounter) + ": Valid pixels: " + std::to_string(validPixels) + "/" + std::to_string(totalPixels));
+            }
+            srcData = registeredCroppedBuffer.data();
             srcWidth = bigW;
             srcHeight = croppedH;
             dstWidth = bigdepthWidth_;

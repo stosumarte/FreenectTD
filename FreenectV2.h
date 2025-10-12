@@ -62,20 +62,27 @@ public:
 private:
     libfreenect2::Freenect2Device* device;
     libfreenect2::SyncMultiFrameListener* listener;
+    libfreenect2::Frame depthFrame;
+    libfreenect2::Frame rgbFrame;
+    libfreenect2::Frame undistortedFrame;
+    libfreenect2::Frame registeredFrame;
+    libfreenect2::Frame bigdepthFrame;
     std::unique_ptr<libfreenect2::Registration> reg;
-    std::atomic<bool>&    rgbReady;
-    std::atomic<bool>&    depthReady;
-    std::atomic<bool>&    irReady;
-    std::vector<uint8_t>  rgbBuffer;
-    std::vector<float>    depthBuffer;
-    std::vector<float>    irBuffer;
-    std::vector<float>    downscaledDepthBuffer;
-    std::vector<float>    bigdepthBufferCropped;
-    std::vector<float>    flipDstBuffer;
-    std::mutex            mutex;
-    bool                  hasNewRGB;
-    bool                  hasNewDepth;
-    bool                  hasNewIR;
+    std::atomic<bool>&      rgbReady;
+    std::atomic<bool>&      depthReady;
+    std::atomic<bool>&      irReady;
+    std::vector<uint8_t>    rgbBuffer;
+    std::vector<float>      depthBuffer;
+    std::vector<float>      irBuffer;
+    std::vector<float>      downscaledDepthBuffer;
+    std::vector<float>      bigdepthBufferCropped;
+    std::vector<float>      flipDstBuffer;
+    std::vector<float>      registeredCroppedBuffer;
+    bool                    lastRegisteredDepthValid = false;
+    std::mutex              mutex;
+    bool                    hasNewRGB;
+    bool                    hasNewDepth;
+    bool                    hasNewIR;
     int rgbWidth_ = RGB_WIDTH,
         rgbHeight_ = RGB_HEIGHT,
         depthWidth_ = DEPTH_WIDTH,

@@ -96,9 +96,21 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
 }
 
 // Get color frame
-bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
+bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType type) {
     const int srcWidth = WIDTH, srcHeight = HEIGHT;
     const int dstWidth = rgbWidth_, dstHeight = rgbHeight_;
+    
+    /*switch (type) {
+        case fn1_colorType::RGB:
+            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_RGB);
+            break;
+        case fn1_colorType::IR:
+            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_IR_10BIT);
+            break;
+        default:
+            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_RGB);
+            break;
+    }*/
 
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewRGB) return false;
@@ -149,7 +161,7 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out) {
     return true;
 }
 
-
+// Get depth frame
 bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type) {
     const int srcWidth = WIDTH, srcHeight = HEIGHT;
     const int dstWidth = depthWidth_, dstHeight = depthHeight_;
@@ -218,6 +230,3 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType t
     hasNewDepth = false;
     return true;
 }
-
-
-

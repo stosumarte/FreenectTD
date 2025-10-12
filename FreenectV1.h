@@ -16,6 +16,11 @@ enum class fn1_depthType {
     Registered
 };
 
+enum class fn1_colorType {
+    RGB,
+    IR
+};
+
 class MyFreenectDevice : public Freenect::FreenectDevice {
 public:
     static constexpr int WIDTH = 640;
@@ -28,7 +33,7 @@ public:
     void DepthCallback(void* depth, uint32_t) override;
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<uint16_t>& out);
-    bool getColorFrame(std::vector<uint8_t>& out);
+    bool getColorFrame(std::vector<uint8_t>& out, fn1_colorType type);
     bool getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type);
     bool start();
     void stop();
