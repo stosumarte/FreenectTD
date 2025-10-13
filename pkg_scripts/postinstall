@@ -29,6 +29,11 @@ if [ ! -d "$PLUGIN_SRC" ]; then
     exit 1
 fi
 
+# Delete existing plugin if it exists
+if [ -d "${PLUGIN_DEST}/Freenect*" ]; then
+    rm -rf "${PLUGIN_DEST:?}/Freenect*"
+fi
+
 # Create destination directory if it doesn't exist
 rm -rf "${PLUGIN_DEST}/${BUNDLE_NAME}"
 mkdir -p "${PLUGIN_DEST}"

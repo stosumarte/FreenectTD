@@ -960,28 +960,34 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
     
     // Enable/disable parameters based on device type
-    auto enablePar = [&](const char* name, bool v1, bool v2, bool other = true) {
-        bool enabled = (devType == "Kinect v1") ? v1 :
-                       (devType == "Kinect v2") ? v2 : other;
+    auto dynamicParameterEnable = [&](const char* name, bool v1, bool v2, bool other = true) {
+        bool enabled = (devType == "Kinect v1") ? v1 : (devType == "Kinect v2") ? v2 : other;
         inputs->enablePar(name, enabled);
     };
     
     // V1 only parameters
-    enablePar("Tilt", true, false);
-    enablePar("V1rgbresolution", true, false);
-    enablePar("V1depthresolution", true, false);
-    enablePar("V1irresolution", true, false);
+    dynamicParameterEnable("Tilt", true, false);
+    dynamicParameterEnable("V1rgbresolution", true, false);
+    dynamicParameterEnable("V1irresolution", true, false);
     
     // V2 only parameters
-    enablePar("V2rgbresolution", false, true);
-    enablePar("V2depthresolution", false, true);
-    enablePar("V2irresolution", false, true);
+    dynamicParameterEnable("V2rgbresolution", false, true);
+    dynamicParameterEnable("V2irresolution", false, true);
     
     // Enable/disable depthUndistort based on device type and depthFormat
     if (devType == "Kinect v2" && depthFormat == "Raw") {
         inputs->enablePar("Depthundistort", true);
     } else {
         inputs->enablePar("Depthundistort", false);
+    }
+    
+    // Enable/disable depthResolution based on depthFormat
+    if (depthFormat == "Registered") {
+        dynamicParameterEnable("V1depthresolution", false, false);
+        dynamicParameterEnable("V2depthresolution", false, false);
+    } else {
+        dynamicParameterEnable("V1depthresolution", true, false);
+        dynamicParameterEnable("V2depthresolution", false, true);
     }
         
     
