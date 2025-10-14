@@ -99,7 +99,7 @@ private:
     // V1 background init members
     std::atomic<bool> fn1InitInProgress{false};
     std::atomic<bool> fn1InitSuccess{false};
-    std::thread fn1InitThread;
+    std::thread fn1_InitThread;
     void startV1InitThread();
     void waitV1InitThread();
 };
