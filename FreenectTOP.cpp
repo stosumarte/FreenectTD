@@ -365,10 +365,7 @@ bool FreenectTOP::fn1_initDevice() {
 
     int numDevices = freenect_num_devices(fn1_ctx);
     
-    LOG("[FreenectTOP] fn1_initDevice: numDevices = " + std::to_string(numDevices));
-    
     if (numDevices <= 0) {
-        LOG("[FreenectTOP] No Kinect v1 devices found");
         errorString.clear();
         errorString = "No Kinect v1 devices found";
         freenect_shutdown(fn1_ctx);
@@ -399,7 +396,6 @@ bool FreenectTOP::fn1_initDevice() {
             LOG("[FreenectTOP] fn1_eventThread: exiting");
         });
     } catch (...) {
-        LOG("[FreenectTOP] Failed to start device");
         errorString.clear();
         errorString = "Failed to start Kinect v1 device";
         fn1_cleanupDevice();
@@ -486,7 +482,6 @@ bool FreenectTOP::fn2_initDevice() {
     fn2_ctx = new libfreenect2::Freenect2();
     LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_ctx after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_ctx)));
     if (fn2_ctx->enumerateDevices() == 0) {
-        LOG("[FreenectTOP] No Kinect v2 devices found");
         errorString.clear();
         errorString = "No Kinect v2 devices found";
         delete fn2_ctx;
@@ -497,21 +492,17 @@ bool FreenectTOP::fn2_initDevice() {
     fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
     try {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
-        LOG("[FreenectTOP] Using CPU pipeline for Kinect v2");
     } catch (...) {
         errorString.clear();
         errorString = "Couldn't create CPU pipeline for Kinect v2";
-        LOG("Couldn't create CPU pipeline for Kinect v2");
         LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_pipeline after fail = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_pipeline)));
     }
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
     LOG(std::string("[FreenectTOP] fn2_initDevice: openDevice returned dev = ") + std::to_string(reinterpret_cast<uintptr_t>(dev)));
     if (!dev) {
-        LOG("[FreenectTOP] Failed to open Kinect v2 device");
         errorString.clear();
         errorString = "Failed to open Kinect v2 device";
         delete fn2_device;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device deleted");
         if (fn2_pipeline) {
             delete fn2_pipeline;
             fn2_pipeline = nullptr;
@@ -532,7 +523,6 @@ bool FreenectTOP::fn2_initDevice() {
         LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_device after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_device)));
     }
     if (!fn2_device->start()) {
-        LOG("[FreenectTOP] Failed to start Kinect v2 device");
         errorString.clear();
         errorString = "Failed to start Kinect v2 device";
         delete fn2_device;
@@ -659,7 +649,6 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         LOG("[FreenectTOP] executeV1: device is null, initializing device in thread");
         startV1InitThread();
         if (!fn1InitSuccess.load()) {
-            LOG("[FreenectTOP] executeV1: fn1_initDevice not finished or failed, uploading fallback black buffer");
             errorString.clear();
             errorString = "No Kinect v1 devices found";
             uploadFallbackBuffer();
@@ -668,13 +657,14 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
     
     if (!fn1_device) {
-        LOG("[FreenectTOP] ERROR: device is null after init! Uploading fallback black buffer");
         errorString = "Device is null after initialization";
         uploadFallbackBuffer();
         return;
     }
     
     std::string depthFormat = (inputs->getParString("Depthformat"));
+    
+    // Parameters to variables
     
     // V1 resolution values
     int fn1_colorW  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 0));
@@ -684,16 +674,17 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     int fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
     int fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
     
+    // Tilt angle
+    float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
+    
     if(fn1_device) {
         fn1_device->setResolutions(fn1_colorW, fn1_colorH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
     }
     
     // Set tilt angle
-    float tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     try {
         fn1_device->setTiltDegrees(tilt);
     } catch (const std::exception& e) {
-        LOG("[FreenectTOP] Failed to set tilt");
         errorString = "Failed to set tilt angle: " + std::string(e.what());
         fn1_cleanupDevice();
         fn1_device = nullptr;
@@ -890,9 +881,13 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) {
     myCurrentOutput = output;
     
+    // If errorString is set, LOG it
+    if ( FNTD_DEBUG == 1 && !errorString.empty() && errorString != "No Kinect v1 devices found" && errorString != "No Kinect v2 devices found") {
+        LOG("[FreenectTOP] ERROR: " + errorString);
+    }
+    
     // Validate inputs
     if (!inputs) {
-        LOG("[FreenectTOP] ERROR: inputs is null");
         errorString = "Inputs is null";
         return;
     }

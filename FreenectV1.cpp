@@ -221,8 +221,7 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType t
     };
 
     if (dstWidth != srcWidth || dstHeight != srcHeight) {
-        vImageScale_Planar16U(&srcBuf, &dstBuf, nullptr,
-                              kvImageHighQualityResampling | kvImageDoNotTile);
+        vImageScale_Planar16U(&srcBuf, &dstBuf, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
     } else {
         std::memcpy(out.data(), tmp.data(), tmp.size() * sizeof(uint16_t));
     }

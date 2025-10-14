@@ -9,7 +9,12 @@
 
 #include "logger.h"
 
+// Disable warnings from TouchDesigner headers for non-standard offsetof usage
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winvalid-offsetof"
 #include "TOP_CPlusPlusBase.h"
+#pragma clang diagnostic pop
+
 #include <thread>
 #include <atomic>
 #include <vector>
