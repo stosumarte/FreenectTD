@@ -48,30 +48,47 @@ public:
     bool getIR(std::vector<float>& out);
     void processFrames();
     // Unified processed frame methods for v2
-    bool getColorFrame(std::vector<uint8_t>& out, bool downscale, int& width, int& height);
-    bool getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type, bool downscale, int& width, int& height);
-    bool getIRFrame(std::vector<uint16_t>& out, int& width, int& height);
+    bool getColorFrame(std::vector<uint8_t>& out);
+    bool getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type);
+    bool getIRFrame(std::vector<uint16_t>& out);
     // Setters for buffer injection
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
+    // Set resolutions
+    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight, int bigdepthWidth, int bigdepthHeight);
     
     libfreenect2::Freenect2Device* getDevice() { return device; }
     
 private:
     libfreenect2::Freenect2Device* device;
     libfreenect2::SyncMultiFrameListener* listener;
+    libfreenect2::Frame depthFrame;
+    libfreenect2::Frame rgbFrame;
+    libfreenect2::Frame undistortedFrame;
+    libfreenect2::Frame registeredFrame;
+    libfreenect2::Frame bigdepthFrame;
     std::unique_ptr<libfreenect2::Registration> reg;
-    std::atomic<bool>&    rgbReady;
-    std::atomic<bool>&    depthReady;
-    std::atomic<bool>&    irReady;
-    std::vector<uint8_t>  rgbBuffer;
-    std::vector<float>    depthBuffer;
-    std::vector<float>    irBuffer;
-    std::vector<float>    downscaledDepthBuffer;
-    std::vector<float>    bigdepthBufferCropped;
-    std::vector<float>    flipDstBuffer;
-    std::mutex            mutex;
-    bool                  hasNewRGB;
-    bool                  hasNewDepth;
-    bool                  hasNewIR;
+    std::atomic<bool>&      rgbReady;
+    std::atomic<bool>&      depthReady;
+    std::atomic<bool>&      irReady;
+    std::vector<uint8_t>    rgbBuffer;
+    std::vector<float>      depthBuffer;
+    std::vector<float>      irBuffer;
+    std::vector<float>      downscaledDepthBuffer;
+    std::vector<float>      bigdepthBufferCropped;
+    std::vector<float>      flipDstBuffer;
+    std::vector<float>      registeredCroppedBuffer;
+    bool                    lastRegisteredDepthValid = false;
+    std::mutex              mutex;
+    bool                    hasNewRGB;
+    bool                    hasNewDepth;
+    bool                    hasNewIR;
+    int rgbWidth_ = RGB_WIDTH,
+        rgbHeight_ = RGB_HEIGHT,
+        depthWidth_ = DEPTH_WIDTH,
+        depthHeight_ = DEPTH_HEIGHT,
+        irWidth_ = IR_WIDTH,
+        irHeight_ = IR_HEIGHT,
+        bigdepthWidth_ = BIGDEPTH_WIDTH,
+        bigdepthHeight_ = BIGDEPTH_HEIGHT - 2; // Crop to 1080 from 1082
 };

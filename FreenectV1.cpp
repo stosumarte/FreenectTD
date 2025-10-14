@@ -67,6 +67,15 @@ void MyFreenectDevice::stop() {
     stopDepth();
 }
 
+// Set RGB, depth and IR resolutions
+void MyFreenectDevice::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight) {
+    rgbWidth_ = rgbWidth;
+    rgbHeight_ = rgbHeight;
+    depthWidth_ = depthWidth;
+    depthHeight_ = depthHeight;
+    irWidth_ = irWidth;
+    irHeight_ = irHeight;
+}
 
 // Get RGB data
 bool MyFreenectDevice::getRGB(std::vector<uint8_t>& out) {
@@ -87,58 +96,76 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
 }
 
 // Get color frame
-bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, int& width, int& height) {
+bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType type) {
     const int srcWidth = WIDTH, srcHeight = HEIGHT;
-    const int dstWidth = srcWidth, dstHeight = srcHeight;
+    const int dstWidth = rgbWidth_, dstHeight = rgbHeight_;
     
-    std::lock_guard<std::mutex> lock(mutex);        // Lock the mutex to ensure thread safety
-    if (!hasNewRGB) return false;                   // Check if new RGB data is available
-    
-    const size_t pixelCount = srcWidth * srcHeight;
-    out.resize(pixelCount * 4);
-    
-    // Convert RGB to RGBA using Accelerate
-    std::vector<uint8_t> rgbaBuffer(pixelCount * 4);
-    vImage_Buffer vImage_RGB = {
+    /*switch (type) {
+        case fn1_colorType::RGB:
+            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_RGB);
+            break;
+        case fn1_colorType::IR:
+            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_IR_10BIT);
+            break;
+        default:
+            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_RGB);
+            break;
+    }*/
+
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!hasNewRGB) return false;
+
+    const size_t dstPixelCount = static_cast<size_t>(dstWidth) * dstHeight;
+    out.resize(dstPixelCount * 4);
+
+    // Source buffer (RGB888)
+    vImage_Buffer src = {
         .data = rgbBuffer.data(),
         .height = (vImagePixelCount)srcHeight,
         .width = (vImagePixelCount)srcWidth,
-        .rowBytes = srcWidth * 3
+        .rowBytes = static_cast<size_t>(srcWidth * 3)
     };
-    vImage_Buffer vImage_RGBA = {
-        .data = rgbaBuffer.data(),
+
+    // Temporary ARGB buffer (same size as source)
+    std::vector<uint8_t> tmpARGB(srcWidth * srcHeight * 4);
+    vImage_Buffer tmpARGBbuf = {
+        .data = tmpARGB.data(),
+        .height = (vImagePixelCount)srcHeight,
+        .width = (vImagePixelCount)srcWidth,
+        .rowBytes = static_cast<size_t>(srcWidth * 4)
+    };
+
+    // Destination RGBA buffer (scaled)
+    vImage_Buffer dst = {
+        .data = out.data(),
         .height = (vImagePixelCount)dstHeight,
         .width = (vImagePixelCount)dstWidth,
-        .rowBytes = dstWidth * 4
+        .rowBytes = static_cast<size_t>(dstWidth * 4)
     };
-    vImage_Error vImageErr = vImageConvert_RGB888toRGBA8888(
-        &vImage_RGB,    // RGB source
-        NULL,           // no alpha plane, use constant instead
-        255,            // constant alpha
-        &vImage_RGBA,   // RGBA destination
-        false,          // premultiply = false
-        kvImageNoFlags  // flags
-    );
-    if (vImageErr != kvImageNoError) {
-        printf("vImage error: %ld\n", vImageErr);
+
+    // Convert RGB → ARGB
+    vImageConvert_RGB888toARGB8888(&src, nullptr, 255, &tmpARGBbuf, false, kvImageNoFlags);
+
+    // Scale ARGB
+    if (dstWidth != srcWidth || dstHeight != srcHeight) {
+        vImageScale_ARGB8888(&tmpARGBbuf, &dst, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
+    } else {
+        // Same size, copy directly
+        std::memcpy(out.data(), tmpARGB.data(), tmpARGB.size());
     }
 
+    // Convert ARGB → RGBA in place (safe, same 4 bytes per pixel)
+    vImagePermuteChannels_ARGB8888(&dst, &dst, (uint8_t[]){1, 2, 3, 0}, kvImageNoFlags);
 
-    // Copy the flipped RGBA data to the output buffer
-    std::memcpy(out.data(), rgbaBuffer.data(), pixelCount * 4);
-    
     hasNewRGB = false;
-    
-    width  = dstWidth;
-    height = dstHeight;
-    
     return true;
 }
 
-bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type, int& width, int& height) {
+// Get depth frame
+bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type) {
     const int srcWidth = WIDTH, srcHeight = HEIGHT;
+    const int dstWidth = depthWidth_, dstHeight = depthHeight_;
 
-    // Select format
     if (type == fn1_depthType::Raw) {
         MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_11BIT);
     } else if (type == fn1_depthType::Registered) {
@@ -148,39 +175,58 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType t
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
 
-    const size_t pixelCount = srcWidth * srcHeight;
-    if (out.size() != pixelCount) out.resize(pixelCount);
+    const size_t srcPixelCount = static_cast<size_t>(srcWidth) * srcHeight;
+    const size_t dstPixelCount = static_cast<size_t>(dstWidth) * dstHeight;
+    out.resize(dstPixelCount);
 
-    #pragma omp parallel for if(pixelCount > 100000)
-    for (size_t i = 0; i < pixelCount; ++i) {
+    // Step 1. Normalize depth data into 16-bit linear buffer
+    std::vector<uint16_t> tmp(srcPixelCount);
+    #pragma omp parallel for if(srcPixelCount > 100000)
+    for (size_t i = 0; i < srcPixelCount; ++i) {
         uint16_t val = depthBuffer[i];
-
         if (type == fn1_depthType::Raw) {
-            val &= 0x07FF; // keep only 11 bits
+            val &= 0x07FF;
             if (val > 0 && val <= 2047) {
                 float inv = 2047.0f - static_cast<float>(val);
-                out[i] = static_cast<uint16_t>(inv / 2047.0f * 65535.0f);
+                tmp[i] = static_cast<uint16_t>(inv / 2047.0f * 65535.0f);
             } else {
-                out[i] = 0;
+                tmp[i] = 0;
             }
         } else if (type == fn1_depthType::Registered) {
             const float min_mm = 400.0f;
             const float max_mm = 4500.0f;
             if (val >= min_mm && val <= max_mm) {
-                out[i] = static_cast<uint16_t>(
+                tmp[i] = static_cast<uint16_t>(
                     (static_cast<float>(val) - min_mm) / (max_mm - min_mm) * 65535.0f
                 );
             } else {
-                out[i] = 0;
+                tmp[i] = 0;
             }
         }
     }
 
-    hasNewDepth = false;
-    width  = srcWidth;
-    height = srcHeight;
+    // Step 2. Use vImage to scale depth map (single channel 16-bit)
+    vImage_Buffer srcBuf = {
+        .data = tmp.data(),
+        .height = (vImagePixelCount)srcHeight,
+        .width = (vImagePixelCount)srcWidth,
+        .rowBytes = static_cast<size_t>(srcWidth * sizeof(uint16_t))
+    };
 
+    vImage_Buffer dstBuf = {
+        .data = out.data(),
+        .height = (vImagePixelCount)dstHeight,
+        .width = (vImagePixelCount)dstWidth,
+        .rowBytes = static_cast<size_t>(dstWidth * sizeof(uint16_t))
+    };
+
+    if (dstWidth != srcWidth || dstHeight != srcHeight) {
+        vImageScale_Planar16U(&srcBuf, &dstBuf, nullptr,
+                              kvImageHighQualityResampling | kvImageDoNotTile);
+    } else {
+        std::memcpy(out.data(), tmp.data(), tmp.size() * sizeof(uint16_t));
+    }
+
+    hasNewDepth = false;
     return true;
 }
-
-
