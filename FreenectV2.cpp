@@ -223,7 +223,7 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out) {
 }
 
 // All-in-one depth frame retrieval (raw/undistorted/registered)
-bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type) {
+bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type, float depthThreshMin, float depthThreshMax) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth || !device) return false;
 
@@ -347,8 +347,8 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
     #pragma omp parallel for if(pixelCount > 100000)
     for (size_t i = 0; i < pixelCount; ++i) {
         const float d = scaled[i];
-        out[i] = (d > 100.0f && d < 4500.0f)
-                 ? static_cast<uint16_t>(d / 4500.0f * 65535.0f)
+        out[i] = (d > depthThreshMin && d < depthThreshMax)
+                 ? static_cast<uint16_t>((d - depthThreshMin) / (depthThreshMax - depthThreshMin) * 65535.0f)
                  : 0;
     }
 

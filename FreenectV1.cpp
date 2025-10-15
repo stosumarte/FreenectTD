@@ -26,7 +26,7 @@ MyFreenectDevice::MyFreenectDevice
       hasNewDepth(false)
 {
     setVideoFormat(FREENECT_VIDEO_RGB);
-    setDepthFormat(FREENECT_DEPTH_REGISTERED);  // Changed from FREENECT_DEPTH_11BIT to FREENECT_DEPTH_REGISTERED
+    setDepthFormat(FREENECT_DEPTH_MM);
 }
 
 // MyFreenectDevice class destructor
@@ -162,12 +162,12 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType ty
 }
 
 // Get depth frame
-bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type) {
+bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type, float depthThreshMin, float depthThreshMax) {
     const int srcWidth = WIDTH, srcHeight = HEIGHT;
     const int dstWidth = depthWidth_, dstHeight = depthHeight_;
 
     if (type == fn1_depthType::Raw) {
-        MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_11BIT);
+        MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_MM);
     } else if (type == fn1_depthType::Registered) {
         MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_REGISTERED);
     }
@@ -184,17 +184,8 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType t
     #pragma omp parallel for if(srcPixelCount > 100000)
     for (size_t i = 0; i < srcPixelCount; ++i) {
         uint16_t val = depthBuffer[i];
-        if (type == fn1_depthType::Raw) {
-            val &= 0x07FF;
-            if (val > 0 && val <= 2047) {
-                float inv = 2047.0f - static_cast<float>(val);
-                tmp[i] = static_cast<uint16_t>(inv / 2047.0f * 65535.0f);
-            } else {
-                tmp[i] = 0;
-            }
-        } else if (type == fn1_depthType::Registered) {
-            const float min_mm = 400.0f;
-            const float max_mm = 4500.0f;
+            const float min_mm = depthThreshMin;
+            const float max_mm = depthThreshMax;
             if (val >= min_mm && val <= max_mm) {
                 tmp[i] = static_cast<uint16_t>(
                     (static_cast<float>(val) - min_mm) / (max_mm - min_mm) * 65535.0f
@@ -202,7 +193,6 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType t
             } else {
                 tmp[i] = 0;
             }
-        }
     }
 
     // Step 2. Use vImage to scale depth map (single channel 16-bit)

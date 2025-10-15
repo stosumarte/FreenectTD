@@ -91,8 +91,8 @@ private:
     std::mutex fn1_eventMutex; // Separate mutex for v1 event thread
     
     // Execution methods for different device versions
-    void executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
-    void executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
+    void fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
+    void fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void uploadFallbackBuffer(int targetIndex = -1);
     
     // Error/warning string handling

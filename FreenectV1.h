@@ -34,7 +34,7 @@ public:
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<uint16_t>& out);
     bool getColorFrame(std::vector<uint8_t>& out, fn1_colorType type);
-    bool getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type);
+    bool getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type, float depthThreshMin, float depthThreshMax);
     bool start();
     void stop();
     void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight);

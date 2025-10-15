@@ -171,6 +171,44 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     depthUndistortParam.clampMaxes[0] = true;
     manager->appendToggle(depthUndistortParam);
     
+    // Enable manual depth threshold toggle
+    OP_NumericParameter manualDepthThreshParam;
+    manualDepthThreshParam.name = "Manualdepththresh";
+    manualDepthThreshParam.label = "Manual Depth Threshold";
+    manualDepthThreshParam.page = "Freenect";
+    manualDepthThreshParam.defaultValues[0] = 0.0; // Default to disabled
+    manualDepthThreshParam.minValues[0] = 0.0;
+    manualDepthThreshParam.maxValues[0] = 1.0;
+    manualDepthThreshParam.minSliders[0] = 0.0;
+    manualDepthThreshParam.maxSliders[0] = 1.0;
+    manualDepthThreshParam.clampMins[0] = true;
+    manualDepthThreshParam.clampMaxes[0] = true;
+    manager->appendToggle(manualDepthThreshParam);
+    
+    // Depth threshold min parameter
+    OP_NumericParameter depthThreshMinParam;
+    depthThreshMinParam.name = "Depththreshmin";
+    depthThreshMinParam.label = "Depth Threshold Min";
+    depthThreshMinParam.page = "Freenect";
+    depthThreshMinParam.defaultValues[0] = 0.0;
+    depthThreshMinParam.minValues[0] = 0.0;
+    depthThreshMinParam.maxValues[0] = 5000.0;
+    depthThreshMinParam.minSliders[0] = 0.0;
+    depthThreshMinParam.maxSliders[0] = 5000.0;
+    manager->appendFloat(depthThreshMinParam);
+    
+    // Depth threshold max parameter
+    OP_NumericParameter depthThreshMaxParam;
+    depthThreshMaxParam.name = "Depththreshmax";
+    depthThreshMaxParam.label = "Depth Threshold Max";
+    depthThreshMaxParam.page = "Freenect";
+    depthThreshMaxParam.defaultValues[0] = 5000.0;
+    depthThreshMaxParam.minValues[0] = 0.0;
+    depthThreshMaxParam.maxValues[0] = 5000.0;
+    depthThreshMaxParam.minSliders[0] = 0.0;
+    depthThreshMaxParam.maxSliders[0] = 5000.0;
+    manager->appendFloat(depthThreshMaxParam);
+    
     // ---------------
     // RESOLUTION PAGE
     // ---------------
@@ -652,7 +690,7 @@ void FreenectTOP::fn2_cleanupDevice() {
 }
 
 // Execute method for Kinect v1 (libfreenect)
-void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
+void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
     if (!fn1_device) {
         LOG("[FreenectTOP] executeV1: device is null, initializing device in thread");
         startV1InitThread();
@@ -670,9 +708,16 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         return;
     }
     
-    std::string depthFormat = (inputs->getParString("Depthformat"));
-    
     // Parameters to variables
+    std::string depthFormat = (inputs->getParString("Depthformat"));
+    float depthThreshMin = static_cast<float>(inputs->getParDouble("Depththreshmin"));
+    float depthThreshMax = static_cast<float>(inputs->getParDouble("Depththreshmax"));
+    bool manualDepthThresh = (inputs->getParInt("Manualdepththresh") != 0);
+    
+    if (!manualDepthThresh) {
+        depthThreshMin = 400.0f;
+        depthThreshMax = 4500.0f;
+    }
     
     // V1 resolution values
     int fn1_colorW  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 0));
@@ -735,7 +780,7 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     
     // --- Depth frame ---
     std::vector<uint16_t> depthFrame;
-    if (fn1_device->getDepthFrame(depthFrame, depthType)) {
+    if (fn1_device->getDepthFrame(depthFrame, depthType, depthThreshMin, depthThreshMax)) {
         errorString.clear();
         if (depthFrameBuffer) {
             std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
@@ -754,7 +799,7 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
 }
 
 // Execute method for Kinect v2 (libfreenect2)
-void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
+void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
     //bool streamEnabledIR = (inputs->getParInt("Enableir") != 0);
     //bool streamEnabledDepth = (inputs->getParInt("Enabledepth") != 0);
     
@@ -769,6 +814,16 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             uploadFallbackBuffer();
             return;
         }
+    }
+    
+    float depthThreshMin = static_cast<float>(inputs->getParDouble("Depththreshmin"));
+    float depthThreshMax = static_cast<float>(inputs->getParDouble("Depththreshmax"));
+    
+    bool manualDepthThresh = (inputs->getParInt("Manualdepththresh") != 0);
+    
+    if (!manualDepthThresh) {
+        depthThreshMin = 100.0f;
+        depthThreshMax = 4500.0f;
     }
     
     // V2 resolution values
@@ -821,7 +876,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         }
         
         if (depthFormat == "Raw") {
-            if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum)) {
+            if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum, depthThreshMin, depthThreshMax)) {
                 errorString.clear();
                 TD::OP_SmartRef<TD::TOP_Buffer> buf =
                 fntdContext ? fntdContext->createOutputBuffer(fn2_depthW * fn2_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
@@ -838,7 +893,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
                 }
             }
         } else if (depthFormat == "Registered") {
-            if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum)) {
+            if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum, depthThreshMin, depthThreshMax)) {
                 errorString.clear();
                 TD::OP_SmartRef<TD::TOP_Buffer> buf =
                 fntdContext ? fntdContext->createOutputBuffer(fn2_bigdepthW * fn2_bigdepthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
@@ -900,16 +955,13 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         return;
     }
     
-    // Get device type parameter as string
+    // Get parameters
+    bool isActive = (inputs && inputs->getParInt("Active") != 0);
     const char* devTypeCStr = inputs->getParString("Hardwareversion");
     std::string devType = devTypeCStr ? devTypeCStr : "Kinect v1";
     static std::string lastDeviceType = "Kinect v1";
-    
-    // Get depth format parameter as string
     std::string depthFormat = inputs->getParString("Depthformat");
-    
-    // Check if Active parameter is set
-    bool isActive = (inputs && inputs->getParInt("Active") != 0);
+    bool manualDepthThresh = (inputs->getParInt("Manualdepththresh") != 0);
     
     // Enable/disable parameters based on device type
     auto dynamicParameterEnable = [&](const char* name, bool v1, bool v2, bool other = true) {
@@ -917,12 +969,10 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         inputs->enablePar(name, enabled);
     };
     
-    // V1 only parameters
+    // Device-specific parameters
     dynamicParameterEnable("Tilt", true, false);
     dynamicParameterEnable("V1rgbresolution", true, false);
     dynamicParameterEnable("V1irresolution", true, false);
-    
-    // V2 only parameters
     dynamicParameterEnable("V2rgbresolution", false, true);
     dynamicParameterEnable("V2irresolution", false, true);
     
@@ -941,8 +991,16 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         dynamicParameterEnable("V1depthresolution", true, false);
         dynamicParameterEnable("V2depthresolution", false, true);
     }
-        
     
+    // Enable/disable depthThreshMin/Max based on manualDepthThresh
+    if (!manualDepthThresh) {
+        inputs->enablePar("Depththreshmin", false);
+        inputs->enablePar("Depththreshmax", false);
+    } else {
+        inputs->enablePar("Depththreshmin", true);
+        inputs->enablePar("Depththreshmax", true);
+    }
+
     // Check if the plugin is active
     if (!isActive) {
         warningString = "FreenectTOP is inactive";
@@ -962,9 +1020,9 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     // Execute based on current device type string
     if (devType == "Kinect v2") {
-        executeV2(output, inputs);
+        fn2_execute(output, inputs);
     } else {
-        executeV1(output, inputs);
+        fn1_execute(output, inputs);
     }
 }
 
