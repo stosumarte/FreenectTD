@@ -43,8 +43,7 @@
       allowLocationSimulation = "YES">
       <PathRunnable
          runnableDebuggingMode = "0"
-         BundleIdentifier = "ca.derivative.TouchDesigner"
-         FilePath = "/Applications/TouchDesigner.app">
+         FilePath = "/Applications/TouchDesigner Experimental.app">
       </PathRunnable>
    </LaunchAction>
    <ProfileAction

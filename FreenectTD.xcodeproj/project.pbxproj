@@ -383,10 +383,11 @@
 					"FNTD_DEBUG=1",
 					"FNTD_PROFILE=0",
 					"$(inherited)",
+					"TD_VERSION=2023",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/include/headers/**",
+					"$(PROJECT_DIR)/include/headers",
 					/usr/local/include,
 				);
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
@@ -428,10 +429,11 @@
 					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
 					"FNTD_PROFILE=0",
 					"FNTD_DEBUG=0",
+					"TD_VERSION=2023",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/include/headers/**",
+					"$(PROJECT_DIR)/include/headers",
 					/usr/local/include,
 				);
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;

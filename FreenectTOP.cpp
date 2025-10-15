@@ -28,7 +28,11 @@ extern "C" {
     using namespace TD;
 
     DLLEXPORT void FillTOPPluginInfo(TOP_PluginInfo* info) {
-        info->apiVersion = TOPCPlusPlusAPIVersion;
+        #if TD_VERSION != 2025
+            info->apiVersion = TOPCPlusPlusAPIVersion;
+        #elif TD_VERSION == 2025
+            (void)info->setAPIVersion(TOPCPlusPlusAPIVersion);
+        #endif
         info->executeMode = TOP_ExecuteMode::CPUMem;
         info->customOPInfo.opType->setString("Freenect");
         info->customOPInfo.opLabel->setString("Freenect");
@@ -39,6 +43,10 @@ extern "C" {
         info->customOPInfo.maxInputs = 0;
         info->customOPInfo.majorVersion = 1;
         info->customOPInfo.minorVersion = 0;
+        #if TD_VERSION == 2025
+            info->customOPInfo.opHelpURL->setString("https://github.com/stosumarte/FreenectTD");
+        #endif
+        
     }
 
     DLLEXPORT TOP_CPlusPlusBase* CreateTOPInstance(const OP_NodeInfo* info, TOP_Context* context) {
@@ -339,7 +347,7 @@ FreenectTOP::~FreenectTOP() {
     LOG("[FreenectTOP] Destructor called, cleaning up devices");
     fn2_cleanupDevice();
     fn1_cleanupDevice();
-    fallbackBuffer = nullptr; // Release fallback buffer
+    fallbackBuffer.release(); // Release fallback buffer
 }
 
 // Init for Kinect v1 (libfreenect)
@@ -692,8 +700,8 @@ void FreenectTOP::executeV1(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
     
     // Create output buffers
-    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
-    TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_depthW * fn1_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+    TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_depthW * fn1_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     
     // Set color type based on parameter (not implemented yet, default to RGB)
     fn1_colorType colorType = fn1_colorType::RGB; // Default to RGB
@@ -778,7 +786,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
     }
     
     // Create output buffers
-    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_rgbW * fn2_rgbH * 4, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_rgbW * fn2_rgbH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
 
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
@@ -816,7 +824,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum)) {
                 errorString.clear();
                 TD::OP_SmartRef<TD::TOP_Buffer> buf =
-                fntdContext ? fntdContext->createOutputBuffer(fn2_depthW * fn2_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+                fntdContext ? fntdContext->createOutputBuffer(fn2_depthW * fn2_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
                 if (buf) {
                     std::memcpy(buf->data, depthFrame.data(), fn2_depthW * fn2_depthH * 2);
                     TD::TOP_UploadInfo info;
@@ -833,7 +841,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
             if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum)) {
                 errorString.clear();
                 TD::OP_SmartRef<TD::TOP_Buffer> buf =
-                fntdContext ? fntdContext->createOutputBuffer(fn2_bigdepthW * fn2_bigdepthH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+                fntdContext ? fntdContext->createOutputBuffer(fn2_bigdepthW * fn2_bigdepthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
                 if (buf) {
                     std::memcpy(buf->data, depthFrame.data(), fn2_bigdepthW * fn2_bigdepthH * 2);
                     TD::TOP_UploadInfo info;
@@ -858,7 +866,7 @@ void FreenectTOP::executeV2(TD::TOP_Output* output, const TD::OP_Inputs* inputs)
         if (fn2_device->getIRFrame(irFrame)) {
             errorString.clear();
             TD::OP_SmartRef<TD::TOP_Buffer> buf =
-            fntdContext ? fntdContext->createOutputBuffer(fn2_irW * fn2_irH * 2, TD::TOP_BufferFlags::None, nullptr) : nullptr;
+            fntdContext ? fntdContext->createOutputBuffer(fn2_irW * fn2_irH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
             if (buf) {
                 std::memcpy(buf->data, irFrame.data(), fn2_irW * fn2_irH * 2);
                 TD::TOP_UploadInfo info;
@@ -975,7 +983,7 @@ void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
             fallbackWidth * fallbackHeight * 4,
             TD::TOP_BufferFlags::None,
             nullptr
-        ) : nullptr;
+        ) : TD::OP_SmartRef<TD::TOP_Buffer>();
 
         if (fallbackBuffer) {
             std::memcpy(fallbackBuffer->data, black.data(), fallbackWidth * fallbackHeight * 4);

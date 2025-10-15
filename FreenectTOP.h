@@ -12,7 +12,16 @@
 // Disable warnings from TouchDesigner headers for non-standard offsetof usage
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-offsetof"
-#include "TOP_CPlusPlusBase.h"
+
+// Include the correct TouchDesigner headers based on version
+#if TD_VERSION == 2023
+#include <touchdesigner_2023/TOP_CPlusPlusBase.h>
+#elif TD_VERSION == 2025
+#include <touchdesigner_2025/TOP_CPlusPlusBase.h>
+#else
+#include <touchdesigner_2023/TOP_CPlusPlusBase.h>
+#endif
+
 #pragma clang diagnostic pop
 
 #include <thread>

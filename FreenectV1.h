@@ -9,7 +9,7 @@
 
 #include "logger.h"
 
-#include "libfreenect.hpp"
+#include <libfreenect/libfreenect.hpp>
 
 enum class fn1_depthType {
     Raw,
