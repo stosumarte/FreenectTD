@@ -56,7 +56,7 @@ public:
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
     // Set resolutions
-    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight, int bigdepthWidth, int bigdepthHeight);
+    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int pcWidth, int pcHeight, int irWidth, int irHeight);
     
     libfreenect2::Freenect2Device* getDevice() { return device; }
     
@@ -88,6 +88,8 @@ private:
         rgbHeight_ = RGB_HEIGHT,
         depthWidth_ = DEPTH_WIDTH,
         depthHeight_ = DEPTH_HEIGHT,
+        pcWidth_ = DEPTH_WIDTH,
+        pcHeight_ = DEPTH_HEIGHT,
         irWidth_ = IR_WIDTH,
         irHeight_ = IR_HEIGHT,
         bigdepthWidth_ = BIGDEPTH_WIDTH,

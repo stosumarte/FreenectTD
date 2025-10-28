@@ -82,15 +82,21 @@ void MyFreenect2Device::close() {
 }
 
 // Set RGB, depth and IR resolutions
-void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight, int bigdepthWidth, int bigdepthHeight) {
+void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int pcWidth, int pcHeight, int irWidth, int irHeight) {
     rgbWidth_ = rgbWidth;
     rgbHeight_ = rgbHeight;
     depthWidth_ = depthWidth;
     depthHeight_ = depthHeight;
+    pcWidth_ = pcWidth;
+    pcHeight_ = pcHeight;
     irWidth_ = irWidth;
     irHeight_ = irHeight;
-    bigdepthWidth_ = bigdepthWidth;
-    bigdepthHeight_ = bigdepthHeight;
+    bigdepthWidth_ = rgbWidth;
+    bigdepthHeight_ = rgbHeight;
+    LOG("setResolutions RGB: " + std::to_string(rgbWidth_) + "x" + std::to_string(rgbHeight_) +
+        " Depth: " + std::to_string(depthWidth_) + "x" + std::to_string(depthHeight_) +
+        " PC: " + std::to_string(pcWidth_) + "x" + std::to_string(pcHeight_) +
+        " IR: " + std::to_string(irWidth_) + "x" + std::to_string(irHeight_));
 }
 
 // Process incoming frames
@@ -267,19 +273,17 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
             reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame, true, &bigdepthFrame);
 
             const float* bigDepthData = reinterpret_cast<float*>(bigdepthFrame.data);
-            const int bigW = BIGDEPTH_WIDTH;
-            const int bigH = BIGDEPTH_HEIGHT;
-            const int croppedH = bigH - 2;
+            const int croppedH = BIGDEPTH_HEIGHT - 2;
 
             // Resize persistent buffer
-            if (registeredCroppedBuffer.size() != bigW * croppedH)
-                registeredCroppedBuffer.resize(bigW * croppedH);
+            if (registeredCroppedBuffer.size() != BIGDEPTH_WIDTH * croppedH)
+                registeredCroppedBuffer.resize(BIGDEPTH_WIDTH * croppedH);
 
             // Crop and copy
             for (int y = 0; y < croppedH; ++y) {
-                const float* srcRow = bigDepthData + (y + 1) * bigW;
-                float* dstRow = registeredCroppedBuffer.data() + y * bigW;
-                std::memcpy(dstRow, srcRow, bigW * sizeof(float));
+                const float* srcRow = bigDepthData + (y + 1) * BIGDEPTH_WIDTH;
+                float* dstRow = registeredCroppedBuffer.data() + y * BIGDEPTH_WIDTH;
+                std::memcpy(dstRow, srcRow, BIGDEPTH_WIDTH * sizeof(float));
             }
 
             // Clean up NaNs/Infs
@@ -288,7 +292,7 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
                 if (!std::isfinite(v)) v = 0.f;
                 if (v > 100.0f && v < 4500.0f) validPixels++;
             }
-            int totalPixels = bigW * croppedH;
+            int totalPixels = BIGDEPTH_WIDTH * croppedH;
             int requiredValidPixels = totalPixels / 10; // At least 10% valid
             lastRegisteredDepthValid = (validPixels >= requiredValidPixels);
             if (!lastRegisteredDepthValid) {
@@ -301,10 +305,13 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
                 LOG("[FreenectV2.cpp] Frame " + std::to_string(frameCounter) + ": Valid pixels: " + std::to_string(validPixels) + "/" + std::to_string(totalPixels));
             }
             srcData = registeredCroppedBuffer.data();
-            srcWidth = bigW;
+            srcWidth = BIGDEPTH_WIDTH;
             srcHeight = croppedH;
             dstWidth = bigdepthWidth_;
             dstHeight = bigdepthHeight_;
+            
+            LOG("Registered depth frame processed: " + std::to_string(srcWidth) + "x" + std::to_string(srcHeight) +
+                " → " + std::to_string(dstWidth) + "x" + std::to_string(dstHeight));
             break;
         }
     }
@@ -406,8 +413,8 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out) {
     }
     
     srcData = out.data();
-    dstWidth = depthWidth_;
-    dstHeight = depthHeight_;
+    dstWidth = pcWidth_;
+    dstHeight = pcHeight_;
     
     // Step 1. Horizontal flip
     std::vector<float> flipped(dstWidth * dstHeight * 4);

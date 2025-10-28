@@ -114,6 +114,22 @@ private:
     std::atomic<bool> fn1InitInProgress{false};
     std::atomic<bool> fn1InitSuccess{false};
     std::thread fn1_InitThread;
-    void startV1InitThread();
-    void waitV1InitThread();
+    void fn1_startInitThread();
+    //void fn1_waitInitThread();
+    
+    // Parameters variables
+    int fn1_colorW, fn1_colorH;
+    int fn1_depthW, fn1_depthH;
+    int fn1_irW, fn1_irH;
+    float fn1_tilt = 0.0f;
+    
+    int fn2_colorW, fn2_colorH;
+    int fn2_depthW, fn2_depthH;
+    int fn2_irW, fn2_irH;
+    int fn2_pcW, fn2_pcH;
+    
+    bool manualDepthThresh;
+    float depthThreshMin, depthThreshMax;
+    std::string depthFormat;
+    
 };
