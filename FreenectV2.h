@@ -51,6 +51,7 @@ public:
     bool getColorFrame(std::vector<uint8_t>& out);
     bool getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type, float depthThreshMin, float depthThreshMax);
     bool getIRFrame(std::vector<uint16_t>& out);
+    bool getPointCloudFrame(std::vector<float>& out);
     // Setters for buffer injection
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);

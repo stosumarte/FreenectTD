@@ -914,6 +914,27 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         uploadFallbackBuffer(1);
         //fntdContext->returnBuffer(&buf)
     }
+    
+    // --- Point Cloud frame ---
+    std::vector<float> pointCloudFrame;
+    if (fn2_device->getPointCloudFrame(pointCloudFrame)) {
+        errorString.clear();
+        TD::OP_SmartRef<TD::TOP_Buffer> buf =
+        fntdContext ? fntdContext->createOutputBuffer(fn2_depthW * fn2_depthH * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+        if (buf) {
+            std::memcpy(buf->data, pointCloudFrame.data(), fn2_depthW * fn2_depthH * 4 * sizeof(float));
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = fn2_depthW;
+            info.textureDesc.height = fn2_depthH;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
+            info.colorBufferIndex = 3;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+            output->uploadBuffer(&buf, info, nullptr);
+        }
+    } else {
+        errorString = "Failed to get point cloud frame from Kinect v2";
+    }
 
     // --- IR frame ---
     if (streamEnabledIR) {

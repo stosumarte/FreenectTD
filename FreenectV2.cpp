@@ -356,6 +356,99 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
     return true;
 }
 
+// Get point cloud frame as 32-bit float RGB texture (XYZ in RGB channels)
+bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out) {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!device) return false;
+    // Lazy init of registration object
+    if (!reg) {
+        const auto& irParams = device->getIrCameraParams();
+        const auto& colorParams = device->getColorCameraParams();
+        reg = std::make_unique<libfreenect2::Registration>(irParams, colorParams);
+        if (!reg) {
+            LOG("Failed to create Registration object");
+            return false;
+        }
+    }
+            
+    
+    const float* srcData = nullptr;
+    int srcWidth = 0, srcHeight = 0;
+    int dstWidth = 0, dstHeight = 0;
+    
+    // Prepare frames
+    std::memcpy(rgbFrame.data, rgbBuffer.data(), RGB_WIDTH * RGB_HEIGHT * 4);
+    std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
+    reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame, true, nullptr);
+    
+    // Output buffer: width x height x 4 (XYZ + alpha)
+    srcWidth = DEPTH_WIDTH;
+    srcHeight = DEPTH_HEIGHT;
+    
+    out.resize(srcWidth * srcHeight * 4);
+    float* outPtr = out.data();
+    for (int r = 0; r < srcHeight; ++r) {
+        for (int c = 0; c < srcWidth; ++c) {
+            float x, y, z;
+            reg->getPointXYZ(&undistortedFrame, r, c, x, y, z);
+            size_t idx = (r * srcWidth + c) * 4;
+            if (z > 0) {
+                outPtr[idx + 0] = x;    // X in meters
+                outPtr[idx + 1] = -y;   // Y in meters (flip Y axis)
+                outPtr[idx + 2] = z;    // Z in meters
+            } else {
+                outPtr[idx + 0] = 0.0f;
+                outPtr[idx + 1] = 0.0f;
+                outPtr[idx + 2] = 0.0f;
+            }
+            outPtr[idx + 3] = 255.0f; // Alpha always 255
+        }
+    }
+    
+    srcData = out.data();
+    dstWidth = depthWidth_;
+    dstHeight = depthHeight_;
+    
+    // Step 1. Horizontal flip
+    std::vector<float> flipped(dstWidth * dstHeight * 4);
+    
+    vImage_Buffer srcBuf = {
+        .data = const_cast<float*>(srcData),
+        .height = (vImagePixelCount)srcHeight,
+        .width = (vImagePixelCount)srcWidth,
+        .rowBytes = static_cast<size_t>(srcWidth * 4 * sizeof(float))
+    };
+    
+    vImage_Buffer flipBuf = {
+        .data = flipped.data(),
+        .height = (vImagePixelCount)srcHeight,
+        .width = (vImagePixelCount)srcWidth,
+        .rowBytes = static_cast<size_t>(srcWidth * 4 * sizeof(float))
+    };
+    
+    vImageHorizontalReflect_ARGBFFFF(&srcBuf, &flipBuf, kvImageDoNotTile);
+    
+    // Step 2. Downscale if necessary
+    std::vector<float> scaled(dstWidth * dstHeight * 4);
+    
+    vImage_Buffer dstBuf = {
+        .data = scaled.data(),
+        .height = (vImagePixelCount)dstHeight,
+        .width = (vImagePixelCount)dstWidth,
+        .rowBytes = static_cast<size_t>(dstWidth * 4 * sizeof(float))
+    };
+    
+    if (dstWidth != srcWidth || dstHeight != srcHeight) {
+        vImageScale_ARGBFFFF(&flipBuf, &dstBuf, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
+    } else {
+        std::memcpy(scaled.data(), flipped.data(), flipped.size() * sizeof(float));
+    }
+    
+    out = std::move(scaled);
+    
+    return true;
+}
+
 // Get IR frame
 bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out) {
     std::lock_guard<std::mutex> lock(mutex);
