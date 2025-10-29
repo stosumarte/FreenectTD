@@ -104,11 +104,12 @@ private:
     // Current output pointer
     TD::TOP_Output* myCurrentOutput = nullptr;
 
-    // Persistent fallback buffer for Metal safety
+    // Persistent fallback buffers
     TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer;
     TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer0;
     TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer1;
     TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer2;
+    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer3;
 
     // V1 background init members
     std::atomic<bool> fn1InitInProgress{false};
@@ -131,5 +132,9 @@ private:
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;
     std::string depthFormat;
+    
+    bool streamEnabledIR;
+    bool streamEnabledDepth;
+    bool streamEnabledPC;
     
 };

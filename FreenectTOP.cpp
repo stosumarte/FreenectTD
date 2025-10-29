@@ -91,34 +91,6 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
     manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
     
-    // TO DO - Enable Depth toggle
-    /*OP_NumericParameter enableDepthParam;
-    enableDepthParam.name = "Enabledepth";
-    enableDepthParam.label = "Enable Depth";
-    enableDepthParam.page = "Freenect";
-    enableDepthParam.defaultValues[0] = 1.0; // Default to enabled
-    enableDepthParam.minValues[0] = 0.0;
-    enableDepthParam.maxValues[0] = 1.0;
-    enableDepthParam.minSliders[0] = 0.0;
-    enableDepthParam.maxSliders[0] = 1.0;
-    enableDepthParam.clampMins[0] = true;
-    enableDepthParam.clampMaxes[0] = true;
-    manager->appendToggle(enableDepthParam);*/
-    
-    // TO DO - Enable IR toggle
-    /*OP_NumericParameter enableIRParam;
-    enableIRParam.name = "Enableir";
-    enableIRParam.label = "Enable IR";
-    enableIRParam.page = "Freenect";
-    enableIRParam.defaultValues[0] = 0.0; // Default to disabled
-    enableIRParam.minValues[0] = 0.0;
-    enableIRParam.maxValues[0] = 1.0;
-    enableIRParam.minSliders[0] = 0.0;
-    enableIRParam.maxSliders[0] = 1.0;
-    enableIRParam.clampMins[0] = true;
-    enableIRParam.clampMaxes[0] = true;
-    manager->appendToggle(enableIRParam);*/
-
     // Tilt angle parameter
     OP_NumericParameter tiltAngleParam;
     tiltAngleParam.name = "Tilt";
@@ -130,6 +102,39 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     tiltAngleParam.minSliders[0] = -30.0;
     tiltAngleParam.maxSliders[0] = 30.0;
     manager->appendFloat(tiltAngleParam);
+    
+    // Enable Depth toggle
+    OP_NumericParameter enableDepthParam;
+    enableDepthParam.name = "Enabledepth";
+    enableDepthParam.label = "Enable Depth";
+    enableDepthParam.page = "Freenect";
+    enableDepthParam.defaultValues[0] = 1.0; // Default to enabled
+    enableDepthParam.minValues[0] = enableDepthParam.minSliders[0] = 0.0;
+    enableDepthParam.maxValues[0] = enableDepthParam.maxSliders[0] = 1.0;
+    enableDepthParam.clampMins[0] = enableDepthParam.clampMaxes[0] = true;
+    manager->appendToggle(enableDepthParam);
+    
+    // Enable PointCloud toggle
+    OP_NumericParameter enablePCParam;
+    enablePCParam.name = "Enablepointcloud";
+    enablePCParam.label = "Enable Point Cloud";
+    enablePCParam.page = "Freenect";
+    enablePCParam.defaultValues[0] = 0.0; // Default to disabled
+    enablePCParam.minValues[0] = enablePCParam.minSliders[0] = 0.0;
+    enablePCParam.maxValues[0] = enablePCParam.maxSliders[0] = 1.0;
+    enablePCParam.clampMins[0] = enablePCParam.clampMaxes[0] = true;
+    manager->appendToggle(enablePCParam);
+    
+    // Enable IR toggle
+    OP_NumericParameter enableIRParam;
+    enableIRParam.name = "Enableir";
+    enableIRParam.label = "Enable IR";
+    enableIRParam.page = "Freenect";
+    enableIRParam.defaultValues[0] = 0.0; // Default to disabled
+    enableIRParam.minValues[0] = enableIRParam.minSliders[0] = 0.0;
+    enableIRParam.maxValues[0] = enableIRParam.maxSliders[0] = 1.0;
+    enableIRParam.clampMins[0] = enableIRParam.clampMaxes[0] = true;
+    manager->appendToggle(enableIRParam);
     
     // Resolution limiter toggle
     // Limit resolution to 1280x720 for Kinect V2 instead of 1920x1080 (for non-commercial licenses)
@@ -723,11 +728,6 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         return;
     }
     
-    if (!manualDepthThresh) {
-        depthThreshMin = 400.0f;
-        depthThreshMax = 4500.0f;
-    }
-    
     if(fn1_device) {
         fn1_device->setResolutions(fn1_colorW, fn1_colorH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
     }
@@ -778,31 +778,30 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     
     // --- Depth frame ---
     std::vector<uint16_t> depthFrame;
-    if (fn1_device->getDepthFrame(depthFrame, depthType, depthThreshMin, depthThreshMax)) {
-        errorString.clear();
-        if (depthFrameBuffer) {
-            std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn1_depthW;
-            info.textureDesc.height = fn1_depthH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 1;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&depthFrameBuffer, info, nullptr);
-        } else {
-            LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
+    if (streamEnabledDepth) {
+        if (fn1_device->getDepthFrame(depthFrame, depthType, depthThreshMin, depthThreshMax)) {
+            errorString.clear();
+            if (depthFrameBuffer) {
+                std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = fn1_depthW;
+                info.textureDesc.height = fn1_depthH;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex = 1;
+                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&depthFrameBuffer, info, nullptr);
+            } else {
+                LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
+            }
         }
+    } else {
+        uploadFallbackBuffer(1);
     }
 }
 
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-    //bool streamEnabledIR = (inputs->getParInt("Enableir") != 0);
-    //bool streamEnabledDepth = (inputs->getParInt("Enabledepth") != 0);
-    
-    bool streamEnabledIR = true;
-    bool streamEnabledDepth = true;
 
     if (!fn2_device) {
         LOG("[FreenectTOP] executeV2: fn2_device is null, initializing device");
@@ -813,15 +812,6 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             return;
         }
     }
-
-    if (!manualDepthThresh) {
-        depthThreshMin = 100.0f;
-        depthThreshMax = 4500.0f;
-    }
-    
-    // V2 resolution values
-    //int fn2_bigdepthW = fn2_colorW;
-    //int fn2_bigdepthH = fn2_colorH;
     
     if (fn2_device) {
         fn2_device->setResolutions(fn2_colorW, fn2_colorH, fn2_depthW, fn2_depthH, fn2_pcW, fn2_pcH, fn2_irW, fn2_irH);
@@ -831,6 +821,7 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_colorW * fn2_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_depthW * fn2_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     TD::OP_SmartRef<TD::TOP_Buffer> pointCloudFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_pcW * fn2_pcH * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+    TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_irW * fn2_irH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
 
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
@@ -848,12 +839,10 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             output->uploadBuffer(&colorFrameBuffer, info, nullptr);
         }
     }
-
-    // --- Depth frame ---
-    std::vector<uint16_t> depthFrame;
     
     // Map string to DepthType enum
     if (streamEnabledDepth) {
+        std::vector<uint16_t> depthFrame;
         std::string depthFormat = inputs->getParString("Depthformat");
         bool depthUndistort = (inputs->getParInt("Depthundistort") != 0);
 
@@ -887,23 +876,27 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     }
     
     // --- Point Cloud frame ---
-    std::vector<float> pointCloudFrame;
-    if (fn2_device->getPointCloudFrame(pointCloudFrame)) {
-        errorString.clear();
-        if (pointCloudFrameBuffer) {
-            std::memcpy(pointCloudFrameBuffer->data, pointCloudFrame.data(), fn2_pcW * fn2_pcH * 4 * sizeof(float));
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn2_pcW;
-            info.textureDesc.height = fn2_pcH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
-            info.colorBufferIndex = 3;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&pointCloudFrameBuffer, info, nullptr);
-            LOG("Resolution PC: " + std::to_string(fn2_pcW) + "x" + std::to_string(fn2_pcH));
+    if (streamEnabledPC) {
+        std::vector<float> pointCloudFrame;
+        if (fn2_device->getPointCloudFrame(pointCloudFrame)) {
+            errorString.clear();
+            if (pointCloudFrameBuffer) {
+                std::memcpy(pointCloudFrameBuffer->data, pointCloudFrame.data(), fn2_pcW * fn2_pcH * 4 * sizeof(float));
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = fn2_pcW;
+                info.textureDesc.height = fn2_pcH;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
+                info.colorBufferIndex = 2;
+                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&pointCloudFrameBuffer, info, nullptr);
+                LOG("Resolution PC: " + std::to_string(fn2_pcW) + "x" + std::to_string(fn2_pcH));
+            }
+        } else {
+            errorString = "Failed to get point cloud frame from Kinect v2";
         }
     } else {
-        errorString = "Failed to get point cloud frame from Kinect v2";
+        uploadFallbackBuffer(2);
     }
 
     // --- IR frame ---
@@ -911,23 +904,21 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         std::vector<uint16_t> irFrame;
         if (fn2_device->getIRFrame(irFrame)) {
             errorString.clear();
-            TD::OP_SmartRef<TD::TOP_Buffer> buf =
-            fntdContext ? fntdContext->createOutputBuffer(fn2_irW * fn2_irH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-            if (buf) {
-                std::memcpy(buf->data, irFrame.data(), fn2_irW * fn2_irH * 2);
+            if (irFrameBuffer) {
+                std::memcpy(irFrameBuffer->data, irFrame.data(), fn2_irW * fn2_irH * 2);
                 TD::TOP_UploadInfo info;
                 info.textureDesc.width = fn2_irW;
                 info.textureDesc.height = fn2_irH;
                 info.textureDesc.texDim = TD::OP_TexDim::e2D;
                 info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-                info.colorBufferIndex = 2;
+                info.colorBufferIndex = 3;
                 info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-                output->uploadBuffer(&buf, info, nullptr);
+                output->uploadBuffer(&irFrameBuffer, info, nullptr);
                 LOG("Resolution IR: " + std::to_string(fn2_irW) + "x" + std::to_string(fn2_irH));
             }
         }
     } else {
-        uploadFallbackBuffer(2);
+        uploadFallbackBuffer(3);
     }
 }
 
@@ -957,6 +948,10 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     depthThreshMin = static_cast<float>(inputs->getParDouble("Depththreshmin"));
     depthThreshMax = static_cast<float>(inputs->getParDouble("Depththreshmax"));
     
+    streamEnabledIR = (inputs->getParInt("Enableir") != 0);
+    streamEnabledDepth = (inputs->getParInt("Enabledepth") != 0);
+    streamEnabledPC = (inputs->getParInt("Enablepointcloud") != 0);
+    
     fn1_tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     
     // V1 resolution values
@@ -966,16 +961,6 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     fn1_depthH  = static_cast<int>(inputs->getParDouble("V1depthresolution", 1));
     fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
     fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
-    
-    // Set V2 device resolution values on the instance, not the class
-    /*if (fn2_device) {
-        fn2_device->rgbWidth_ = fn2_colorW;
-        fn2_device->rgbHeight_ = fn2_colorH;
-        fn2_device->depthWidth_ = fn2_depthW;
-        fn2_device->depthHeight_ = fn2_depthH;
-        fn2_device->irWidth_ = fn2_irW;
-        fn2_device->irHeight_ = fn2_irH;
-    }*/
     
     // V2 resolution values
     fn2_colorW  = static_cast<int>(inputs->getParDouble("V2rgbresolution", 0));
@@ -1001,10 +986,13 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     // Device-specific parameters
     dynamicParameterEnable("Tilt", true, false);
+    dynamicParameterEnable("Enableir", false, true);
+    dynamicParameterEnable("Enablepointcloud", false, true);
     dynamicParameterEnable("V1rgbresolution", true, false);
     dynamicParameterEnable("V1irresolution", true, false);
     dynamicParameterEnable("V2rgbresolution", false, true);
     dynamicParameterEnable("V2irresolution", false, true);
+    dynamicParameterEnable("V2pcresolution", false, true);
     
     // Enable/disable depthUndistort based on device type and depthFormat
     if (devType == "Kinect v2" && depthFormat == "Raw") {
@@ -1029,6 +1017,16 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     } else {
         inputs->enablePar("Depththreshmin", true);
         inputs->enablePar("Depththreshmax", true);
+    }
+    
+    if (!manualDepthThresh && devType == "Kinect v1") {
+        depthThreshMin = 400.0f;
+        depthThreshMax = 4500.0f;
+    }
+    
+    if (!manualDepthThresh && devType == "Kinect v2") {
+        depthThreshMin = 100.0f;
+        depthThreshMax = 4500.0f;
     }
 
     // Check if the plugin is active
@@ -1089,16 +1087,17 @@ void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
     if (!fallbackBuffer0) fallbackBuffer0 = fallbackBuffer;
     if (!fallbackBuffer1) fallbackBuffer1 = fallbackBuffer;
     if (!fallbackBuffer2) fallbackBuffer2 = fallbackBuffer;
+    if (!fallbackBuffer3) fallbackBuffer3 = fallbackBuffer;
 
-    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 3> fallbackBuffers = {
-        fallbackBuffer0, fallbackBuffer1, fallbackBuffer2
+    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 4> fallbackBuffers = {
+        fallbackBuffer0, fallbackBuffer1, fallbackBuffer2, fallbackBuffer3
     };
 
-    if (targetIndex >= 0 && targetIndex < 3) {
+    if (targetIndex >= 0 && targetIndex < 4) {
         info.colorBufferIndex = targetIndex;
         myCurrentOutput->uploadBuffer(&fallbackBuffers[targetIndex], info, nullptr);
     } else {
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 4; ++i) {
             info.colorBufferIndex = i;
             myCurrentOutput->uploadBuffer(&fallbackBuffers[i], info, nullptr);
         }
