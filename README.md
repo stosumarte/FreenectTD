@@ -3,15 +3,27 @@ FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't
 
 It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
 
-## Requirements
+####⚠️ WARNING: FreenectTD is currently in beta. This means that it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility if your installation crashes live!
+
+### Requirements
 * Apple Silicon Mac
 * macOS 12.4+ (Monterey)
 * TouchDesigner 2023+ (any license)
-* Kinect V1 / Kinect V2 
+* Kinect V1 / Kinect V2
+
+### Supported features
+* RGB streaming
+* Depth map streaming
+* Point cloud map streaming (V2 only)
+* IR streaming (currently V2 only)
+* Tilt control (V1 only)
+* Depth undistortion (V2 only)
+* Depth registration (align depth map to color)
+* Manual depth range threshold
 
 ## Installing
 
-### [Recommended] Using installer
+### [RECOMMENDED] Using installer
 
 1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
@@ -46,12 +58,10 @@ You should now be able to open your .toe and find FreenectTOP under the "Custom"
 3. Add a CPlusPlus TOP to your network, and select `FreenectTOP.plugin` under "Plugin Path" in the "Load" tab.
 
 ## Usage
-By default, FreenectTOP outputs RGB data. To get a depth map, you must use a Render Select TOP and reference index 1.
+By default, FreenectTOP outputs RGB data. To get other streams, you must use Render Select TOPs and reference indexes 1 (for a depth map), 2 (for a point cloud map) and 3 (for IR stream).
 
 ### Examples
 Example .toe project files are provided in this repository, under the `toe_examples` directory.
-
-<img width="872" alt="image" src="https://github.com/user-attachments/assets/f23b02f7-640a-4a77-b22b-a8668c5dd161" />
 
 ### Known limitations
 
@@ -64,24 +74,16 @@ Example .toe project files are provided in this repository, under the `toe_examp
 To uninstall all FreenectTD related files, run the following command in terminal:
 `sudo rm -rf ~/Library/Application\ Support/Derivative/TouchDesigner099/Plugins/Freenect*.plugin`
 
-
-## Support
-Both Kinect V1 (Xbox 360) and Kinect V2 (Xbox One) are supported. Kinect for Windows devices of either generation are supported as well.
-
-### Included features
-* RGB streaming
-* Depth map streaming
-* Tilt control (V1 only)
-* Depth undistortion (V2 only)
-
-## Credits
-A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible.
-
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
 
-[You can donate here via PayPal.](https://www.paypal.com/donate/?hosted_button_id=PZXS4BCQJ9QMQ "You can donate here via PayPal.")
+<a href='https://ko-fi.com/H2H318LODL' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi4.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
+[Donate with PayPal](https://www.paypal.com/donate/?hosted_button_id=PZXS4BCQJ9QMQ "Donate with PayPal")
+
+## Credits
+
+A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible.
 
 ## Licensing
 
