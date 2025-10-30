@@ -408,7 +408,7 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out) {
                 outPtr[idx + 1] = 0.0f;
                 outPtr[idx + 2] = 0.0f;
             }
-            outPtr[idx + 3] = 255.0f; // Alpha always 255
+            outPtr[idx + 3] = 1.0f; // Alpha always 255
         }
     }
     
@@ -417,7 +417,7 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out) {
     dstHeight = pcHeight_;
     
     // Step 1. Horizontal flip
-    std::vector<float> flipped(dstWidth * dstHeight * 4);
+    std::vector<float> flipped(srcWidth * srcHeight * 4);
     
     vImage_Buffer srcBuf = {
         .data = const_cast<float*>(srcData),
