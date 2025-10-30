@@ -499,35 +499,35 @@ void FreenectTOP::fn1_cleanupDevice() {
 
 // Start the background enumeration thread for Kinect v2
 void FreenectTOP::fn2_startEnumThread() {
-    LOG("[FreenectTOP] fn2_startEnumThread: v2EnumThreadRunning before = " + std::to_string(v2EnumThreadRunning.load()));
-    if (v2EnumThreadRunning.load()) {
+    LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThreadRunning before = " + std::to_string(fn2_enumThreadRunning.load()));
+    if (fn2_enumThreadRunning.load()) {
         LOG("[FreenectTOP] fn2_startEnumThread: end, already running");
         return;
     }
-    v2EnumThreadRunning = true;
-    LOG("[FreenectTOP] fn2_startEnumThread: v2EnumThreadRunning after = " + std::to_string(v2EnumThreadRunning.load()));
-    v2EnumThread = std::thread([this]() {
-        while (v2EnumThreadRunning.load()) {
+    fn2_enumThreadRunning = true;
+    LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThreadRunning after = " + std::to_string(fn2_enumThreadRunning.load()));
+    fn2_enumThread = std::thread([this]() {
+        while (fn2_enumThreadRunning.load()) {
             libfreenect2::Freenect2 ctx;
-            v2DeviceAvailable = (ctx.enumerateDevices() > 0);
+            fn2_deviceAvailable = (ctx.enumerateDevices() > 0);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     });
-    LOG("[FreenectTOP] fn2_startEnumThread: v2EnumThread joinable after = " + std::to_string(v2EnumThread.joinable()));
+    LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThread joinable after = " + std::to_string(fn2_enumThread.joinable()));
 }
 
 // Stop the background enumeration thread for Kinect v2
 void FreenectTOP::fn2_stopEnumThread() {
     LOG("[FreenectTOP] fn2_stopEnumThread: start");
-    LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThreadRunning before = " + std::to_string(v2EnumThreadRunning.load()));
-    v2EnumThreadRunning = false;
-    LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThreadRunning after = " + std::to_string(v2EnumThreadRunning.load()));
-    LOG("[FreenectTOP] fn2_stopEnumThread: v2EnumThread joinable = " + std::to_string(v2EnumThread.joinable()));
+    LOG("[FreenectTOP] fn2_stopEnumThread: fn2_enumThreadRunning before = " + std::to_string(fn2_enumThreadRunning.load()));
+    fn2_enumThreadRunning = false;
+    LOG("[FreenectTOP] fn2_stopEnumThread: fn2_enumThreadRunning after = " + std::to_string(fn2_enumThreadRunning.load()));
+    LOG("[FreenectTOP] fn2_stopEnumThread: fn2_enumThread joinable = " + std::to_string(fn2_enumThread.joinable()));
     
-    if (v2EnumThread.joinable()) {
-        LOG("[FreenectTOP] fn2_stopEnumThread: attempting to join v2EnumThread");
-        v2EnumThread.join();
-        LOG("[FreenectTOP] v2EnumThread joined successfully");
+    if (fn2_enumThread.joinable()) {
+        LOG("[FreenectTOP] fn2_stopEnumThread: attempting to join fn2_enumThread");
+        fn2_enumThread.join();
+        LOG("[FreenectTOP] fn2_enumThread joined successfully");
     }
     LOG("[FreenectTOP] fn2_stopEnumThread: end");
 }
@@ -537,7 +537,7 @@ bool FreenectTOP::fn2_initDevice() {
     LOG("[FreenectTOP] fn2_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
     fn2_startEnumThread();
-    if (!v2DeviceAvailable.load()) {
+    if (!fn2_deviceAvailable.load()) {
         LOG("[FreenectTOP] fn2_initDevice: no device available");
         return false;
     }
@@ -608,9 +608,11 @@ bool FreenectTOP::fn2_initDevice() {
         LOG("[FreenectTOP] fn2_initDevice: end (start fail)");
         return false;
     }
-    // Stop enumeration thread after successful device start**
-    fn2_stopEnumThread();
+    
+    // Stop enumeration thread after successful device start
+    //fn2_stopEnumThread();
     LOG("[FreenectTOP] fn2_initDevice: device started and enum thread stopped");
+    
     // Start event thread for v2
     LOG("[FreenectTOP] fn2_initDevice: fn2_eventThread joinable before = " + std::to_string(fn2_eventThread.joinable()));
     if (!fn2_eventThread.joinable()) {
@@ -802,7 +804,14 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
 
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-
+    
+    // Check if device was disconnected
+    if (!fn2_deviceAvailable.load() && fn2_device) {
+        fn2_cleanupDevice();
+        uploadFallbackBuffer();
+        return;
+    }
+    
     if (!fn2_device) {
         LOG("[FreenectTOP] executeV2: fn2_device is null, initializing device");
         fn2_startInitThread();
