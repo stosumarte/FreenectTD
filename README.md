@@ -3,7 +3,7 @@ FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't
 
 It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
 
-####⚠️ WARNING: FreenectTD is currently in beta. This means that it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility if your installation crashes live!
+**⚠️ WARNING: FreenectTD is currently in beta. This means that it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility if your installation crashes live!**
 
 ### Requirements
 * Apple Silicon Mac
