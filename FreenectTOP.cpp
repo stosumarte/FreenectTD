@@ -747,61 +747,50 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     // Set color type based on parameter (not implemented yet, default to RGB)
     fn1_colorType colorType = fn1_colorType::RGB; // Default to RGB
     
-    // Set depth type based on parameter
-    fn1_depthType depthType = fn1_depthType::Raw; // Default to Raw
-    if (depthFormat == "Raw") {
-        depthType = fn1_depthType::Raw;
-    } else if (depthFormat == "Registered") {
-        depthType = fn1_depthType::Registered;
-    }
-    
     // Create output buffers
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_depthW * fn1_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
-    if (fn1_device->getColorFrame(colorFrame, colorType)) {
+    if (colorFrameBuffer && fn1_device->getColorFrame(colorFrame, colorType)) {
         errorString.clear();
-        if (colorFrameBuffer) {
-            std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn1_colorW * fn1_colorH * 4);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn1_colorW;
-            info.textureDesc.height = fn1_colorH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
-            info.colorBufferIndex = 0;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&colorFrameBuffer, info, nullptr);
-        } else {
-            LOG("[FreenectTOP] executeV1: failed to create color output buffer");
-        }
+        std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn1_colorW * fn1_colorH * 4);
+        TD::TOP_UploadInfo info;
+        info.textureDesc.width = fn1_colorW;
+        info.textureDesc.height = fn1_colorH;
+        info.textureDesc.texDim = TD::OP_TexDim::e2D;
+        info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
+        info.colorBufferIndex = 0;
+        info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+        output->uploadBuffer(&colorFrameBuffer, info, nullptr);
+    } else {
+        LOG("[FreenectTOP] executeV1: failed to create color output buffer");
     }
     
     // --- Depth frame ---
     std::vector<uint16_t> depthFrame;
     if (streamEnabledDepth) {
-        if (fn1_device->getDepthFrame(depthFrame, depthType, depthThreshMin, depthThreshMax)) {
+        if (depthFrameBuffer && fn1_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
             errorString.clear();
-            if (depthFrameBuffer) {
-                std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
-                TD::TOP_UploadInfo info;
-                info.textureDesc.width = fn1_depthW;
-                info.textureDesc.height = fn1_depthH;
-                info.textureDesc.texDim = TD::OP_TexDim::e2D;
-                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-                info.colorBufferIndex = 1;
-                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-                output->uploadBuffer(&depthFrameBuffer, info, nullptr);
-            } else {
-                LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
-            }
+            std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = fn1_depthW;
+            info.textureDesc.height = fn1_depthH;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+            info.colorBufferIndex = 1;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+            output->uploadBuffer(&depthFrameBuffer, info, nullptr);
+        } else {
+            LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
         }
     } else {
         uploadFallbackBuffer(1);
     }
+    
 }
-
+    
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
     
@@ -834,51 +823,34 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
 
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
-    if (fn2_device->getColorFrame(colorFrame)) {
+    if (colorFrameBuffer && fn2_device->getColorFrame(colorFrame)) {
         errorString.clear();
-        if (colorFrameBuffer) {
-            std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn2_colorW * fn2_colorH * 4);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn2_colorW;
-            info.textureDesc.height = fn2_colorH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
-            info.colorBufferIndex = 0;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&colorFrameBuffer, info, nullptr);
-        }
+        std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn2_colorW * fn2_colorH * 4);
+        TD::TOP_UploadInfo info;
+        info.textureDesc.width = fn2_colorW;
+        info.textureDesc.height = fn2_colorH;
+        info.textureDesc.texDim = TD::OP_TexDim::e2D;
+        info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
+        info.colorBufferIndex = 0;
+        info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+        output->uploadBuffer(&colorFrameBuffer, info, nullptr);
     }
     
-    // Map string to DepthType enum
+    // --- Depth frame ---
     if (streamEnabledDepth) {
         std::vector<uint16_t> depthFrame;
-        std::string depthFormat = inputs->getParString("Depthformat");
-        bool depthUndistort = (inputs->getParInt("Depthundistort") != 0);
-
-        fn2_depthType depthTypeEnum = fn2_depthType::Raw;
-        if (depthFormat == "Raw" && depthUndistort)
-            depthTypeEnum = fn2_depthType::Undistorted;
-        else if (depthFormat == "Registered")
-            depthTypeEnum = fn2_depthType::Registered;
-
-        if (fn2_device->getDepthFrame(depthFrame, depthTypeEnum, depthThreshMin, depthThreshMax)) {
+        if (depthFrameBuffer && fn2_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
             errorString.clear();
-
-            //int w = (depthFormat == "Registered") ? fn2_bigdepthW : fn2_depthW;
-            //int h = (depthFormat == "Registered") ? fn2_bigdepthH : fn2_depthH;
-
-            if (depthFrameBuffer) {
-                std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn2_depthW * fn2_depthH * 2);
-                TD::TOP_UploadInfo info;
-                info.textureDesc.width = fn2_depthW;
-                info.textureDesc.height = fn2_depthH;
-                info.textureDesc.texDim = TD::OP_TexDim::e2D;
-                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-                info.colorBufferIndex = 1;
-                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-                output->uploadBuffer(&depthFrameBuffer, info, nullptr);
-                LOG("Resolution Depth: " + std::to_string(fn2_depthW) + "x" + std::to_string(fn2_depthH));
-            }
+            std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn2_depthW * fn2_depthH * 2);
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = fn2_depthW;
+            info.textureDesc.height = fn2_depthH;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+            info.colorBufferIndex = 1;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+            output->uploadBuffer(&depthFrameBuffer, info, nullptr);
+            LOG("Resolution Depth: " + std::to_string(fn2_depthW) + "x" + std::to_string(fn2_depthH));
         }
     } else {
         uploadFallbackBuffer(1);
@@ -887,23 +859,19 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     // --- Point Cloud frame ---
     if (streamEnabledPC) {
         std::vector<float> pointCloudFrame;
-        if (fn2_device->getPointCloudFrame(pointCloudFrame)) {
+        if (pointCloudFrameBuffer && fn2_device->getPointCloudFrame(pointCloudFrame)) {
             errorString.clear();
-            if (pointCloudFrameBuffer) {
-                std::memcpy(pointCloudFrameBuffer->data, pointCloudFrame.data(), fn2_pcW * fn2_pcH * 4 * sizeof(float));
-                TD::TOP_UploadInfo info;
-                info.textureDesc.width = fn2_pcW;
-                info.textureDesc.height = fn2_pcH;
-                info.textureDesc.texDim = TD::OP_TexDim::e2D;
-                info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
-                info.colorBufferIndex = 2;
-                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-                output->uploadBuffer(&pointCloudFrameBuffer, info, nullptr);
-                LOG("Resolution PC: " + std::to_string(fn2_pcW) + "x" + std::to_string(fn2_pcH));
-            }
-        } else {
-            errorString = "Failed to get point cloud frame from Kinect v2";
-        }
+            std::memcpy(pointCloudFrameBuffer->data, pointCloudFrame.data(), fn2_pcW * fn2_pcH * 4 * sizeof(float));
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = fn2_pcW;
+            info.textureDesc.height = fn2_pcH;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
+            info.colorBufferIndex = 2;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+            output->uploadBuffer(&pointCloudFrameBuffer, info, nullptr);
+            LOG("Resolution PC: " + std::to_string(fn2_pcW) + "x" + std::to_string(fn2_pcH));
+        } else {errorString = "Failed to get point cloud frame from Kinect v2";}
     } else {
         uploadFallbackBuffer(2);
     }
@@ -911,20 +879,17 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     // --- IR frame ---
     if (streamEnabledIR) {
         std::vector<uint16_t> irFrame;
-        if (fn2_device->getIRFrame(irFrame)) {
+        if (irFrameBuffer && fn2_device->getIRFrame(irFrame)) {
             errorString.clear();
-            if (irFrameBuffer) {
-                std::memcpy(irFrameBuffer->data, irFrame.data(), fn2_irW * fn2_irH * 2);
-                TD::TOP_UploadInfo info;
-                info.textureDesc.width = fn2_irW;
-                info.textureDesc.height = fn2_irH;
-                info.textureDesc.texDim = TD::OP_TexDim::e2D;
-                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-                info.colorBufferIndex = 3;
-                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-                output->uploadBuffer(&irFrameBuffer, info, nullptr);
-                LOG("Resolution IR: " + std::to_string(fn2_irW) + "x" + std::to_string(fn2_irH));
-            }
+            std::memcpy(irFrameBuffer->data, irFrame.data(), fn2_irW * fn2_irH * 2);
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = fn2_irW;
+            info.textureDesc.height = fn2_irH;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+            info.colorBufferIndex = 3;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+            output->uploadBuffer(&irFrameBuffer, info, nullptr);
         }
     } else {
         uploadFallbackBuffer(3);
@@ -952,7 +917,18 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     const char* devTypeCStr = inputs->getParString("Hardwareversion");
     std::string devType = devTypeCStr ? devTypeCStr : "Kinect v1";
     static std::string lastDeviceType = "Kinect v1";
-    depthFormat = (inputs->getParString("Depthformat"));
+    
+    // Set depthFormat from parameters
+    std::string depthFormatStr = inputs->getParString("Depthformat");
+    bool depthUndistort = (inputs->getParInt("Depthundistort") != 0);
+    if (depthFormatStr == "Raw" && depthUndistort) {
+        depthFormat = depthFormatEnum::RawUndistorted;
+    } else if (depthFormatStr == "Registered") {
+        depthFormat = depthFormatEnum::Registered;
+    } else if (depthFormatStr == "Raw" || (!depthUndistort && devType == "Kinect v1")) {
+        depthFormat = depthFormatEnum::Raw;
+    }
+    
     manualDepthThresh = (inputs->getParInt("Manualdepththresh") != 0);
     depthThreshMin = static_cast<float>(inputs->getParDouble("Depththreshmin"));
     depthThreshMax = static_cast<float>(inputs->getParDouble("Depththreshmax"));
@@ -980,9 +956,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     fn2_pcH     = static_cast<int>(inputs->getParDouble("V2pcresolution", 1));
     fn2_irW     = static_cast<int>(inputs->getParDouble("V2irresolution", 0));
     fn2_irH     = static_cast<int>(inputs->getParDouble("V2irresolution", 1));
-    
-    if (devType == "Kinect v2" && depthFormat == "Registered") {
-        // Registered depth uses color resolution
+    if (devType == "Kinect v2" && depthFormat == depthFormatEnum::Registered) {
         fn2_depthW = fn2_colorW;
         fn2_depthH = fn2_colorH;
     }
@@ -1004,14 +978,14 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     dynamicParameterEnable("V2pcresolution", false, true);
     
     // Enable/disable depthUndistort based on device type and depthFormat
-    if (devType == "Kinect v2" && depthFormat == "Raw") {
+    if (devType == "Kinect v2" && depthFormat == depthFormatEnum::Raw) {
         inputs->enablePar("Depthundistort", true);
     } else {
         inputs->enablePar("Depthundistort", false);
     }
     
     // Enable/disable depthResolution based on depthFormat
-    if (depthFormat == "Registered") {
+    if (depthFormat == depthFormatEnum::Registered) {
         dynamicParameterEnable("V1depthresolution", false, false);
         dynamicParameterEnable("V2depthresolution", false, false);
     } else {

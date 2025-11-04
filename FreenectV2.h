@@ -14,11 +14,8 @@
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 
-enum class fn2_depthType {
-    Raw,
-    Undistorted,
-    Registered
-};
+// Forward declaration - depthFormatEnum is defined in FreenectTOP.h
+enum class depthFormatEnum;
 
 class MyFreenect2Device {
 public:
@@ -49,7 +46,7 @@ public:
     void processFrames();
     // Unified processed frame methods for v2
     bool getColorFrame(std::vector<uint8_t>& out);
-    bool getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type, float depthThreshMin, float depthThreshMax);
+    bool getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax);
     bool getIRFrame(std::vector<uint16_t>& out);
     bool getPointCloudFrame(std::vector<float>& out);
     // Setters for buffer injection

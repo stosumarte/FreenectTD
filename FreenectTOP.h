@@ -32,6 +32,12 @@
 #include "FreenectV1.h"
 #include "FreenectV2.h"
 
+enum class depthFormatEnum {
+    Raw,
+    RawUndistorted,
+    Registered
+};
+
 class FreenectTOP : public TD::TOP_CPlusPlusBase {
     
 public:
@@ -95,6 +101,8 @@ private:
     void fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void uploadFallbackBuffer(int targetIndex = -1);
     
+    //void updateParameterStates(const TD::OP_Inputs* inputs, const std::string& devType);
+    
     // Error/warning string handling
     std::string errorString;
     std::string warningString;
@@ -131,7 +139,7 @@ private:
     
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;
-    std::string depthFormat;
+    depthFormatEnum depthFormat = depthFormatEnum::Raw;
     
     bool streamEnabledIR;
     bool streamEnabledDepth;

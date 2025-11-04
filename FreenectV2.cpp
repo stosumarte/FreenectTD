@@ -12,6 +12,13 @@
 #include <thread>
 #include <Accelerate/Accelerate.h>
 
+// depthFormatEnum enum definition (shared between v1 and v2)
+enum class depthFormatEnum {
+    Raw,
+    RawUndistorted,
+    Registered
+};
+
 // MyFreenect2Device class constructor
 MyFreenect2Device::MyFreenect2Device(
     libfreenect2::Freenect2Device* dev,
@@ -93,10 +100,10 @@ void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWid
     irHeight_ = irHeight;
     bigdepthWidth_ = rgbWidth;
     bigdepthHeight_ = rgbHeight;
-    LOG("setResolutions RGB: " + std::to_string(rgbWidth_) + "x" + std::to_string(rgbHeight_) +
+    /*LOG("setResolutions RGB: " + std::to_string(rgbWidth_) + "x" + std::to_string(rgbHeight_) +
         " Depth: " + std::to_string(depthWidth_) + "x" + std::to_string(depthHeight_) +
         " PC: " + std::to_string(pcWidth_) + "x" + std::to_string(pcHeight_) +
-        " IR: " + std::to_string(irWidth_) + "x" + std::to_string(irHeight_));
+        " IR: " + std::to_string(irWidth_) + "x" + std::to_string(irHeight_));*/
 }
 
 // Process incoming frames
@@ -229,7 +236,7 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out) {
 }
 
 // All-in-one depth frame retrieval (raw/undistorted/registered)
-bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType type, float depthThreshMin, float depthThreshMax) {
+bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth || !device) return false;
 
@@ -249,7 +256,7 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
     int dstWidth = 0, dstHeight = 0;
 
     switch (type) {
-        case fn2_depthType::Raw: {
+        case depthFormatEnum::Raw: {
             srcData = depthBuffer.data();
             srcWidth = DEPTH_WIDTH;
             srcHeight = DEPTH_HEIGHT;
@@ -257,7 +264,7 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
             dstHeight = depthHeight_;
             break;
         }
-        case fn2_depthType::Undistorted: {
+        case depthFormatEnum::RawUndistorted: {
             std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
             reg->undistortDepth(&depthFrame, &undistortedFrame);
             srcData = reinterpret_cast<float*>(undistortedFrame.data);
@@ -267,7 +274,7 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, fn2_depthType 
             dstHeight = depthHeight_;
             break;
         }
-        case fn2_depthType::Registered: {
+        case depthFormatEnum::Registered: {
             std::memcpy(rgbFrame.data, rgbBuffer.data(), RGB_WIDTH * RGB_HEIGHT * 4);
             std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
             reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame, true, &bigdepthFrame);

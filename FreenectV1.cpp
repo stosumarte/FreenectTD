@@ -12,6 +12,13 @@
 #include <chrono>
 #include <Accelerate/Accelerate.h>
 
+// depthFormatEnum enum definition (shared between v1 and v2)
+enum class depthFormatEnum {
+    Raw,
+    RawUndistorted,
+    Registered
+};
+
 // MyFreenectDevice class constructor
 MyFreenectDevice::MyFreenectDevice
     (freenect_context* ctx, int index,
@@ -162,14 +169,15 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType ty
 }
 
 // Get depth frame
-bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, fn1_depthType type, float depthThreshMin, float depthThreshMax) {
+bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
     const int srcWidth = WIDTH, srcHeight = HEIGHT;
     const int dstWidth = depthWidth_, dstHeight = depthHeight_;
 
-    if (type == fn1_depthType::Raw) {
-        MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_MM);
-    } else if (type == fn1_depthType::Registered) {
+    if (type == depthFormatEnum::Registered) {
         MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_REGISTERED);
+    } else {
+        // Both Raw and RawUndistorted use FREENECT_DEPTH_MM for v1
+        MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_MM);
     }
 
     std::lock_guard<std::mutex> lock(mutex);
