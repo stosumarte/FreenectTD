@@ -22,7 +22,7 @@ FreenectTD is an experimental project. While being thoroughly tested and confirm
 * Depth registration (align depth map to color)
 * Manual depth range threshold
 
-## Installing using installer
+## [RECOMMENDED] Installing using installer
 
 1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
@@ -70,9 +70,13 @@ To uninstall all FreenectTD related files, run the following command in terminal
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
 
-<a href='https://ko-fi.com/H2H318LODL' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi4.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
-
-[Donate with PayPal](https://www.paypal.com/donate/?hosted_button_id=PZXS4BCQJ9QMQ "Donate with PayPal")
+<a href='https://ko-fi.com/H2H318LODL' target='_blank'>
+<img width='180' style='border:0px;height:auto;' src='https://storage.ko-fi.com/cdn/kofi4.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' />
+</a>
+</br>
+<a href="https://www.paypal.com/donate/?hosted_button_id=PZXS4BCQJ9QMQ" target="_blank" style="text-decoration:none!important;">
+<img width="180" alt="Donate with PayPal" src="https://github.com/user-attachments/assets/ff3b7328-7b8b-4a8a-b777-3c61b5d2a1bc" border="0" />
+</a>
 
 ## Credits
 
