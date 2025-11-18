@@ -111,10 +111,4 @@ ditto -c -k --sequesterRsrc --keepParent "${FINAL_NAMED_VERSIONED_PLUGIN}" "${PL
 # Delete zipped plugin
 rm -rf "${FINAL_NAMED_VERSIONED_PLUGIN}"
 
-# DISABLED - Create DMG containing the pkg
-#DMG_NAME="${PLUGIN_NAME}_v${VERSION}.dmg"
-#DMG_PATH="${VERSIONED_DIR}/${DMG_NAME}"
-#hdiutil create -volname "${PLUGIN_NAME} Installer" -srcfolder "$FINAL_NAMED_VERSIONED_PKG" -ov -format UDZO "$DMG_PATH"
-#fi
-
 exit 0
