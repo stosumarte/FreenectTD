@@ -22,6 +22,9 @@ FreenectTD is an experimental project. While being thoroughly tested and confirm
 * Depth registration (align depth map to color)
 * Manual depth range threshold
 
+### Known issues
+Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). This is due to a mix of different factors in libfreenect and Kinect official firmware.
+
 ## [RECOMMENDED] Installing using installer
 
 1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
