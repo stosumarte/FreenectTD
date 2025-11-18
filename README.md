@@ -3,7 +3,8 @@ FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't
 
 It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
 
-**⚠️ WARNING: FreenectTD is currently in beta. This means that it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility if your installation crashes live!**
+**⚠️ Warning:** 
+FreenectTD is an experimental project. While being thoroughly tested and confirmed to work on multiple platforms, it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility.
 
 ### Requirements
 * Apple Silicon Mac
@@ -21,9 +22,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 * Depth registration (align depth map to color)
 * Manual depth range threshold
 
-## Installing
-
-### [RECOMMENDED] Using installer
+## Installing using installer
 
 1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
@@ -33,7 +32,10 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 
 You should now find FreenectTOP under the "Custom" OPs panel.
 
-### Manual Installation
+## Installing Manually
+
+### Global Installation
+
 1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
 2. Unzip and copy `FreenectTOP.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
@@ -47,15 +49,6 @@ You should now find FreenectTOP under the "Custom" OPs panel.
 2. Unzip and copy `FreenectTOP.plugin` next to your .toe, in a folder named `Plugins`.
 
 You should now be able to open your .toe and find FreenectTOP under the "Custom" OPs panel.
-
-
-### [Not recommended] CPlusPlus TOP
-
-1. [Download the latest build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
-
-2. Unzip and copy `FreenectTOP.plugin` wherever you want on your machine.
-
-3. Add a CPlusPlus TOP to your network, and select `FreenectTOP.plugin` under "Plugin Path" in the "Load" tab.
 
 ## Usage
 By default, FreenectTOP outputs RGB data. To get other streams, you must use Render Select TOPs and reference indexes 1 (for a depth map), 2 (for a point cloud map) and 3 (for IR stream).
