@@ -9,7 +9,7 @@ FreenectTD is an experimental project. While being thoroughly tested and confirm
 ### Requirements
 * Apple Silicon Mac
 * macOS 12.4+ (Monterey)
-* TouchDesigner 2023+ (any license)
+* TouchDesigner 2025+ (any license)
 * Kinect V1 / Kinect V2
 
 ### Supported features
