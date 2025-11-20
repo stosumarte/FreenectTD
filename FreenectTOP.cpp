@@ -978,7 +978,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     dynamicParameterEnable("V2pcresolution", false, true);
     
     // Enable/disable depthUndistort based on device type and depthFormat
-    if (devType == "Kinect v2" && depthFormat == depthFormatEnum::Raw) {
+    if (devType == "Kinect v2" && (depthFormat == depthFormatEnum::Raw || depthFormat == depthFormatEnum::RawUndistorted)) {
         inputs->enablePar("Depthundistort", true);
     } else {
         inputs->enablePar("Depthundistort", false);
