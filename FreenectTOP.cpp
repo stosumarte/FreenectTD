@@ -793,16 +793,16 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-    
     // Check if device was disconnected
     if (!fn2_deviceAvailable.load() && fn2_device) {
         fn2_cleanupDevice();
         uploadFallbackBuffer();
         return;
     }
-    
+
+    // Always attempt initialization if device is null
     if (!fn2_device) {
-        LOG("[FreenectTOP] executeV2: fn2_device is null, initializing device");
+        LOG("[FreenectTOP] executeV2: fn2_device is null, attempting initialization");
         fn2_startInitThread();
         if (!fn2_InitSuccess.load()) {
             errorString = "No Kinect v2 devices found";
@@ -810,11 +810,11 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             return;
         }
     }
-    
+
     if (fn2_device) {
         fn2_device->setResolutions(fn2_colorW, fn2_colorH, fn2_depthW, fn2_depthH, fn2_pcW, fn2_pcH, fn2_irW, fn2_irH);
     }
-    
+
     // Create output buffers
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_colorW * fn2_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_depthW * fn2_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
