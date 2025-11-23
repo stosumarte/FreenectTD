@@ -136,22 +136,6 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     enableIRParam.clampMins[0] = enableIRParam.clampMaxes[0] = true;
     manager->appendToggle(enableIRParam);
     
-    // Resolution limiter toggle
-    // Limit resolution to 1280x720 for Kinect V2 instead of 1920x1080 (for non-commercial licenses)
-    // !!! Look into automating this based on requested output resolution
-    /*OP_NumericParameter resLimitParam;
-    resLimitParam.name = "Resolutionlimit";
-    resLimitParam.label = "Resolution Limit";
-    resLimitParam.page = "Freenect";
-    resLimitParam.defaultValues[0] = 1.0; // Default to enabled
-    resLimitParam.minValues[0] = 0.0;
-    resLimitParam.maxValues[0] = 1.0;
-    resLimitParam.minSliders[0] = 0.0;
-    resLimitParam.maxSliders[0] = 1.0;
-    resLimitParam.clampMins[0] = true;
-    resLimitParam.clampMaxes[0] = true;
-    manager->appendToggle(resLimitParam);*/
-    
     // Depth format dropdown
     OP_StringParameter depthFormatParam;
     depthFormatParam.name = "Depthformat";
@@ -256,7 +240,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     manager->appendXY(fn1_depthResParam);
     
     // V1 IR resolution
-    OP_NumericParameter fn1_irResParam;
+    /*OP_NumericParameter fn1_irResParam;
     fn1_irResParam.name = "V1irresolution";
     fn1_irResParam.label = "IR Resolution";
     fn1_irResParam.page = "Resolution";
@@ -268,7 +252,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     fn1_irResParam.minValues[1] = fn1_irResParam.minSliders[1] = 1.0;
     fn1_irResParam.maxValues[1] = fn1_irResParam.maxSliders[1] = MyFreenectDevice::HEIGHT;
     fn1_irResParam.clampMins[1] = fn1_irResParam.clampMaxes[1] = true;
-    manager->appendXY(fn1_irResParam);
+    manager->appendXY(fn1_irResParam);*/
     
     // V2 header
     OP_StringParameter fn2_resHeader;
@@ -405,7 +389,7 @@ FreenectTOP::~FreenectTOP() {
     LOG("[FreenectTOP] Destructor called, cleaning up devices");
     fn2_cleanupDevice();
     fn1_cleanupDevice();
-    fallbackBuffer.release(); // Release fallback buffer
+    //fallbackBuffer.release(); // Release fallback buffer
 }
 
 // Init for Kinect v1 (libfreenect)
@@ -944,8 +928,8 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     fn1_colorH  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 1));
     fn1_depthW  = static_cast<int>(inputs->getParDouble("V1depthresolution", 0));
     fn1_depthH  = static_cast<int>(inputs->getParDouble("V1depthresolution", 1));
-    fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
-    fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
+    //fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
+    //fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
     
     // V2 resolution values
     fn2_colorW  = static_cast<int>(inputs->getParDouble("V2rgbresolution", 0));
@@ -972,7 +956,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     dynamicParameterEnable("Enableir", false, true);
     dynamicParameterEnable("Enablepointcloud", false, true);
     dynamicParameterEnable("V1rgbresolution", true, false);
-    dynamicParameterEnable("V1irresolution", true, false);
+    //dynamicParameterEnable("V1irresolution", true, false);
     dynamicParameterEnable("V2rgbresolution", false, true);
     dynamicParameterEnable("V2irresolution", false, true);
     dynamicParameterEnable("V2pcresolution", false, true);
@@ -1045,36 +1029,28 @@ void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
     }
 
     const int fallbackWidth = 128, fallbackHeight = 128;
+    const size_t fallbackSize = fallbackWidth * fallbackHeight * 4;
+    std::vector<uint8_t> black(fallbackSize, 0);
 
-    if (!fallbackBuffer) {
-        std::vector<uint8_t> black(fallbackWidth * fallbackHeight * 4, 0);
-        fallbackBuffer = fntdContext ? fntdContext->createOutputBuffer(
-            fallbackWidth * fallbackHeight * 4,
-            TD::TOP_BufferFlags::None,
-            nullptr
-        ) : TD::OP_SmartRef<TD::TOP_Buffer>();
-
-        if (fallbackBuffer) {
-            std::memcpy(fallbackBuffer->data, black.data(), fallbackWidth * fallbackHeight * 4);
+    // Allocate and initialize each fallback buffer if not already
+    for (int i = 0; i < 4; ++i) {
+        if (!fallbackBuffers[i]) {
+            fallbackBuffers[i] = fntdContext ? fntdContext->createOutputBuffer(
+                fallbackSize,
+                TD::TOP_BufferFlags::None,
+                nullptr
+            ) : TD::OP_SmartRef<TD::TOP_Buffer>();
+            if (fallbackBuffers[i]) {
+                std::memcpy(fallbackBuffers[i]->data, black.data(), fallbackSize);
+            }
         }
     }
-
-    if (!fallbackBuffer) return;
 
     TD::TOP_UploadInfo info;
     info.textureDesc.width = fallbackWidth;
     info.textureDesc.height = fallbackHeight;
     info.textureDesc.texDim = TD::OP_TexDim::e2D;
     info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
-
-    if (!fallbackBuffer0) fallbackBuffer0 = fallbackBuffer;
-    if (!fallbackBuffer1) fallbackBuffer1 = fallbackBuffer;
-    if (!fallbackBuffer2) fallbackBuffer2 = fallbackBuffer;
-    if (!fallbackBuffer3) fallbackBuffer3 = fallbackBuffer;
-
-    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 4> fallbackBuffers = {
-        fallbackBuffer0, fallbackBuffer1, fallbackBuffer2, fallbackBuffer3
-    };
 
     if (targetIndex >= 0 && targetIndex < 4) {
         info.colorBufferIndex = targetIndex;

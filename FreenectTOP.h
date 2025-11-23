@@ -69,7 +69,6 @@ private:
     std::atomic<bool>                       fn2_depthReady{false};
     std::atomic<bool>                       fn2_irReady{false};
     std::atomic<bool>                       fn2_runEvents{false};
-    //libfreenect2::Registration*             fn2_registration = nullptr;
     std::thread                             fn2_eventThread;
     
     std::atomic<bool>                       fn2_deviceAvailable{false};
@@ -101,8 +100,6 @@ private:
     void fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void uploadFallbackBuffer(int targetIndex = -1);
     
-    //void updateParameterStates(const TD::OP_Inputs* inputs, const std::string& devType);
-    
     // Error/warning string handling
     std::string errorString;
     std::string warningString;
@@ -112,19 +109,13 @@ private:
     // Current output pointer
     TD::TOP_Output* myCurrentOutput = nullptr;
 
-    // Persistent fallback buffers
-    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer;
-    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer0;
-    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer1;
-    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer2;
-    TD::OP_SmartRef<TD::TOP_Buffer> fallbackBuffer3;
+    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 4> fallbackBuffers;
 
     // V1 background init members
     std::atomic<bool> fn1InitInProgress{false};
     std::atomic<bool> fn1InitSuccess{false};
     std::thread fn1_InitThread;
     void fn1_startInitThread();
-    //void fn1_waitInitThread();
     
     // Parameters variables
     int fn1_colorW, fn1_colorH;
