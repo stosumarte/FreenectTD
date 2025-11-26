@@ -834,7 +834,6 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             info.colorBufferIndex = 1;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             output->uploadBuffer(&depthFrameBuffer, info, nullptr);
-            LOG("Resolution Depth: " + std::to_string(fn2_depthW) + "x" + std::to_string(fn2_depthH));
         }
     } else {
         uploadFallbackBuffer(1);
@@ -854,7 +853,6 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             info.colorBufferIndex = 2;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             output->uploadBuffer(&pointCloudFrameBuffer, info, nullptr);
-            LOG("Resolution PC: " + std::to_string(fn2_pcW) + "x" + std::to_string(fn2_pcH));
         } else {errorString = "Failed to get point cloud frame from Kinect v2";}
     } else {
         uploadFallbackBuffer(2);

@@ -43,13 +43,17 @@ MyFreenect2Device::MyFreenect2Device(
   registeredFrame(DEPTH_WIDTH, DEPTH_HEIGHT, 4),
   bigdepthFrame(1920, 1082, 4)
 {
+    LOG("[FreenectV2.cpp] MyFreenect2Device constructor: device=" + std::to_string(reinterpret_cast<uintptr_t>(device)));
     listener = new libfreenect2::SyncMultiFrameListener(
         libfreenect2::Frame::Color |
         libfreenect2::Frame::Ir |
         libfreenect2::Frame::Depth
     );
+    LOG("[FreenectV2.cpp] MyFreenect2Device constructor: listener created at " + std::to_string(reinterpret_cast<uintptr_t>(listener)));
     device->setColorFrameListener(listener);
+    LOG("[FreenectV2.cpp] MyFreenect2Device constructor: setColorFrameListener done");
     device->setIrAndDepthFrameListener(listener);
+    LOG("[FreenectV2.cpp] MyFreenect2Device constructor: setIrAndDepthFrameListener done");
 }
 
 // MyFreenect2Device class destructor
@@ -68,8 +72,14 @@ MyFreenect2Device::~MyFreenect2Device() {
 
 // Start the device streams using libfreenect2 API
 bool MyFreenect2Device::start() {
-    if (!device) return false;
-    return device->startStreams(true, true);
+    LOG("[FreenectV2.cpp] start(): called, device=" + std::to_string(reinterpret_cast<uintptr_t>(device)));
+    if (!device) {
+        LOG("[FreenectV2.cpp] start(): device is null, returning false");
+        return false;
+    }
+    bool result = device->startStreams(true, true);
+    LOG("[FreenectV2.cpp] start(): startStreams returned " + std::to_string(result));
+    return result;
 }
 
 // Stop the device streams using libfreenect2 API
@@ -108,28 +118,46 @@ void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWid
 
 // Process incoming frames
 void MyFreenect2Device::processFrames() {
-    if (!listener) return;
+    if (!listener) {
+        LOG("[FreenectV2.cpp] processFrames(): listener is null");
+        return;
+    }
     if (!listener->hasNewFrame()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2)); // Prevent busy-waiting
         return;
     }
+    LOG("[FreenectV2.cpp] processFrames(): calling waitForNewFrame");
     libfreenect2::FrameMap frames;
     listener->waitForNewFrame(frames, 1000); // Immediately get the frame if available
+    LOG("[FreenectV2.cpp] processFrames(): waitForNewFrame returned");
     libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
     libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
     libfreenect2::Frame* ir = frames[libfreenect2::Frame::Ir];
+    LOG("[FreenectV2.cpp] processFrames(): got frame pointers - rgb=" + std::to_string(reinterpret_cast<uintptr_t>(rgb)) +
+        " depth=" + std::to_string(reinterpret_cast<uintptr_t>(depth)) +
+        " ir=" + std::to_string(reinterpret_cast<uintptr_t>(ir)));
     {
         std::lock_guard<std::mutex> lock(mutex);
         if (rgb && rgb->data && rgb->width == RGB_WIDTH && rgb->height == RGB_HEIGHT) {
             memcpy(rgbBuffer.data(), rgb->data, RGB_WIDTH * RGB_HEIGHT * 4);
             hasNewRGB = true;
             rgbReady = true;
+            LOG("[FreenectV2.cpp] processFrames(): RGB frame copied");
+        } else if (rgb) {
+            LOG("[FreenectV2.cpp] processFrames(): RGB frame invalid - data=" +
+                std::to_string(reinterpret_cast<uintptr_t>(rgb->data)) +
+                " size=" + std::to_string(rgb->width) + "x" + std::to_string(rgb->height));
         }
         if (depth && depth->data && depth->width == DEPTH_WIDTH && depth->height == DEPTH_HEIGHT) {
             const float* src = reinterpret_cast<const float*>(depth->data);
             std::copy(src, src + DEPTH_WIDTH * DEPTH_HEIGHT, depthBuffer.begin());
             hasNewDepth = true;
             depthReady = true;
+            LOG("[FreenectV2.cpp] processFrames(): Depth frame copied");
+        } else if (depth) {
+            LOG("[FreenectV2.cpp] processFrames(): Depth frame invalid - data=" +
+                std::to_string(reinterpret_cast<uintptr_t>(depth->data)) +
+                " size=" + std::to_string(depth->width) + "x" + std::to_string(depth->height));
         }
         if (ir && ir->data && ir->width == DEPTH_WIDTH && ir->height == DEPTH_HEIGHT) {
             const float* src = reinterpret_cast<const float*>(ir->data);
@@ -138,10 +166,17 @@ void MyFreenect2Device::processFrames() {
             std::copy(src, src + DEPTH_WIDTH * DEPTH_HEIGHT, irBuffer.begin());
             hasNewIR = true;
             irReady = true;
+            LOG("[FreenectV2.cpp] processFrames(): IR frame copied");
+        } else if (ir) {
+            LOG("[FreenectV2.cpp] processFrames(): IR frame invalid - data=" +
+                std::to_string(reinterpret_cast<uintptr_t>(ir->data)) +
+                " size=" + std::to_string(ir->width) + "x" + std::to_string(ir->height));
         }
 
     }
+    LOG("[FreenectV2.cpp] processFrames(): calling listener->release");
     listener->release(frames);
+    LOG("[FreenectV2.cpp] processFrames(): complete");
 }
 
 // Get RGB data
@@ -232,23 +267,34 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out) {
     vImagePermuteChannels_ARGB8888(&dst, &dst, permuteMap, kvImageNoFlags);
 
     hasNewRGB = false;
+    LOG("[FreenectV2.cpp] getColorFrame(): success, size=" + std::to_string(dstWidth) + "x" + std::to_string(dstHeight));
     return true;
 }
 
 // All-in-one depth frame retrieval (raw/undistorted/registered)
 bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
+    LOG("[FreenectV2.cpp] getDepthFrame(): called with type=" + std::to_string(static_cast<int>(type)));
     std::lock_guard<std::mutex> lock(mutex);
-    if (!hasNewDepth || !device) return false;
+    if (!hasNewDepth) {
+        LOG("[FreenectV2.cpp] getDepthFrame(): no new depth data available");
+        return false;
+    }
+    if (!device) {
+        LOG("[FreenectV2.cpp] getDepthFrame(): device is null");
+        return false;
+    }
 
     // Lazy init of registration object
     if (!reg) {
+        LOG("[FreenectV2.cpp] getDepthFrame(): creating Registration object");
         const auto& irParams = device->getIrCameraParams();
         const auto& colorParams = device->getColorCameraParams();
         reg = std::make_unique<libfreenect2::Registration>(irParams, colorParams);
         if (!reg) {
-            LOG("Failed to create Registration object");
+            LOG("[FreenectV2.cpp] getDepthFrame(): Failed to create Registration object");
             return false;
         }
+        LOG("[FreenectV2.cpp] getDepthFrame(): Registration object created successfully");
     }
 
     const float* srcData = nullptr;
@@ -367,22 +413,29 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnu
     }
 
     hasNewDepth = false;
+    LOG("[FreenectV2.cpp] getDepthFrame(): success, size=" + std::to_string(dstWidth) + "x" + std::to_string(dstHeight));
     return true;
 }
 
 // Get point cloud frame as 32-bit float RGB texture (XYZ in RGB channels)
 bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out) {
+    LOG("[FreenectV2.cpp] getPointCloudFrame(): called");
     std::lock_guard<std::mutex> lock(mutex);
-    if (!device) return false;
+    if (!device) {
+        LOG("[FreenectV2.cpp] getPointCloudFrame(): device is null");
+        return false;
+    }
     // Lazy init of registration object
     if (!reg) {
+        LOG("[FreenectV2.cpp] getPointCloudFrame(): creating Registration object");
         const auto& irParams = device->getIrCameraParams();
         const auto& colorParams = device->getColorCameraParams();
         reg = std::make_unique<libfreenect2::Registration>(irParams, colorParams);
         if (!reg) {
-            LOG("Failed to create Registration object");
+            LOG("[FreenectV2.cpp] getPointCloudFrame(): Failed to create Registration object");
             return false;
         }
+        LOG("[FreenectV2.cpp] getPointCloudFrame(): Registration object created");
     }
             
     
@@ -391,9 +444,12 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out) {
     int dstWidth = 0, dstHeight = 0;
     
     // Prepare frames
+    LOG("[FreenectV2.cpp] getPointCloudFrame(): copying frames");
     std::memcpy(rgbFrame.data, rgbBuffer.data(), RGB_WIDTH * RGB_HEIGHT * 4);
     std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
+    LOG("[FreenectV2.cpp] getPointCloudFrame(): calling reg->apply");
     reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame, true, nullptr);
+    LOG("[FreenectV2.cpp] getPointCloudFrame(): reg->apply complete");
     
     // Output buffer: width x height x 4 (XYZ + alpha)
     srcWidth = DEPTH_WIDTH;
@@ -460,14 +516,19 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out) {
     
     out = std::move(scaled);
     
+    LOG("[FreenectV2.cpp] getPointCloudFrame(): success");
     return true;
 }
 
 // Get IR frame
 bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out) {
+    LOG("[FreenectV2.cpp] getIRFrame(): called");
     std::lock_guard<std::mutex> lock(mutex);
 
-    if (!hasNewIR) return false;
+    if (!hasNewIR) {
+        LOG("[FreenectV2.cpp] getIRFrame(): no new IR data");
+        return false;
+    }
 
     const int srcWidth = IR_WIDTH;
     const int srcHeight = IR_HEIGHT;
@@ -522,6 +583,7 @@ bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out) {
     }
 
     hasNewIR = false;
+    LOG("[FreenectV2.cpp] getIRFrame(): success, size=" + std::to_string(dstWidth) + "x" + std::to_string(dstHeight));
     return true;
 }
 
