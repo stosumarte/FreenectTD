@@ -13,14 +13,16 @@ FreenectTD is an experimental project. While being thoroughly tested and confirm
 * Kinect V1 / Kinect V2
 
 ### Supported features
-* RGB streaming
-* Depth map streaming
-* Point cloud map streaming (V2 only)
-* IR streaming (currently V2 only)
-* Tilt control (V1 only)
-* Depth undistortion (V2 only)
-* Depth registration (align depth map to color)
-* Manual depth range threshold
+| Feature                                       | Kinect V1 | Kinect V2 |
+| --------------------------------------------- | --------- | --------- |
+| RGB streaming                                 | ✅         | ✅         |
+| Depth map streaming                           | ✅         | ✅         |
+| Point cloud map streaming                     | ❌         | ✅         |
+| IR streaming                                  | TBA       | ✅         |
+| Tilt control                                  | ✅         | ❌         |
+| Depth undistortion                            | ❌         | ✅         |
+| Depth registration (align depth map to color) | ✅         | ✅         |
+| Manual depth range threshold                  | ✅         | ✅         |
 
 ### Known issues
 Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). This is due to a mix of different factors in libfreenect and Kinect official firmware.
