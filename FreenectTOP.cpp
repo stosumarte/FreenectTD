@@ -596,26 +596,6 @@ bool FreenectTOP::fn2_initDevice() {
     // Stop enumeration thread after successful device start
     //fn2_stopEnumThread();
     LOG("[FreenectTOP] fn2_initDevice: device started and enum thread stopped");
-    
-    // Start event thread for v2
-    LOG("[FreenectTOP] fn2_initDevice: fn2_eventThread joinable before = " + std::to_string(fn2_eventThread.joinable()));
-    if (!fn2_eventThread.joinable()) {
-        fn2_runEvents = true;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_runEvents set to true");
-        fn2_eventThread = std::thread([this]() {
-            LOG("[FreenectTOP] fn2_eventThread: running");
-            while (fn2_runEvents.load()) {
-                std::lock_guard<std::mutex> lock(freenectMutex);
-                if (fn2_device) {
-                    fn2_device->processFrames();
-                } else {
-                    LOG("[FreenectTOP] fn2_device is null in event thread");
-                }
-            }
-            LOG("[FreenectTOP] fn2_eventThread: exiting");
-        });
-        LOG("[FreenectTOP] fn2_initDevice: fn2_eventThread joinable after = " + std::to_string(fn2_eventThread.joinable()));
-    }
     LOG("[FreenectTOP] fn2_initDevice: end (success)");
     return true;
 }
@@ -655,27 +635,15 @@ void FreenectTOP::fn2_startInitThread() {
 // Cleanup for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_cleanupDevice() {
     LOG("[FreenectTOP] fn2_cleanupDevice: start");
-    fn2_runEvents = false;
-    // Wait a short time for the event thread to exit
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    
-    // Try to join event thread
-    if (fn2_eventThread.joinable()) {
-        fn2_eventThread.join();
-    } else {
-        LOG("[FreenectTOP] fn2_cleanupDevice: couldn't join fn2_eventThread");
-    }
-    
-    // Try to join init thread
+
     if (fn2_InitThread.joinable()) {
         fn2_InitThread.join();
     } else {
         LOG("[FreenectTOP] fn2_cleanupDevice: couldn't join fn2_InitThread");
     }
-    
+
     fn2_stopEnumThread();
-    
-    // Clean up device and context
+
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (fn2_device) {
         delete fn2_device;

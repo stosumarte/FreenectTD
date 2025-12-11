@@ -14,6 +14,10 @@
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 
+#include <thread>
+#include <mutex>
+#include <atomic>
+
 // Forward declaration - depthFormatEnum is defined in FreenectTOP.h
 enum class depthFormatEnum;
 
@@ -91,4 +95,7 @@ private:
         irHeight_ = IR_HEIGHT,
         bigdepthWidth_ = BIGDEPTH_WIDTH,
         bigdepthHeight_ = BIGDEPTH_HEIGHT - 2; // Crop to 1080 from 1082
+    std::thread             workerThread;
+    std::atomic<bool>       stopWorker{true};
+    void runWorker();
 };
