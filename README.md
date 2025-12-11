@@ -29,7 +29,7 @@ Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). 
 
 ## [RECOMMENDED] Installing using installer
 
-1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
+1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP_Installer.pkg) 
 
 2. Right click on `FreenectTOP_[version]_Installer.pkg` and select "Open"
 
