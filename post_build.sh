@@ -1,6 +1,9 @@
 #!/bin/bash
-#if [ "${CONFIGURATION}" = "Release" ]; then
 set -euo pipefail
+
+# Ensure PKG_WORK_DIR is cleaned up on exit, even if an error occurs
+PKG_WORK_DIR="${BUILD_DIR}/pkg"
+trap 'rm -rf "$PKG_WORK_DIR"' EXIT
 
 # --------------------------------------------------------
 #        Generate macOS installer package (.pkg)
@@ -17,7 +20,6 @@ fi
 # Xcode build variables
 
 BUILD_OUTPUT="${BUILT_PRODUCTS_DIR}/${PLUGIN_NAME}.plugin"
-PKG_WORK_DIR="${BUILD_DIR}/pkg"
 ROOT_DIR="${PKG_WORK_DIR}/root"
 COMPONENT_PKG="${PKG_WORK_DIR}/IntermediateComponent.pkg"
 FINAL_PKG="${PKG_WORK_DIR}/${PLUGIN_NAME}.pkg"
@@ -77,18 +79,6 @@ productbuild \
     --package-path "$PKG_WORK_DIR" \
     "$FINAL_PKG"
 
-# Step 4: Rinomina e sposta in BUILT_PRODUCTS_DIR
-INSTALLERS_DIR_NAME="Installers"
-INSTALLERS_DIR="${BUILT_PRODUCTS_DIR}/${INSTALLERS_DIR_NAME}"
-mkdir -p "${INSTALLERS_DIR}"
-FINAL_NAMED_PKG="${INSTALLERS_DIR}/Install_${PLUGIN_NAME}_v${VERSION}.pkg"
-mv "$FINAL_PKG" "$FINAL_NAMED_PKG"
-
-echo "Installer created at: $FINAL_NAMED_PKG"
-
-# Cleanup temporary files
-rm -rf "$PKG_WORK_DIR"
-
 # --------------------------------------------------------
 #      Make distribution files for GitHub releases
 # --------------------------------------------------------
@@ -97,22 +87,21 @@ rm -rf "$PKG_WORK_DIR"
 VERSIONED_DIR="${BUILT_PRODUCTS_DIR}/${PLUGIN_NAME}_v${VERSION}"
 mkdir -p "$VERSIONED_DIR"
 
-# Move pkg to versioned directory
-FINAL_NAMED_VERSIONED_PKG="${VERSIONED_DIR}/${PLUGIN_NAME}_v${VERSION}_Installer.pkg"
-mv "$FINAL_NAMED_PKG" "$FINAL_NAMED_VERSIONED_PKG"
+# Move pkg to versioned directory (pluginname_Installer.pkg)
+FINAL_NAMED_PKG="${VERSIONED_DIR}/${PLUGIN_NAME}_Installer.pkg"
+mv "$FINAL_PKG" "$FINAL_NAMED_PKG"
 
-# Delete installer directory
-rm -rf "${INSTALLERS_DIR}"
+echo "Installer created at: $FINAL_NAMED_PKG"
 
-# Move .plugin to versioned directory
-FINAL_NAMED_VERSIONED_PLUGIN="${VERSIONED_DIR}/${PLUGIN_NAME}.plugin"
-cp -r "$BUILD_OUTPUT" "${FINAL_NAMED_VERSIONED_PLUGIN}"
+# Move .plugin to versioned directory (unversioned file name)
+FINAL_NAMED_PLUGIN="${VERSIONED_DIR}/${PLUGIN_NAME}.plugin"
+cp -r "$BUILD_OUTPUT" "$FINAL_NAMED_PLUGIN"
 
-# Zip the plugin itself
-PLUGIN_ZIP="${VERSIONED_DIR}/${PLUGIN_NAME}_v${VERSION}.zip"
-ditto -c -k --sequesterRsrc --keepParent "${FINAL_NAMED_VERSIONED_PLUGIN}" "${PLUGIN_ZIP}"
+# Zip the plugin itself (unversioned zip name)
+PLUGIN_ZIP="${VERSIONED_DIR}/${PLUGIN_NAME}.zip"
+ditto -c -k --sequesterRsrc --keepParent "${FINAL_NAMED_PLUGIN}" "${PLUGIN_ZIP}"
 
 # Delete zipped plugin
-rm -rf "${FINAL_NAMED_VERSIONED_PLUGIN}"
+rm -rf "${FINAL_NAMED_PLUGIN}"
 
 exit 0
