@@ -41,7 +41,7 @@ You should now find FreenectTOP under the "Custom" OPs panel.
 
 ### Global Installation
 
-1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
+1. [Download the latest zip build from the releases tab]([https://github.com/stosumarte/FreenectTD/releases/latest](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP.zip)) 
 
 2. Unzip and copy `FreenectTOP.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
 
