@@ -8,11 +8,9 @@
 #pragma once
 
 #include "logger.h"
+#include "FreenectCommon.h"
 
 #include <libfreenect/libfreenect.hpp>
-
-// Forward declaration - depthFormatEnum is defined in FreenectTOP.h
-enum class depthFormatEnum;
 
 enum class fn1_colorType {
     RGB,
@@ -50,4 +48,6 @@ private:
     int depthHeight_ = HEIGHT;
     int irWidth_ = WIDTH;
     int irHeight_ = HEIGHT;
+    uint64_t              depthFrameCounter_ = 0;
+    depthFormatEnum       lastRequestedDepthFormat_ = depthFormatEnum::Raw;
 };

@@ -13,6 +13,10 @@
 #include <iostream>
 #include <future>
 #include <array>
+#include <chrono>
+#include <limits>
+#include <sstream>
+#include <cmath>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
@@ -21,6 +25,56 @@
 #ifndef FREENECTTOP_VERSION
 #define FREENECTTOP_VERSION "dev"
 #endif
+
+namespace {
+
+struct Mono16Stats {
+    size_t nonZero = 0;
+    uint16_t min = 0;
+    uint16_t max = 0;
+};
+
+const char* depthFormatName(depthFormatEnum format) {
+    switch (format) {
+        case depthFormatEnum::Raw:
+            return "Raw";
+        case depthFormatEnum::RawUndistorted:
+            return "RawUndistorted";
+        case depthFormatEnum::Registered:
+            return "Registered";
+    }
+    return "Unknown";
+}
+
+Mono16Stats analyzeMono16Frame(const std::vector<uint16_t>& frame) {
+    Mono16Stats stats;
+    uint16_t minValue = std::numeric_limits<uint16_t>::max();
+
+    for (uint16_t value : frame) {
+        if (value == 0) {
+            continue;
+        }
+        stats.nonZero++;
+        minValue = std::min(minValue, value);
+        stats.max = std::max(stats.max, value);
+    }
+
+    stats.min = stats.nonZero == 0 ? 0 : minValue;
+    return stats;
+}
+
+std::string percentString(size_t numerator, size_t denominator) {
+    std::ostringstream out;
+    const double value = denominator == 0
+        ? 0.0
+        : static_cast<double>(numerator) * 100.0 / static_cast<double>(denominator);
+    out.setf(std::ios::fixed);
+    out.precision(2);
+    out << value;
+    return out.str();
+}
+
+} // namespace
 
 // TouchDesigner Entrypoints
 extern "C" {
@@ -478,6 +532,14 @@ void FreenectTOP::fn1_cleanupDevice() {
     }
     fn1InitInProgress = false;
     fn1InitSuccess = false;
+    fn1DepthCookCounter = 0;
+    fn1DepthUploadCounter = 0;
+    fn1DepthMissCounter = 0;
+    fn1DepthAllZeroCounter = 0;
+    fn1LastLoggedDepthFormat = depthFormatEnum::Raw;
+    fn1LastLoggedDepthEnabled = true;
+    fn1LastDepthUploadTime = std::chrono::steady_clock::time_point{};
+    fn1LastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     LOG("[FreenectTOP] fn1_cleanupDevice: end");
 }
 
@@ -685,15 +747,29 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     if(fn1_device) {
         fn1_device->setResolutions(fn1_colorW, fn1_colorH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
     }
+
+    if (depthFormat != fn1LastLoggedDepthFormat || streamEnabledDepth != fn1LastLoggedDepthEnabled) {
+        LOG("[FreenectTOP] executeV1: depth stream state changed enabled=" + std::to_string(streamEnabledDepth) +
+            " format=" + std::string(depthFormatName(depthFormat)) +
+            " thresholds=[" + std::to_string(depthThreshMin) + ", " + std::to_string(depthThreshMax) + "]" +
+            " resolution=" + std::to_string(fn1_depthW) + "x" + std::to_string(fn1_depthH));
+        fn1LastLoggedDepthFormat = depthFormat;
+        fn1LastLoggedDepthEnabled = streamEnabledDepth;
+    }
     
-    // Set tilt angle
-    try {
-        fn1_device->setTiltDegrees(fn1_tilt);
-    } catch (const std::exception& e) {
-        errorString = "Failed to set tilt angle: " + std::string(e.what());
-        fn1_cleanupDevice();
-        fn1_device = nullptr;
-        return;
+    // Only touch the motor when the value actually changes.
+    if (std::isnan(fn1LastAppliedTilt) || std::fabs(fn1_tilt - fn1LastAppliedTilt) > 0.01f) {
+        try {
+            LOG("[FreenectTOP] executeV1: applying tilt=" + std::to_string(fn1_tilt) +
+                " previousTilt=" + (std::isnan(fn1LastAppliedTilt) ? std::string("nan") : std::to_string(fn1LastAppliedTilt)));
+            fn1_device->setTiltDegrees(fn1_tilt);
+            fn1LastAppliedTilt = fn1_tilt;
+        } catch (const std::exception& e) {
+            errorString = "Failed to set tilt angle: " + std::string(e.what());
+            fn1_cleanupDevice();
+            fn1_device = nullptr;
+            return;
+        }
     }
     
     // Set color type based on parameter (not implemented yet, default to RGB)
@@ -723,8 +799,18 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     // --- Depth frame ---
     std::vector<uint16_t> depthFrame;
     if (streamEnabledDepth) {
-        if (depthFrameBuffer && fn1_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
+        fn1DepthCookCounter++;
+        const bool gotDepthFrame = depthFrameBuffer && fn1_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax);
+        if (gotDepthFrame) {
             errorString.clear();
+            fn1DepthUploadCounter++;
+            fn1DepthMissCounter = 0;
+
+            const Mono16Stats stats = analyzeMono16Frame(depthFrame);
+            if (stats.nonZero == 0) {
+                fn1DepthAllZeroCounter++;
+            }
+
             std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
             TD::TOP_UploadInfo info;
             info.textureDesc.width = fn1_depthW;
@@ -734,8 +820,33 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             info.colorBufferIndex = 1;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             output->uploadBuffer(&depthFrameBuffer, info, nullptr);
+            fn1LastDepthUploadTime = std::chrono::steady_clock::now();
+
+            if (fn1DepthUploadCounter == 1 || fn1DepthUploadCounter % 30 == 0 || stats.nonZero == 0) {
+                LOG("[FreenectTOP] executeV1: uploaded depth frame #" + std::to_string(fn1DepthUploadCounter) +
+                    " cook#" + std::to_string(fn1DepthCookCounter) +
+                    " format=" + std::string(depthFormatName(depthFormat)) +
+                    " nonZero=" + std::to_string(stats.nonZero) + "/" + std::to_string(depthFrame.size()) +
+                    " coverage=" + percentString(stats.nonZero, depthFrame.size()) + "%" +
+                    " min=" + std::to_string(stats.min) +
+                    " max=" + std::to_string(stats.max) +
+                    " allZeroFrames=" + std::to_string(fn1DepthAllZeroCounter));
+            }
         } else {
-            LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
+            fn1DepthMissCounter++;
+            if (!depthFrameBuffer) {
+                LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
+            } else if (fn1DepthMissCounter == 1 || fn1DepthMissCounter % 120 == 0) {
+                const auto now = std::chrono::steady_clock::now();
+                const auto msSinceUpload = fn1LastDepthUploadTime == std::chrono::steady_clock::time_point{}
+                    ? -1LL
+                    : std::chrono::duration_cast<std::chrono::milliseconds>(now - fn1LastDepthUploadTime).count();
+                LOG("[FreenectTOP] executeV1: no depth frame available missCount=" + std::to_string(fn1DepthMissCounter) +
+                    " cook#" + std::to_string(fn1DepthCookCounter) +
+                    " format=" + std::string(depthFormatName(depthFormat)) +
+                    " depthReady=" + std::to_string(fn1_depthReady.load()) +
+                    " msSinceLastUpload=" + std::to_string(msSinceUpload));
+            }
         }
     } else {
         uploadFallbackBuffer(1);
