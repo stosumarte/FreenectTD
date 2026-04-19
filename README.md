@@ -18,7 +18,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 | RGB streaming                                 | ✅         | ✅         |
 | Depth map streaming                           | ✅         | ✅         |
 | Point cloud map streaming                     | ❌         | ✅         |
-| IR streaming                                  | TBA       | ✅         |
+| IR streaming                                  | ✅ (modal) | ✅         |
 | Tilt control                                  | ✅         | ❌         |
 | Depth undistortion                            | ❌         | ✅         |
 | Depth registration (align depth map to color) | ✅         | ✅         |
@@ -57,7 +57,10 @@ You should now find FreenectTOP under the "Custom" OPs panel.
 You should now be able to open your .toe and find FreenectTOP under the "Custom" OPs panel.
 
 ## Usage
-By default, FreenectTOP outputs RGB data. To get other streams, you must use Render Select TOPs and reference indexes 1 (for a depth map), 2 (for a point cloud map) and 3 (for IR stream).
+By default, FreenectTOP outputs RGB data. To get other streams, you must use Render Select TOPs and reference indexes 1 (for a depth map), 2 (for a point cloud map on V2 or IR on V1) and 3 (for IR stream on V2).
+
+### Kinect V1 IR note
+On Kinect V1, the RGB and IR cameras share a single USB endpoint, so only one can stream at a time. Use the new `V1 Video Source` menu on the `Freenect` parameter page to select between `RGB`, `IR (10-bit)` and `IR (8-bit)`. When IR is selected the IR stream appears on color buffer index 2 and the RGB output (index 0) is blank. Depth keeps streaming regardless, but `Depth Format = Registered` is only available with `RGB` source because registration requires the RGB calibration — a warning is shown and the format falls back to `Raw` if IR is active. Two threshold sliders (`V1 IR Threshold Min/Max`, in raw sample units) can be used to window the IR values before normalizing to the full 16-bit range; leave both at 0 for a full-range passthrough.
 
 ### Examples
 Example .toe project files are provided in this repository, under the `toe_examples` directory.

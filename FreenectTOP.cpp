@@ -135,6 +135,40 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     enableIRParam.maxValues[0] = enableIRParam.maxSliders[0] = 1.0;
     enableIRParam.clampMins[0] = enableIRParam.clampMaxes[0] = true;
     manager->appendToggle(enableIRParam);
+
+    // V1 Video Source menu. On Kinect v1 the RGB and IR cameras share a single
+    // USB endpoint, so only one can stream at a time. This menu selects which.
+    OP_StringParameter v1VideoSourceParam;
+    v1VideoSourceParam.name = "V1videosource";
+    v1VideoSourceParam.label = "V1 Video Source";
+    v1VideoSourceParam.page = "Freenect";
+    v1VideoSourceParam.defaultValue = "RGB";
+    const char* v1VideoSourceNames[]  = {"RGB", "IR10bit", "IR8bit"};
+    const char* v1VideoSourceLabels[] = {"RGB", "IR (10-bit)", "IR (8-bit)"};
+    manager->appendMenu(v1VideoSourceParam, 3, v1VideoSourceNames, v1VideoSourceLabels);
+
+    // V1 IR threshold min/max (in raw sample units; leave both at 0 for passthrough)
+    OP_NumericParameter v1IRThreshMinParam;
+    v1IRThreshMinParam.name = "V1irthreshmin";
+    v1IRThreshMinParam.label = "V1 IR Threshold Min";
+    v1IRThreshMinParam.page = "Freenect";
+    v1IRThreshMinParam.defaultValues[0] = 0.0;
+    v1IRThreshMinParam.minValues[0] = 0.0;
+    v1IRThreshMinParam.maxValues[0] = 1023.0;
+    v1IRThreshMinParam.minSliders[0] = 0.0;
+    v1IRThreshMinParam.maxSliders[0] = 1023.0;
+    manager->appendFloat(v1IRThreshMinParam);
+
+    OP_NumericParameter v1IRThreshMaxParam;
+    v1IRThreshMaxParam.name = "V1irthreshmax";
+    v1IRThreshMaxParam.label = "V1 IR Threshold Max";
+    v1IRThreshMaxParam.page = "Freenect";
+    v1IRThreshMaxParam.defaultValues[0] = 0.0;
+    v1IRThreshMaxParam.minValues[0] = 0.0;
+    v1IRThreshMaxParam.maxValues[0] = 1023.0;
+    v1IRThreshMaxParam.minSliders[0] = 0.0;
+    v1IRThreshMaxParam.maxSliders[0] = 1023.0;
+    manager->appendFloat(v1IRThreshMaxParam);
     
     // Depth format dropdown
     OP_StringParameter depthFormatParam;
@@ -240,7 +274,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     manager->appendXY(fn1_depthResParam);
     
     // V1 IR resolution
-    /*OP_NumericParameter fn1_irResParam;
+    OP_NumericParameter fn1_irResParam;
     fn1_irResParam.name = "V1irresolution";
     fn1_irResParam.label = "IR Resolution";
     fn1_irResParam.page = "Resolution";
@@ -252,7 +286,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     fn1_irResParam.minValues[1] = fn1_irResParam.minSliders[1] = 1.0;
     fn1_irResParam.maxValues[1] = fn1_irResParam.maxSliders[1] = MyFreenectDevice::HEIGHT;
     fn1_irResParam.clampMins[1] = fn1_irResParam.clampMaxes[1] = true;
-    manager->appendXY(fn1_irResParam);*/
+    manager->appendXY(fn1_irResParam);
     
     // V2 header
     OP_StringParameter fn2_resHeader;
@@ -426,7 +460,8 @@ bool FreenectTOP::fn1_initDevice() {
     try {
         fn1_rgbReady = false;
         fn1_depthReady = false;
-        fn1_device = new MyFreenectDevice(fn1_ctx, 0, fn1_rgbReady, fn1_depthReady);
+        fn1_irReady = false;
+        fn1_device = new MyFreenectDevice(fn1_ctx, 0, fn1_rgbReady, fn1_depthReady, fn1_irReady);
         fn1_device->startVideo();
         fn1_device->startDepth();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -436,6 +471,12 @@ bool FreenectTOP::fn1_initDevice() {
             while (fn1_runEvents.load()) {
                 std::lock_guard<std::mutex> lock(fn1_eventMutex);
                 if (!fn1_ctx) break;
+                // Apply any pending video-source switch before pumping USB events.
+                // setVideoFormat internally stops/starts the video stream, so it
+                // must not race with freenect_process_events.
+                if (fn1_device) {
+                    fn1_device->applyPendingVideoSource();
+                }
                 int err = freenect_process_events(fn1_ctx);
                 if (err < 0) {
                     LOG("[FreenectTOP] Error in freenect_process_events");
@@ -696,30 +737,38 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         return;
     }
     
-    // Set color type based on parameter (not implemented yet, default to RGB)
-    fn1_colorType colorType = fn1_colorType::RGB; // Default to RGB
-    
+    // Push the desired video source to the device. The actual stop/start of the
+    // underlying stream is applied by the event thread between process_events
+    // calls to avoid racing with in-flight USB transfers.
+    fn1_device->requestVideoSource(fn1VideoSource);
+    const bool irActive = (fn1VideoSource != fn1_videoSource::RGB);
+
     // Create output buffers
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_depthW * fn1_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    
-    // --- Color frame ---
-    std::vector<uint8_t> colorFrame;
-    if (colorFrameBuffer && fn1_device->getColorFrame(colorFrame, colorType)) {
-        errorString.clear();
-        std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn1_colorW * fn1_colorH * 4);
-        TD::TOP_UploadInfo info;
-        info.textureDesc.width = fn1_colorW;
-        info.textureDesc.height = fn1_colorH;
-        info.textureDesc.texDim = TD::OP_TexDim::e2D;
-        info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
-        info.colorBufferIndex = 0;
-        info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-        output->uploadBuffer(&colorFrameBuffer, info, nullptr);
+    TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer    = fntdContext ? fntdContext->createOutputBuffer(fn1_irW    * fn1_irH    * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+
+    // --- Color frame (only when video source is RGB) ---
+    if (!irActive) {
+        std::vector<uint8_t> colorFrame;
+        if (colorFrameBuffer && fn1_device->getColorFrame(colorFrame, fn1_colorType::RGB)) {
+            errorString.clear();
+            std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn1_colorW * fn1_colorH * 4);
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = fn1_colorW;
+            info.textureDesc.height = fn1_colorH;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
+            info.colorBufferIndex = 0;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+            output->uploadBuffer(&colorFrameBuffer, info, nullptr);
+        } else {
+            LOG("[FreenectTOP] executeV1: failed to create color output buffer");
+        }
     } else {
-        LOG("[FreenectTOP] executeV1: failed to create color output buffer");
+        uploadFallbackBuffer(0);
     }
-    
+
     // --- Depth frame ---
     std::vector<uint16_t> depthFrame;
     if (streamEnabledDepth) {
@@ -740,7 +789,28 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     } else {
         uploadFallbackBuffer(1);
     }
-    
+
+    // --- IR frame (only when video source is IR) ---
+    // V1 IR is published on colorBufferIndex 2 (unused by V1 depth/RGB path).
+    // V2 uses index 2 for point cloud and index 3 for IR; on V1 we use index 2
+    // for IR because the point cloud isn't supported.
+    if (irActive) {
+        std::vector<uint16_t> irFrame;
+        if (irFrameBuffer && fn1_device->getIRFrame(irFrame, fn1_irThreshMin, fn1_irThreshMax)) {
+            errorString.clear();
+            std::memcpy(irFrameBuffer->data, irFrame.data(), fn1_irW * fn1_irH * 2);
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = fn1_irW;
+            info.textureDesc.height = fn1_irH;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+            info.colorBufferIndex = 2;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+            output->uploadBuffer(&irFrameBuffer, info, nullptr);
+        }
+    } else {
+        uploadFallbackBuffer(2);
+    }
 }
     
 // Execute method for Kinect v2 (libfreenect2)
@@ -888,14 +958,28 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     streamEnabledPC = (inputs->getParInt("Enablepointcloud") != 0);
     
     fn1_tilt = static_cast<float>(inputs->getParDouble("Tilt"));
-    
+
+    // V1 video source (RGB / IR 10-bit / IR 8-bit). The V1 RGB and IR cameras
+    // share one USB endpoint, so the stream is modal.
+    const char* v1VideoSourceCStr = inputs->getParString("V1videosource");
+    std::string v1VideoSourceStr = v1VideoSourceCStr ? v1VideoSourceCStr : "RGB";
+    if (v1VideoSourceStr == "IR10bit") {
+        fn1VideoSource = fn1_videoSource::IR_10BIT;
+    } else if (v1VideoSourceStr == "IR8bit") {
+        fn1VideoSource = fn1_videoSource::IR_8BIT;
+    } else {
+        fn1VideoSource = fn1_videoSource::RGB;
+    }
+    fn1_irThreshMin = static_cast<float>(inputs->getParDouble("V1irthreshmin"));
+    fn1_irThreshMax = static_cast<float>(inputs->getParDouble("V1irthreshmax"));
+
     // V1 resolution values
     fn1_colorW  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 0));
     fn1_colorH  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 1));
     fn1_depthW  = static_cast<int>(inputs->getParDouble("V1depthresolution", 0));
     fn1_depthH  = static_cast<int>(inputs->getParDouble("V1depthresolution", 1));
-    //fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
-    //fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
+    fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
+    fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
     
     // V2 resolution values
     fn2_colorW  = static_cast<int>(inputs->getParDouble("V2rgbresolution", 0));
@@ -921,11 +1005,24 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     dynamicParameterEnable("Tilt", true, false);
     dynamicParameterEnable("Enableir", false, true);
     dynamicParameterEnable("Enablepointcloud", false, true);
+    dynamicParameterEnable("V1videosource", true, false);
     dynamicParameterEnable("V1rgbresolution", true, false);
-    //dynamicParameterEnable("V1irresolution", true, false);
+    dynamicParameterEnable("V1irresolution", true, false);
     dynamicParameterEnable("V2rgbresolution", false, true);
     dynamicParameterEnable("V2irresolution", false, true);
     dynamicParameterEnable("V2pcresolution", false, true);
+
+    // Only show V1 IR threshold sliders when V1 is active and source is IR
+    const bool v1IREnabled = (devType == "Kinect v1" && fn1VideoSource != fn1_videoSource::RGB);
+    inputs->enablePar("V1irthreshmin", v1IREnabled);
+    inputs->enablePar("V1irthreshmax", v1IREnabled);
+
+    // Depth REGISTERED requires the RGB camera on V1; warn if user picked IR.
+    if (devType == "Kinect v1" && depthFormat == depthFormatEnum::Registered
+        && fn1VideoSource != fn1_videoSource::RGB) {
+        warningString = "Depth REGISTERED is not available while V1 video source is IR; falling back to Raw.";
+        depthFormat = depthFormatEnum::Raw;
+    }
     
     // Enable/disable depthUndistort based on device type and depthFormat
     if (devType == "Kinect v2" && (depthFormat == depthFormatEnum::Raw || depthFormat == depthFormatEnum::RawUndistorted)) {

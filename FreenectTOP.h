@@ -57,6 +57,7 @@ private:
     MyFreenectDevice*                       fn1_device = nullptr;
     std::atomic<bool>                       fn1_rgbReady{false};
     std::atomic<bool>                       fn1_depthReady{false};
+    std::atomic<bool>                       fn1_irReady{false};
     std::atomic<bool>                       fn1_runEvents{false};
     std::thread                             fn1_eventThread;
 
@@ -135,5 +136,10 @@ private:
     bool streamEnabledIR;
     bool streamEnabledDepth;
     bool streamEnabledPC;
-    
+
+    // V1 IR controls
+    fn1_videoSource fn1VideoSource = fn1_videoSource::RGB;
+    float fn1_irThreshMin = 0.0f;
+    float fn1_irThreshMax = 0.0f;
+
 };
