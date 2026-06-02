@@ -135,5 +135,11 @@ private:
     bool streamEnabledIR;
     bool streamEnabledDepth;
     bool streamEnabledPC;
-    
+
+    // persistent frame buffers for fn2_execute() — swapped with ready_ each frame, zero steady-state alloc
+    std::vector<uint8_t>  fn2_colorBuf_;
+    std::vector<uint16_t> fn2_depthBuf_;
+    std::vector<uint16_t> fn2_irBuf_;
+    std::vector<float>    fn2_pcBuf_;
+
 };

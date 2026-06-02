@@ -332,6 +332,13 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " – by @stosumarte";
     versionHeader.label = versionLabel.c_str();
     manager->appendHeader(versionHeader);
+
+    // vibecoded version credit
+    OP_StringParameter vibeHeader;
+    vibeHeader.name = "Vibecodedversion";
+    vibeHeader.page = "About";
+    vibeHeader.label = "vibecoded version";
+    manager->appendHeader(vibeHeader);
     
     // Empty spacer header
     OP_StringParameter emptyHeader1;
@@ -491,10 +498,11 @@ void FreenectTOP::fn2_startEnumThread() {
     fn2_enumThreadRunning = true;
     LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThreadRunning after = " + std::to_string(fn2_enumThreadRunning.load()));
     fn2_enumThread = std::thread([this]() {
+        // Reuse a single context; enumerate every 2 s to avoid USB interference
+        libfreenect2::Freenect2 ctx;
         while (fn2_enumThreadRunning.load()) {
-            libfreenect2::Freenect2 ctx;
             fn2_deviceAvailable = (ctx.enumerateDevices() > 0);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         }
     });
     LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThread joinable after = " + std::to_string(fn2_enumThread.joinable()));
@@ -540,32 +548,31 @@ bool FreenectTOP::fn2_initDevice() {
         return false;
     }
     fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
-    try {
-        fn2_pipeline = new libfreenect2::CpuPacketPipeline();
-    } catch (...) {
-        errorString.clear();
-        errorString = "Couldn't create CPU pipeline for Kinect v2";
-        LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_pipeline after fail = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_pipeline)));
-    }
+
+    // Try OpenCL pipeline first — offloads JPEG decode + depth processing to GPU,
+    // which is the main fps bottleneck on CpuPacketPipeline (~15fps).
+    // openDevice() always takes pipeline ownership regardless of success/failure,
+    // so fn2_pipeline must be nullptr immediately after each call.
+    LOG("[FreenectTOP] fn2_initDevice: trying OpenCLPacketPipeline");
+    fn2_pipeline = new libfreenect2::OpenCLPacketPipeline(-1); // -1 = auto-select device
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
-    LOG(std::string("[FreenectTOP] fn2_initDevice: openDevice returned dev = ") + std::to_string(reinterpret_cast<uintptr_t>(dev)));
+    fn2_pipeline = nullptr;
+
     if (!dev) {
-        errorString.clear();
+        // OpenCL failed — fall back to CPU pipeline
+        LOG("[FreenectTOP] fn2_initDevice: OpenCL failed, falling back to CpuPacketPipeline");
+        warningString = "OpenCL pipeline unavailable, using CPU pipeline";
+        fn2_pipeline = new libfreenect2::CpuPacketPipeline();
+        dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
+        fn2_pipeline = nullptr;
+    } else {
+        LOG("[FreenectTOP] fn2_initDevice: OpenCL pipeline opened successfully");
+    }
+
+    if (!dev) {
         errorString = "Failed to open Kinect v2 device";
-        delete fn2_device;
-        if (fn2_pipeline) {
-            delete fn2_pipeline;
-            fn2_pipeline = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_pipeline deleted and set to nullptr");
-        }
-        if (fn2_ctx) {
-            delete fn2_ctx;
-            fn2_ctx = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_ctx deleted and set to nullptr");
-        }
+        if (fn2_ctx) { delete fn2_ctx; fn2_ctx = nullptr; }
         fn2_device = nullptr;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device set to nullptr");
-        LOG("[FreenectTOP] fn2_initDevice: end (openDevice fail)");
         return false;
     }
     if (!fn2_device) {
@@ -573,28 +580,16 @@ bool FreenectTOP::fn2_initDevice() {
         LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_device after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_device)));
     }
     if (!fn2_device->start()) {
-        errorString.clear();
         errorString = "Failed to start Kinect v2 device";
-        delete fn2_device;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device deleted");
-        if (fn2_pipeline) {
-            delete fn2_pipeline;
-            fn2_pipeline = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_pipeline deleted and set to nullptr");
-        }
-        if (fn2_ctx) {
-            delete fn2_ctx;
-            fn2_ctx = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_ctx deleted and set to nullptr");
-        }
-        fn2_device = nullptr;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device set to nullptr");
-        LOG("[FreenectTOP] fn2_initDevice: end (start fail)");
+        delete fn2_device; fn2_device = nullptr;
+        // fn2_pipeline is already null (openDevice took ownership)
+        if (fn2_ctx) { delete fn2_ctx; fn2_ctx = nullptr; }
         return false;
     }
     
-    // Stop enumeration thread after successful device start
-    //fn2_stopEnumThread();
+    // Stop enumeration thread now that the device is open — no need to keep
+    // hammering USB while we're actively streaming.
+    fn2_stopEnumThread();
     LOG("[FreenectTOP] fn2_initDevice: device started and enum thread stopped");
     LOG("[FreenectTOP] fn2_initDevice: end (success)");
     return true;
@@ -616,20 +611,21 @@ void FreenectTOP::fn1_startInitThread() {
     }
 }
 
-// Threaded initialization for Kinect v2
+// Threaded initialization for Kinect v2.
+// NON-BLOCKING: returns immediately so the cook thread is never stalled.
+// OpenCL kernel compilation can take 10-60s on first run; the cook thread
+// shows fallback frames until init completes, then switches to live Kinect.
+// fn2_cleanupDevice() handles joining the thread at teardown.
 void FreenectTOP::fn2_startInitThread() {
-    if (fn2_InitInProgress.load()) return; // Already running
+    if (fn2_InitInProgress.load()) return; // Already running in background
     fn2_InitInProgress = true;
+    if (fn2_InitThread.joinable()) fn2_InitThread.join(); // clean up any prior thread
     fn2_InitThread = std::thread([this]() {
         bool result = this->fn2_initDevice();
         fn2_InitSuccess = result;
         fn2_InitInProgress = false;
     });
-    if (fn2_InitThread.joinable()) {
-        fn2_InitThread.join();
-    } else {
-        LOG("[FreenectTOP] fn2_startInitThread: fn2_InitThread not joinable after creation");
-    }
+    // Do NOT join here — return immediately so cook thread stays responsive.
 }
 
 // Cleanup for Kinect v2 (libfreenect2)
@@ -752,94 +748,118 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         return;
     }
 
-    // Always attempt initialization if device is null
+    // Start init in background if not already running (non-blocking).
     if (!fn2_device) {
-        LOG("[FreenectTOP] executeV2: fn2_device is null, attempting initialization");
-        fn2_startInitThread();
+        fn2_startInitThread(); // returns immediately; cook thread stays responsive
+        if (fn2_InitInProgress.load()) {
+            warningString = "Kinect v2: initialising...";
+            uploadFallbackBuffer();
+            return;
+        }
         if (!fn2_InitSuccess.load()) {
             errorString = "No Kinect v2 devices found";
             uploadFallbackBuffer();
             return;
         }
     }
+    warningString.clear();
 
     if (fn2_device) {
-        fn2_device->setResolutions(fn2_colorW, fn2_colorH, fn2_depthW, fn2_depthH, fn2_pcW, fn2_pcH, fn2_irW, fn2_irH);
+        fn2_device->setResolutions(fn2_colorW, fn2_colorH,
+                                   fn2_depthW, fn2_depthH,
+                                   fn2_pcW,    fn2_pcH,
+                                   fn2_irW,    fn2_irH);
     }
-
-    // Create output buffers
-    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_colorW * fn2_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_depthW * fn2_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> pointCloudFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_pcW * fn2_pcH * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_irW * fn2_irH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
 
     // --- Color frame ---
-    std::vector<uint8_t> colorFrame;
-    if (colorFrameBuffer && fn2_device->getColorFrame(colorFrame)) {
-        errorString.clear();
-        std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn2_colorW * fn2_colorH * 4);
-        TD::TOP_UploadInfo info;
-        info.textureDesc.width = fn2_colorW;
-        info.textureDesc.height = fn2_colorH;
-        info.textureDesc.texDim = TD::OP_TexDim::e2D;
-        info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
-        info.colorBufferIndex = 0;
-        info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-        output->uploadBuffer(&colorFrameBuffer, info, nullptr);
+    {
+        int cW = 0, cH = 0;
+        if (fn2_device->getColorFrame(fn2_colorBuf_, cW, cH) && cW > 0 && cH > 0) {
+            auto buf = fntdContext
+                ? fntdContext->createOutputBuffer(cW * cH * 4, TD::TOP_BufferFlags::None, nullptr)
+                : TD::OP_SmartRef<TD::TOP_Buffer>();
+            if (buf) {
+                errorString.clear();
+                std::memcpy(buf->data, fn2_colorBuf_.data(), fn2_colorBuf_.size());
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width       = cW;
+                info.textureDesc.height      = cH;
+                info.textureDesc.texDim      = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
+                info.colorBufferIndex        = 0;
+                info.firstPixel              = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
+        }
     }
-    
+
     // --- Depth frame ---
     if (streamEnabledDepth) {
-        std::vector<uint16_t> depthFrame;
-        if (depthFrameBuffer && fn2_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
-            errorString.clear();
-            std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn2_depthW * fn2_depthH * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn2_depthW;
-            info.textureDesc.height = fn2_depthH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 1;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&depthFrameBuffer, info, nullptr);
+        int dW = 0, dH = 0;
+        if (fn2_device->getDepthFrame(fn2_depthBuf_, dW, dH) && dW > 0 && dH > 0) {
+            auto buf = fntdContext
+                ? fntdContext->createOutputBuffer(dW * dH * sizeof(uint16_t), TD::TOP_BufferFlags::None, nullptr)
+                : TD::OP_SmartRef<TD::TOP_Buffer>();
+            if (buf) {
+                errorString.clear();
+                std::memcpy(buf->data, fn2_depthBuf_.data(), fn2_depthBuf_.size() * sizeof(uint16_t));
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width       = dW;
+                info.textureDesc.height      = dH;
+                info.textureDesc.texDim      = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex        = 1;
+                info.firstPixel              = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
         }
     } else {
         uploadFallbackBuffer(1);
     }
-    
+
     // --- Point Cloud frame ---
     if (streamEnabledPC) {
-        std::vector<float> pointCloudFrame;
-        if (pointCloudFrameBuffer && fn2_device->getPointCloudFrame(pointCloudFrame)) {
-            errorString.clear();
-            std::memcpy(pointCloudFrameBuffer->data, pointCloudFrame.data(), fn2_pcW * fn2_pcH * 4 * sizeof(float));
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn2_pcW;
-            info.textureDesc.height = fn2_pcH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
-            info.colorBufferIndex = 2;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&pointCloudFrameBuffer, info, nullptr);
-        } else {errorString = "Failed to get point cloud frame from Kinect v2";}
+        int pW = 0, pH = 0;
+        if (fn2_device->getPointCloudFrame(fn2_pcBuf_, pW, pH) && pW > 0 && pH > 0) {
+            auto buf = fntdContext
+                ? fntdContext->createOutputBuffer(pW * pH * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr)
+                : TD::OP_SmartRef<TD::TOP_Buffer>();
+            if (buf) {
+                errorString.clear();
+                std::memcpy(buf->data, fn2_pcBuf_.data(), fn2_pcBuf_.size() * sizeof(float));
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width       = pW;
+                info.textureDesc.height      = pH;
+                info.textureDesc.texDim      = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
+                info.colorBufferIndex        = 2;
+                info.firstPixel              = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
+        }
     } else {
         uploadFallbackBuffer(2);
     }
 
     // --- IR frame ---
     if (streamEnabledIR) {
-        std::vector<uint16_t> irFrame;
-        if (irFrameBuffer && fn2_device->getIRFrame(irFrame)) {
-            errorString.clear();
-            std::memcpy(irFrameBuffer->data, irFrame.data(), fn2_irW * fn2_irH * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn2_irW;
-            info.textureDesc.height = fn2_irH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 3;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&irFrameBuffer, info, nullptr);
+        int iW = 0, iH = 0;
+        if (fn2_device->getIRFrame(fn2_irBuf_, iW, iH) && iW > 0 && iH > 0) {
+            auto buf = fntdContext
+                ? fntdContext->createOutputBuffer(iW * iH * sizeof(uint16_t), TD::TOP_BufferFlags::None, nullptr)
+                : TD::OP_SmartRef<TD::TOP_Buffer>();
+            if (buf) {
+                errorString.clear();
+                std::memcpy(buf->data, fn2_irBuf_.data(), fn2_irBuf_.size() * sizeof(uint16_t));
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width       = iW;
+                info.textureDesc.height      = iH;
+                info.textureDesc.texDim      = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex        = 3;
+                info.firstPixel              = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&buf, info, nullptr);
+            }
         }
     } else {
         uploadFallbackBuffer(3);
@@ -979,6 +999,15 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         lastDeviceType = devType;
     }
     
+    // Push current params to V2 device so the worker thread picks them up.
+    if (fn2_device) {
+        fn2_device->setParams(
+            static_cast<int>(depthFormat),
+            depthThreshMin, depthThreshMax,
+            streamEnabledDepth, streamEnabledIR, streamEnabledPC
+        );
+    }
+
     // Execute based on current device type string
     if (devType == "Kinect v2") {
         fn2_execute(output, inputs);
