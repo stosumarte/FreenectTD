@@ -8,6 +8,7 @@
 #pragma once
 
 #include "logger.h"
+#include "FreenectCommon.h"
 
 // Disable warnings from TouchDesigner headers for non-standard offsetof usage
 #pragma clang diagnostic push
@@ -28,15 +29,11 @@
 #include <atomic>
 #include <vector>
 #include <mutex>
+#include <chrono>
+#include <limits>
 
 #include "FreenectV1.h"
 #include "FreenectV2.h"
-
-enum class depthFormatEnum {
-    Raw,
-    RawUndistorted,
-    Registered
-};
 
 class FreenectTOP : public TD::TOP_CPlusPlusBase {
     
@@ -122,6 +119,7 @@ private:
     int fn1_depthW, fn1_depthH;
     int fn1_irW, fn1_irH;
     float fn1_tilt = 0.0f;
+    float fn1LastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     
     int fn2_colorW, fn2_colorH;
     int fn2_depthW, fn2_depthH;
@@ -135,5 +133,13 @@ private:
     bool streamEnabledIR;
     bool streamEnabledDepth;
     bool streamEnabledPC;
+
+    uint64_t fn1DepthCookCounter = 0;
+    uint64_t fn1DepthUploadCounter = 0;
+    uint64_t fn1DepthMissCounter = 0;
+    uint64_t fn1DepthAllZeroCounter = 0;
+    depthFormatEnum fn1LastLoggedDepthFormat = depthFormatEnum::Raw;
+    bool fn1LastLoggedDepthEnabled = true;
+    std::chrono::steady_clock::time_point fn1LastDepthUploadTime{};
     
 };

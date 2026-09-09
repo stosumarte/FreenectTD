@@ -10,14 +10,43 @@
 #include <cstring>
 #include <iostream>
 #include <chrono>
+#include <limits>
 #include <Accelerate/Accelerate.h>
 
-// depthFormatEnum enum definition (shared between v1 and v2)
-enum class depthFormatEnum {
-    Raw,
-    RawUndistorted,
-    Registered
-};
+namespace {
+
+const char* depthFormatName(depthFormatEnum type) {
+    switch (type) {
+        case depthFormatEnum::Raw:
+            return "Raw";
+        case depthFormatEnum::RawUndistorted:
+            return "RawUndistorted";
+        case depthFormatEnum::Registered:
+            return "Registered";
+    }
+    return "Unknown";
+}
+
+const char* freenectDepthFormatName(freenect_depth_format type) {
+    switch (type) {
+        case FREENECT_DEPTH_REGISTERED:
+            return "FREENECT_DEPTH_REGISTERED";
+        case FREENECT_DEPTH_MM:
+            return "FREENECT_DEPTH_MM";
+        case FREENECT_DEPTH_11BIT:
+            return "FREENECT_DEPTH_11BIT";
+        case FREENECT_DEPTH_10BIT:
+            return "FREENECT_DEPTH_10BIT";
+        case FREENECT_DEPTH_11BIT_PACKED:
+            return "FREENECT_DEPTH_11BIT_PACKED";
+        case FREENECT_DEPTH_10BIT_PACKED:
+            return "FREENECT_DEPTH_10BIT_PACKED";
+        default:
+            return "UNKNOWN_FREENECT_DEPTH_FORMAT";
+    }
+}
+
+} // namespace
 
 // MyFreenectDevice class constructor
 MyFreenectDevice::MyFreenectDevice
@@ -172,6 +201,16 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType ty
 bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
     const int srcWidth = WIDTH, srcHeight = HEIGHT;
     const int dstWidth = depthWidth_, dstHeight = depthHeight_;
+    const freenect_depth_format requestedFormat = (type == depthFormatEnum::Registered)
+        ? FREENECT_DEPTH_REGISTERED
+        : FREENECT_DEPTH_MM;
+
+    if (type != lastRequestedDepthFormat_ || requestedFormat != getDepthFormat()) {
+        LOG("[FreenectV1] getDepthFrame: requestedType=" + std::string(depthFormatName(type)) +
+            " requestedFormat=" + std::string(freenectDepthFormatName(requestedFormat)) +
+            " currentFormat=" + std::string(freenectDepthFormatName(getDepthFormat())) +
+            " thresholds=[" + std::to_string(depthThreshMin) + ", " + std::to_string(depthThreshMax) + "]");
+    }
 
     if (type == depthFormatEnum::Registered) {
         MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_REGISTERED);
@@ -179,6 +218,7 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum
         // Both Raw and RawUndistorted use FREENECT_DEPTH_MM for v1
         MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_MM);
     }
+    lastRequestedDepthFormat_ = type;
 
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
@@ -189,18 +229,34 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum
 
     // Step 1. Normalize depth data into 16-bit linear buffer
     std::vector<uint16_t> tmp(srcPixelCount);
-    #pragma omp parallel for if(srcPixelCount > 100000)
+    size_t rawNonZero = 0;
+    uint16_t rawMin = std::numeric_limits<uint16_t>::max();
+    uint16_t rawMax = 0;
+    size_t mappedNonZero = 0;
+    uint16_t mappedMin = std::numeric_limits<uint16_t>::max();
+    uint16_t mappedMax = 0;
     for (size_t i = 0; i < srcPixelCount; ++i) {
         uint16_t val = depthBuffer[i];
-            const float min_mm = depthThreshMin;
-            const float max_mm = depthThreshMax;
-            if (val >= min_mm && val <= max_mm) {
-                tmp[i] = static_cast<uint16_t>(
-                    (static_cast<float>(val) - min_mm) / (max_mm - min_mm) * 65535.0f
-                );
-            } else {
-                tmp[i] = 0;
+        if (val != 0) {
+            rawNonZero++;
+            rawMin = std::min(rawMin, val);
+            rawMax = std::max(rawMax, val);
+        }
+        const float min_mm = depthThreshMin;
+        const float max_mm = depthThreshMax;
+        if (val >= min_mm && val <= max_mm) {
+            const uint16_t mappedValue = static_cast<uint16_t>(
+                (static_cast<float>(val) - min_mm) / (max_mm - min_mm) * 65535.0f
+            );
+            tmp[i] = mappedValue;
+            if (mappedValue != 0) {
+                mappedNonZero++;
+                mappedMin = std::min(mappedMin, mappedValue);
+                mappedMax = std::max(mappedMax, mappedValue);
             }
+        } else {
+            tmp[i] = 0;
+        }
     }
 
     // Step 2. Use vImage to scale depth map (single channel 16-bit)
@@ -225,5 +281,26 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum
     }
 
     hasNewDepth = false;
+    depthFrameCounter_++;
+
+    if (rawNonZero == 0) {
+        rawMin = 0;
+    }
+    if (mappedNonZero == 0) {
+        mappedMin = 0;
+    }
+
+    if (depthFrameCounter_ == 1 || depthFrameCounter_ % 30 == 0 || (rawNonZero > 0 && mappedNonZero == 0)) {
+        LOG("[FreenectV1] depth frame #" + std::to_string(depthFrameCounter_) +
+            " type=" + std::string(depthFormatName(type)) +
+            " rawNonZero=" + std::to_string(rawNonZero) + "/" + std::to_string(srcPixelCount) +
+            " rawMin=" + std::to_string(rawMin) +
+            " rawMax=" + std::to_string(rawMax) +
+            " mappedNonZero=" + std::to_string(mappedNonZero) + "/" + std::to_string(srcPixelCount) +
+            " mappedMin=" + std::to_string(mappedMin) +
+            " mappedMax=" + std::to_string(mappedMax) +
+            " outputSize=" + std::to_string(dstPixelCount));
+    }
+
     return true;
 }
