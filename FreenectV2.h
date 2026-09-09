@@ -12,14 +12,13 @@
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/registration.h>
+#include "FreenectTypes.h"
 #include <libfreenect2/packet_pipeline.h>
 
 #include <thread>
 #include <mutex>
 #include <atomic>
 
-// Forward declaration - depthFormatEnum is defined in FreenectTOP.h
-enum class depthFormatEnum;
 
 class MyFreenect2Device {
 public:
@@ -50,9 +49,14 @@ public:
     void processFrames();
     // Unified processed frame methods for v2
     bool getColorFrame(std::vector<uint8_t>& out);
-    bool getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax);
+    // Depth in millimetres (float), 0 = invalid / outside threshold
+    bool getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax);
     bool getIRFrame(std::vector<uint16_t>& out);
-    bool getPointCloudFrame(std::vector<float>& out);
+    // XYZ (m) + validity in A; space selects depth-camera (512x424) or color-camera (1920x1080) frame
+    // flipX/flipY/flipZ negate the corresponding axis (e.g. flipZ makes +Z point toward the viewer, TouchDesigner style)
+    bool getPointCloudFrame(std::vector<float>& out, pcSpaceEnum space, float depthThreshMin, float depthThreshMax, bool flipX = false, bool flipY = false, bool flipZ = false);
+    // RGB mapped onto the depth grid (512x424 RGBA8) + depth->color UV map (512x424 RGBA32F)
+    bool getRegisteredColorFrame(std::vector<uint8_t>& color, std::vector<float>& uv);
     // Setters for buffer injection
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
@@ -79,8 +83,13 @@ private:
     std::vector<float>      downscaledDepthBuffer;
     std::vector<float>      bigdepthBufferCropped;
     std::vector<float>      flipDstBuffer;
-    std::vector<float>      registeredCroppedBuffer;
-    bool                    lastRegisteredDepthValid = false;
+    std::vector<float>      pcScratch;
+    std::vector<int>        colorDepthMap;
+    uint64_t                depthSeq_ = 0;   // incremented for every new depth frame
+    uint64_t                regSeq_ = 0;     // depthSeq_ the cached registration was computed for
+    bool                    regHasBigdepth_ = false;
+    libfreenect2::Freenect2Device::ColorCameraParams colorParams_{};
+    bool ensureRegistration(bool needBigdepth);
     std::mutex              mutex;
     bool                    hasNewRGB;
     bool                    hasNewDepth;

@@ -29,14 +29,9 @@
 #include <vector>
 #include <mutex>
 
+#include "FreenectTypes.h"
 #include "FreenectV1.h"
 #include "FreenectV2.h"
-
-enum class depthFormatEnum {
-    Raw,
-    RawUndistorted,
-    Registered
-};
 
 class FreenectTOP : public TD::TOP_CPlusPlusBase {
     
@@ -99,6 +94,8 @@ private:
     void fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void uploadFallbackBuffer(int targetIndex = -1);
+    static constexpr int kNumOutputs = 6; // 0 RGB, 1 depth, 2 point cloud, 3 IR, 4 registered color, 5 depth->color UV
+    void uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height);
     
     // Error/warning string handling
     std::string errorString;
@@ -109,7 +106,7 @@ private:
     // Current output pointer
     TD::TOP_Output* myCurrentOutput = nullptr;
 
-    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 4> fallbackBuffers;
+    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, kNumOutputs> fallbackBuffers;
 
     // V1 background init members
     std::atomic<bool> fn1InitInProgress{false};
@@ -131,9 +128,14 @@ private:
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;
     depthFormatEnum depthFormat = depthFormatEnum::Raw;
+    depthOutputEnum depthOutput = depthOutputEnum::Normalized;
+    pcSpaceEnum pcSpace = pcSpaceEnum::DepthCamera;
+    bool pcFlipX = false, pcFlipY = false, pcFlipZ = false;
     
     bool streamEnabledIR;
     bool streamEnabledDepth;
     bool streamEnabledPC;
+    bool streamEnabledRegColor = false;
+    bool streamEnabledUV = false;
     
 };

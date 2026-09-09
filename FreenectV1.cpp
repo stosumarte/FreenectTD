@@ -12,12 +12,6 @@
 #include <chrono>
 #include <Accelerate/Accelerate.h>
 
-// depthFormatEnum enum definition (shared between v1 and v2)
-enum class depthFormatEnum {
-    Raw,
-    RawUndistorted,
-    Registered
-};
 
 // MyFreenectDevice class constructor
 MyFreenectDevice::MyFreenectDevice
@@ -169,7 +163,7 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType ty
 }
 
 // Get depth frame
-bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
+bool MyFreenectDevice::getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
     const int srcWidth = WIDTH, srcHeight = HEIGHT;
     const int dstWidth = depthWidth_, dstHeight = depthHeight_;
 
@@ -182,46 +176,21 @@ bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum
 
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
+    if (dstWidth <= 0 || dstHeight <= 0) return false;
 
-    const size_t srcPixelCount = static_cast<size_t>(srcWidth) * srcHeight;
     const size_t dstPixelCount = static_cast<size_t>(dstWidth) * dstHeight;
     out.resize(dstPixelCount);
 
-    // Step 1. Normalize depth data into 16-bit linear buffer
-    std::vector<uint16_t> tmp(srcPixelCount);
-    #pragma omp parallel for if(srcPixelCount > 100000)
-    for (size_t i = 0; i < srcPixelCount; ++i) {
-        uint16_t val = depthBuffer[i];
-            const float min_mm = depthThreshMin;
-            const float max_mm = depthThreshMax;
-            if (val >= min_mm && val <= max_mm) {
-                tmp[i] = static_cast<uint16_t>(
-                    (static_cast<float>(val) - min_mm) / (max_mm - min_mm) * 65535.0f
-                );
-            } else {
-                tmp[i] = 0;
-            }
-    }
-
-    // Step 2. Use vImage to scale depth map (single channel 16-bit)
-    vImage_Buffer srcBuf = {
-        .data = tmp.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * sizeof(uint16_t))
-    };
-
-    vImage_Buffer dstBuf = {
-        .data = out.data(),
-        .height = (vImagePixelCount)dstHeight,
-        .width = (vImagePixelCount)dstWidth,
-        .rowBytes = static_cast<size_t>(dstWidth * sizeof(uint16_t))
-    };
-
-    if (dstWidth != srcWidth || dstHeight != srcHeight) {
-        vImageScale_Planar16U(&srcBuf, &dstBuf, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
-    } else {
-        std::memcpy(out.data(), tmp.data(), tmp.size() * sizeof(uint16_t));
+    // Nearest-neighbour resample straight from the 16-bit mm buffer; depth must not be interpolated.
+    for (int y = 0; y < dstHeight; ++y) {
+        const int sy = (dstHeight == srcHeight) ? y : std::min(srcHeight - 1, static_cast<int>((y + 0.5f) * srcHeight / dstHeight));
+        const uint16_t* srcRow = depthBuffer.data() + static_cast<size_t>(sy) * srcWidth;
+        float* dstRow = out.data() + static_cast<size_t>(y) * dstWidth;
+        for (int x = 0; x < dstWidth; ++x) {
+            const int sx = (dstWidth == srcWidth) ? x : std::min(srcWidth - 1, static_cast<int>((x + 0.5f) * srcWidth / dstWidth));
+            const float val = static_cast<float>(srcRow[sx]);
+            dstRow[x] = (val >= depthThreshMin && val <= depthThreshMax) ? val : 0.0f;
+        }
     }
 
     hasNewDepth = false;

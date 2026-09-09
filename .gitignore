@@ -9,3 +9,9 @@ logs/
 *.bin
 include/headers/touchdesigner_experimental
 notes.txt
+
+# local working files
+toe_examples/*_claude.toe
+toe_examples/FreenectTOP_Example_Dean*.toe
+xcuserdata/
+toe_examples/*.[0-9]*.toe
