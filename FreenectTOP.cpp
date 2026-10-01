@@ -387,8 +387,8 @@ void FreenectTOP::fn1_cleanupDevice() {
     if (fn1_eventThread.joinable()) {
         fn1_eventThread.join();
     }
-    if (fn1_InitThread.joinable()) {
-        fn1_InitThread.join();
+    if (fn1_initThread.joinable()) {
+        fn1_initThread.join();
     }
     std::lock_guard<std::mutex> lock(freenectMutex);
     if (fn1_device) {
@@ -401,9 +401,9 @@ void FreenectTOP::fn1_cleanupDevice() {
         fn1_ctx = nullptr;
         LOG("[FreenectTOP] fn1_ctx shutdown (v1)");
     }
-    fn1InitInProgress = false;
-    fn1InitSuccess = false;
-    fn1LastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
+    fn1_initInProgress = false;
+    fn1_initSuccess = false;
+    fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     LOG("[FreenectTOP] fn1_cleanupDevice: end");
 }
 
@@ -528,33 +528,33 @@ bool FreenectTOP::fn2_initDevice() {
 
 // Threaded initialization for Kinect v1
 void FreenectTOP::fn1_startInitThread() {
-    if (fn1InitInProgress.load()) return; // Already running
-    fn1InitInProgress = true;
-    fn1_InitThread = std::thread([this]() {
+    if (fn1_initInProgress.load()) return; // Already running
+    fn1_initInProgress = true;
+    fn1_initThread = std::thread([this]() {
         bool result = this->fn1_initDevice();
-        fn1InitSuccess = result;
-        fn1InitInProgress = false;
+        fn1_initSuccess = result;
+        fn1_initInProgress = false;
     });
-    if (fn1_InitThread.joinable()) {
-        fn1_InitThread.join();
+    if (fn1_initThread.joinable()) {
+        fn1_initThread.join();
     } else {
-        LOG("[FreenectTOP] fn1_startInitThread: fn1_InitThread not joinable after creation");
+        LOG("[FreenectTOP] fn1_startInitThread: fn1_initThread not joinable after creation");
     }
 }
 
 // Threaded initialization for Kinect v2
 void FreenectTOP::fn2_startInitThread() {
-    if (fn2_InitInProgress.load()) return; // Already running
-    fn2_InitInProgress = true;
-    fn2_InitThread = std::thread([this]() {
+    if (fn2_initInProgress.load()) return; // Already running
+    fn2_initInProgress = true;
+    fn2_initThread = std::thread([this]() {
         bool result = this->fn2_initDevice();
-        fn2_InitSuccess = result;
-        fn2_InitInProgress = false;
+        fn2_initSuccess = result;
+        fn2_initInProgress = false;
     });
-    if (fn2_InitThread.joinable()) {
-        fn2_InitThread.join();
+    if (fn2_initThread.joinable()) {
+        fn2_initThread.join();
     } else {
-        LOG("[FreenectTOP] fn2_startInitThread: fn2_InitThread not joinable after creation");
+        LOG("[FreenectTOP] fn2_startInitThread: fn2_initThread not joinable after creation");
     }
 }
 
@@ -562,10 +562,10 @@ void FreenectTOP::fn2_startInitThread() {
 void FreenectTOP::fn2_cleanupDevice() {
     LOG("[FreenectTOP] fn2_cleanupDevice: start");
 
-    if (fn2_InitThread.joinable()) {
-        fn2_InitThread.join();
+    if (fn2_initThread.joinable()) {
+        fn2_initThread.join();
     } else {
-        LOG("[FreenectTOP] fn2_cleanupDevice: couldn't join fn2_InitThread");
+        LOG("[FreenectTOP] fn2_cleanupDevice: couldn't join fn2_initThread");
     }
 
     fn2_stopEnumThread();
@@ -584,8 +584,8 @@ void FreenectTOP::fn2_cleanupDevice() {
         fn2_ctx = nullptr;
         LOG("[FreenectTOP] fn2_ctx deleted");
     }
-    fn2_InitInProgress = false;
-    fn2_InitSuccess = false;
+    fn2_initInProgress = false;
+    fn2_initSuccess = false;
     LOG("[FreenectTOP] fn2_cleanupDevice: end");
 }
 
@@ -594,7 +594,7 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     if (!fn1_device) {
         LOG("[FreenectTOP] executeV1: device is null, initializing device in thread");
         fn1_startInitThread();
-        if (!fn1InitSuccess.load()) {
+        if (!fn1_initSuccess.load()) {
             errorString.clear();
             errorString = "No Kinect v1 devices found";
             uploadFallbackBuffer();
@@ -614,10 +614,10 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     
     // Only touch the motor when the value actually changes: setting tilt every
     // cook stalls the v1 depth stream (see #21).
-    if (std::isnan(fn1LastAppliedTilt) || std::fabs(fn1_tilt - fn1LastAppliedTilt) > 0.01f) {
+    if (std::isnan(fn1_lastAppliedTilt) || std::fabs(fn1_tilt - fn1_lastAppliedTilt) > 0.01f) {
         try {
             fn1_device->setTiltDegrees(fn1_tilt);
-            fn1LastAppliedTilt = fn1_tilt;
+            fn1_lastAppliedTilt = fn1_tilt;
         } catch (const std::exception& e) {
             errorString = "Failed to set tilt angle: " + std::string(e.what());
             fn1_cleanupDevice();
@@ -675,7 +675,7 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     if (!fn2_device) {
         LOG("[FreenectTOP] executeV2: fn2_device is null, attempting initialization");
         fn2_startInitThread();
-        if (!fn2_InitSuccess.load()) {
+        if (!fn2_initSuccess.load()) {
             errorString = "No Kinect v2 devices found";
             uploadFallbackBuffer();
             return;

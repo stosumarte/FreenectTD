@@ -72,10 +72,10 @@ private:
     std::atomic<bool>                       fn2_enumThreadRunning;
 
     // V2 background init members
-    std::atomic<bool>                       fn2_InitInProgress{false};
-    //std::atomic<bool>                       fn2_InitDone{false};
-    std::atomic<bool>                       fn2_InitSuccess{false};
-    std::thread                             fn2_InitThread;
+    std::atomic<bool>                       fn2_initInProgress{false};
+    //std::atomic<bool>                       fn2_initDone{false};
+    std::atomic<bool>                       fn2_initSuccess{false};
+    std::thread                             fn2_initThread;
     
     // Add declarations for v2 enumeration thread helpers
     void fn2_startEnumThread();
@@ -115,9 +115,9 @@ private:
     std::array<TD::OP_SmartRef<TD::TOP_Buffer>, NUM_OUTPUTS> fallbackBuffers;
 
     // V1 background init members
-    std::atomic<bool> fn1InitInProgress{false};
-    std::atomic<bool> fn1InitSuccess{false};
-    std::thread fn1_InitThread;
+    std::atomic<bool> fn1_initInProgress{false};
+    std::atomic<bool> fn1_initSuccess{false};
+    std::thread fn1_initThread;
     void fn1_startInitThread();
     
     // Parameters variables
@@ -125,7 +125,7 @@ private:
     int fn1_depthW, fn1_depthH;
     int fn1_irW, fn1_irH;
     float fn1_tilt = 0.0f;
-    float fn1LastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
+    float fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     
     int fn2_colorW, fn2_colorH;
     int fn2_depthW, fn2_depthH;
