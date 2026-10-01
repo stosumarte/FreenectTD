@@ -284,27 +284,6 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out) {
     return true;
 }
 
-// Nearest-neighbour resample with optional horizontal mirror.
-// Depth / XYZ data must never be interpolated (bilinear blending across a depth
-// edge invents points that float between foreground and background), so all
-// depth-derived outputs go through this instead of vImageScale.
-template <typename T>
-static void resampleNearest(const T* src, int srcW, int srcH, int channels,
-                            T* dst, int dstW, int dstH, bool flipX)
-{
-    const size_t pix = static_cast<size_t>(channels) * sizeof(T);
-    for (int y = 0; y < dstH; ++y) {
-        int sy = (dstH == srcH) ? y : std::min(srcH - 1, static_cast<int>((y + 0.5f) * srcH / dstH));
-        const T* srcRow = src + static_cast<size_t>(sy) * srcW * channels;
-        T* dstRow = dst + static_cast<size_t>(y) * dstW * channels;
-        for (int x = 0; x < dstW; ++x) {
-            int sx = (dstW == srcW) ? x : std::min(srcW - 1, static_cast<int>((x + 0.5f) * srcW / dstW));
-            if (flipX) sx = srcW - 1 - sx;
-            std::memcpy(dstRow + static_cast<size_t>(x) * channels, srcRow + static_cast<size_t>(sx) * channels, pix);
-        }
-    }
-}
-
 // Run libfreenect2 registration once per depth frame and cache the results
 // (undistortedFrame, registeredFrame, colorDepthMap and optionally bigdepthFrame)
 // so that depth, point cloud and registered color outputs share one apply() call.

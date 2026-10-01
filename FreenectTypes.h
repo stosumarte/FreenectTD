@@ -2,10 +2,13 @@
 //  FreenectTypes.h
 //  FreenectTD
 //
-//  Shared enums used by the TOP and both device backends.
+//  Shared enums and helpers used by the TOP and both device backends.
 //
 
 #pragma once
+
+#include <algorithm>
+#include <cstddef>
 
 // How the depth map is generated
 enum class depthFormatEnum {
@@ -29,3 +32,29 @@ enum class pcSpaceEnum {
     DepthCamera,  // "Raw": 512x424, XYZ (m) relative to the depth/IR camera; aligned with Registered Color / UV outputs
     ColorCamera   // "Registered": 1920x1080, XYZ (m) relative to the color camera, pixel-aligned to the RGB output
 };
+
+// Nearest-neighbour resample with optional horizontal mirror, converting each value
+// from TSrc to TDst. Depth / XYZ data must never be interpolated (bilinear blending
+// across a depth edge invents points that float between foreground and background),
+// so all depth-derived outputs go through this instead of vImageScale.
+template <typename TSrc, typename TDst>
+inline void resampleNearest(const TSrc* src, int srcWidth, int srcHeight, int channels,
+                            TDst* dst, int dstWidth, int dstHeight, bool flipX)
+{
+    for (int y = 0; y < dstHeight; ++y) {
+        const int sy = (dstHeight == srcHeight) ? y : std::min(srcHeight - 1, static_cast<int>((y + 0.5f) * srcHeight / dstHeight));
+        const TSrc* srcRow = src + static_cast<size_t>(sy) * srcWidth * channels;
+        TDst* dstRow = dst + static_cast<size_t>(y) * dstWidth * channels;
+        for (int x = 0; x < dstWidth; ++x) {
+            int sx = (dstWidth == srcWidth) ? x : std::min(srcWidth - 1, static_cast<int>((x + 0.5f) * srcWidth / dstWidth));
+            if (flipX) {
+                sx = srcWidth - 1 - sx;
+            }
+            const TSrc* srcPixel = srcRow + static_cast<size_t>(sx) * channels;
+            TDst* dstPixel = dstRow + static_cast<size_t>(x) * channels;
+            for (int c = 0; c < channels; ++c) {
+                dstPixel[c] = static_cast<TDst>(srcPixel[c]);
+            }
+        }
+    }
+}

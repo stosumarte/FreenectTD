@@ -180,15 +180,11 @@ bool MyFreenectDevice::getDepthFrame(std::vector<float>& out, depthFormatEnum ty
     const size_t dstPixelCount = static_cast<size_t>(dstWidth) * dstHeight;
     out.resize(dstPixelCount);
 
-    // Nearest-neighbour resample straight from the 16-bit mm buffer; depth must not be interpolated.
-    for (int y = 0; y < dstHeight; ++y) {
-        const int sy = (dstHeight == srcHeight) ? y : std::min(srcHeight - 1, static_cast<int>((y + 0.5f) * srcHeight / dstHeight));
-        const uint16_t* srcRow = depthBuffer.data() + static_cast<size_t>(sy) * srcWidth;
-        float* dstRow = out.data() + static_cast<size_t>(y) * dstWidth;
-        for (int x = 0; x < dstWidth; ++x) {
-            const int sx = (dstWidth == srcWidth) ? x : std::min(srcWidth - 1, static_cast<int>((x + 0.5f) * srcWidth / dstWidth));
-            const float val = static_cast<float>(srcRow[sx]);
-            dstRow[x] = (val >= depthThreshMin && val <= depthThreshMax) ? val : 0.0f;
+    // Nearest-neighbour resample straight from the 16-bit mm buffer, then mask the depth range
+    resampleNearest(depthBuffer.data(), srcWidth, srcHeight, 1, out.data(), dstWidth, dstHeight, /*flipX=*/false);
+    for (float& depth : out) {
+        if (depth < depthThreshMin || depth > depthThreshMax) {
+            depth = 0.0f;
         }
     }
 
