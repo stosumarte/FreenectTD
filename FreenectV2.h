@@ -14,7 +14,7 @@
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 
-#include "FreenectTypes.h"
+#include "FreenectCommon.h"
 
 #include <thread>
 #include <mutex>

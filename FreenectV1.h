@@ -11,7 +11,7 @@
 
 #include <libfreenect/libfreenect.hpp>
 
-#include "FreenectTypes.h"
+#include "FreenectCommon.h"
 
 enum class fn1_colorType {
     RGB,

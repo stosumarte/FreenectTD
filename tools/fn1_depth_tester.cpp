@@ -1,4 +1,4 @@
-#include "FreenectTypes.h"
+#include "FreenectCommon.h"
 #include "FreenectV1.h"
 #include "logger.h"
 #include "ofxKinectExtras/ofxKinectExtras.h"

@@ -1,5 +1,5 @@
 //
-//  FreenectTypes.h
+//  FreenectCommon.h
 //  FreenectTD
 //
 //  Shared enums and helpers used by the TOP and both device backends.

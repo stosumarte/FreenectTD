@@ -30,7 +30,7 @@
 #include <mutex>
 #include <limits>
 
-#include "FreenectTypes.h"
+#include "FreenectCommon.h"
 #include "FreenectV1.h"
 #include "FreenectV2.h"
 

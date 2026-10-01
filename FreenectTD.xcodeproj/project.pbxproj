@@ -47,7 +47,7 @@
 		813994B02E7468D80073667B /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
-		81C0FFEE2E9A000100C0FFEE /* FreenectTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTypes.h; sourceTree = "<group>"; };
+		81C0FFEE2E9A000100C0FFEE /* FreenectCommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectCommon.h; sourceTree = "<group>"; };
 		81E200812E7428F300CCB6AE /* ofxKinectExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxKinectExtras.h; sourceTree = "<group>"; };
 		81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxKinectExtras.cpp; sourceTree = "<group>"; };
 		81E200852E7428FF00CCB6AE /* postinstall */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = postinstall; sourceTree = "<group>"; };
@@ -125,7 +125,7 @@
 			children = (
 				81FF21B52E99655C00DF4A33 /* notes.txt */,
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
-				81C0FFEE2E9A000100C0FFEE /* FreenectTypes.h */,
+				81C0FFEE2E9A000100C0FFEE /* FreenectCommon.h */,
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
 				81FD1DEA2E36517700900396 /* FreenectV1.h */,
 				81FD1DE52E3630A700900396 /* FreenectV1.cpp */,
