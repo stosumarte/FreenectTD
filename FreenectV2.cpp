@@ -12,6 +12,7 @@
 #include <iostream>
 #include <thread>
 #include <Accelerate/Accelerate.h>
+#include <dispatch/dispatch.h>
 
 // MyFreenect2Device class constructor
 MyFreenect2Device::MyFreenect2Device(
@@ -112,6 +113,12 @@ void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWid
         " Depth: " + std::to_string(depthWidth_) + "x" + std::to_string(depthHeight_) +
         " PC: " + std::to_string(pcWidth_) + "x" + std::to_string(pcHeight_) +
         " IR: " + std::to_string(irWidth_) + "x" + std::to_string(irHeight_));*/
+}
+
+// Sequence number of the latest depth frame; changes whenever a new depth frame arrives
+uint64_t MyFreenect2Device::getDepthSeq() {
+    std::lock_guard<std::mutex> lock(mutex);
+    return depthSeq;
 }
 
 // Process incoming frames
@@ -446,10 +453,10 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum 
         const float fxInv = 1.0f / colorParams.fx;
         const float fyInv = 1.0f / colorParams.fy;
         const float* bigdepthRows = reinterpret_cast<const float*>(bigdepthFrame.data) + BIGDEPTH_WIDTH; // skip padding row
-        #pragma omp parallel for
-        for (int r = 0; r < srcHeight; ++r) {
-            const float* row = bigdepthRows + static_cast<size_t>(r) * BIGDEPTH_WIDTH;
-            float* dstRow = points + static_cast<size_t>(r) * srcWidth * 4;
+        // Rows are independent, so spread them across cores (dispatch_apply returns when all are done)
+        dispatch_apply(srcHeight, DISPATCH_APPLY_AUTO, ^(size_t r) {
+            const float* row = bigdepthRows + r * BIGDEPTH_WIDTH;
+            float* dstRow = points + r * srcWidth * 4;
             const float yNorm = -(r + 0.5f - colorParams.cy) * fyInv; // negate: +Y up (matches depth-camera path)
             for (int c = 0; c < srcWidth; ++c) {
                 const float depth = row[c];
@@ -468,13 +475,13 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum 
                     point[3] = 0.0f;
                 }
             }
-        }
+        });
     } else {
-        for (int r = 0; r < srcHeight; ++r) {
+        dispatch_apply(srcHeight, DISPATCH_APPLY_AUTO, ^(size_t r) {
             for (int c = 0; c < srcWidth; ++c) {
                 float x, y, z;
-                reg->getPointXYZ(&undistortedFrame, r, c, x, y, z);
-                float* point = points + (static_cast<size_t>(r) * srcWidth + c) * 4;
+                reg->getPointXYZ(&undistortedFrame, static_cast<int>(r), c, x, y, z);
+                float* point = points + (r * srcWidth + c) * 4;
                 const float zMillimeters = z * 1000.0f;
                 if (isDepthInRange(zMillimeters, depthThreshMin, depthThreshMax)) {
                     point[0] = signX * x;
@@ -489,7 +496,7 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum 
                     point[3] = 0.0f;
                 }
             }
-        }
+        });
     }
 
     out.resize(static_cast<size_t>(dstWidth) * dstHeight * 4);

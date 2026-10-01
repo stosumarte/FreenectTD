@@ -587,6 +587,7 @@ void FreenectTOP::fn2_cleanupDevice() {
     }
     fn2_initInProgress = false;
     fn2_initSuccess = false;
+    fn2_lastPointCloudSeq = NO_POINT_CLOUD; // a new device starts counting depth frames from 0 again
     LOG("[FreenectTOP] fn2_cleanupDevice: end");
 }
 
@@ -689,7 +690,6 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
 
     // Create output buffers
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_colorW * fn2_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> pointCloudFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_pcW * fn2_pcH * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_irW * fn2_irH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
 
     // --- Color frame ---
@@ -719,10 +719,15 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     }
     
     // --- Point Cloud frame ---
-    if (streamEnabledPC) {
+    // Only rebuilt and uploaded when a new depth frame has arrived: TD cooks faster than the
+    // Kinect delivers depth, and an output that isn't uploaded keeps its previous texture.
+    const uint64_t depthSeq = fn2_device->getDepthSeq();
+    if (streamEnabledPC && depthSeq != fn2_lastPointCloudSeq) {
+        TD::OP_SmartRef<TD::TOP_Buffer> pointCloudFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_pcW * fn2_pcH * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
         std::vector<float> pointCloudFrame;
         if (pointCloudFrameBuffer && fn2_device->getPointCloudFrame(pointCloudFrame, pcSpace, depthThreshMin, depthThreshMax, pcFlipX, pcFlipY, pcFlipZ, unknownPoint)) {
             errorString.clear();
+            fn2_lastPointCloudSeq = depthSeq;
             std::memcpy(pointCloudFrameBuffer->data, pointCloudFrame.data(), fn2_pcW * fn2_pcH * 4 * sizeof(float));
             TD::TOP_UploadInfo info;
             info.textureDesc.width = fn2_pcW;
@@ -735,8 +740,9 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         } else {
             errorString = "Failed to get point cloud frame from Kinect v2";
         }
-    } else {
+    } else if (!streamEnabledPC) {
         uploadFallbackBuffer(2);
+        fn2_lastPointCloudSeq = NO_POINT_CLOUD; // re-enabling uploads straight away instead of waiting for the next frame
     }
 
     // --- Registered color (index 4) and depth-to-color UV map (index 5) ---

@@ -57,6 +57,7 @@ public:
     // unknownXYZ (3 floats) is written to XYZ of invalid points; their alpha is always 0
     bool getPointCloudFrame(std::vector<float>& out, pcSpaceEnum space, float depthThreshMin, float depthThreshMax,
                             bool flipX, bool flipY, bool flipZ, const float* unknownXYZ);
+    uint64_t getDepthSeq();
     // RGB mapped onto the depth grid (512x424 RGBA8) + depth->color UV map (512x424 RGBA32F)
     bool getRegisteredColorFrame(std::vector<uint8_t>& color, std::vector<float>& uv);
     // Setters for buffer injection

@@ -132,6 +132,8 @@ private:
     int fn2_depthW, fn2_depthH;
     int fn2_irW, fn2_irH;
     int fn2_pcW, fn2_pcH;
+    static constexpr uint64_t NO_POINT_CLOUD = std::numeric_limits<uint64_t>::max();
+    uint64_t fn2_lastPointCloudSeq = NO_POINT_CLOUD; // depthSeq of the last uploaded point cloud
     
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;
