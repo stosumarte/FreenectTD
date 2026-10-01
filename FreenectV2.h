@@ -82,9 +82,6 @@ private:
     std::vector<uint8_t>    rgbBuffer;
     std::vector<float>      depthBuffer;
     std::vector<float>      irBuffer;
-    std::vector<float>      downscaledDepthBuffer;
-    std::vector<float>      bigdepthBufferCropped;
-    std::vector<float>      flipDstBuffer;
     std::vector<float>      pcScratch;
     std::vector<int>        colorDepthMap;
     uint64_t                depthSeq = 0;   // incremented for every new depth frame
