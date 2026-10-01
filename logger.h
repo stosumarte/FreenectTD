@@ -18,7 +18,7 @@
 
 inline std::string currentTimeMillis() {
     auto now = std::chrono::system_clock::now();
-    auto ms = duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
     auto timer = std::chrono::system_clock::to_time_t(now);
     std::tm bt = *std::localtime(&timer);
     std::ostringstream oss;
@@ -28,7 +28,12 @@ inline std::string currentTimeMillis() {
 
 namespace {
     static std::mutex logMutex;
-    static std::ofstream logFile("/tmp/FreenectTOP_" + currentTimeMillis() + ".log");
+#if FNTD_DEBUG == 2
+    inline std::ofstream& debugLogFile() {
+        static std::ofstream logFile("/tmp/FreenectTOP_" + currentTimeMillis() + ".log");
+        return logFile;
+    }
+#endif
 }
 
 #if FNTD_DEBUG == 1
@@ -39,7 +44,7 @@ namespace {
 #elif FNTD_DEBUG == 2
 #define LOG(msg) { \
     std::lock_guard<std::mutex> lock(logMutex); std::cout << "[FNTD_DEBUG] " << msg << std::endl; \
-    if (logFile.is_open()) { logFile << "[" << currentTimeMillis() << "] " << msg << std::endl; } \
+    if (debugLogFile().is_open()) { debugLogFile() << "[" << currentTimeMillis() << "] " << msg << std::endl; } \
 }
 
 #else

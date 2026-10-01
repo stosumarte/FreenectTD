@@ -28,6 +28,7 @@
 #include <atomic>
 #include <vector>
 #include <mutex>
+#include <limits>
 
 #include "FreenectTypes.h"
 #include "FreenectV1.h"
@@ -124,6 +125,7 @@ private:
     int fn1_depthW, fn1_depthH;
     int fn1_irW, fn1_irH;
     float fn1_tilt = 0.0f;
+    float fn1LastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     
     int fn2_colorW, fn2_colorH;
     int fn2_depthW, fn2_depthH;

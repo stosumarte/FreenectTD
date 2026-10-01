@@ -108,6 +108,23 @@ A TOP to POP turns the streams into renderable points with color in two nodes:
 ### Examples
 Example .toe project files are provided in this repository, under the `toe_examples` directory.
 
+## Standalone Kinect V1 depth tester
+
+This repository also includes a standalone CLI tester for Kinect V1 depth debugging, useful when you want to isolate `libfreenect` and the current FreenectTD depth processing path without running TouchDesigner.
+
+Build it with:
+
+`./scripts/build_fn1_depth_tester.sh`
+
+Run it with:
+
+`./build/fn1_depth_tester --mode plugin-path --format raw --duration 20 --toggle-every 5`
+
+Useful modes:
+
+* `--mode plugin-path` mirrors the current `getDepthFrame()` path used by the plugin.
+* `--mode raw-callback` reads raw depth callbacks directly and helps determine whether the capture itself is failing before conversion.
+
 ### Known limitations
 
 * Like every TOP, FreenectTOP only cooks when something uses its output. If your Render Select TOPs stop updating while you are in another network or in perform mode, end the chain in a Null TOP with its display flag on (or display the result somewhere).

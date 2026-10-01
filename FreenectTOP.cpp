@@ -15,6 +15,7 @@
 #include <iostream>
 #include <future>
 #include <array>
+#include <cmath>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
@@ -343,6 +344,7 @@ void FreenectTOP::fn1_cleanupDevice() {
     }
     fn1InitInProgress = false;
     fn1InitSuccess = false;
+    fn1LastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     LOG("[FreenectTOP] fn1_cleanupDevice: end");
 }
 
@@ -551,14 +553,18 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         fn1_device->setResolutions(fn1_colorW, fn1_colorH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
     }
     
-    // Set tilt angle
-    try {
-        fn1_device->setTiltDegrees(fn1_tilt);
-    } catch (const std::exception& e) {
-        errorString = "Failed to set tilt angle: " + std::string(e.what());
-        fn1_cleanupDevice();
-        fn1_device = nullptr;
-        return;
+    // Only touch the motor when the value actually changes: setting tilt every
+    // cook stalls the v1 depth stream (see #21).
+    if (std::isnan(fn1LastAppliedTilt) || std::fabs(fn1_tilt - fn1LastAppliedTilt) > 0.01f) {
+        try {
+            fn1_device->setTiltDegrees(fn1_tilt);
+            fn1LastAppliedTilt = fn1_tilt;
+        } catch (const std::exception& e) {
+            errorString = "Failed to set tilt angle: " + std::string(e.what());
+            fn1_cleanupDevice();
+            fn1_device = nullptr;
+            return;
+        }
     }
     
     // Set color type based on parameter (not implemented yet, default to RGB)
