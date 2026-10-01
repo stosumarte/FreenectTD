@@ -84,112 +84,113 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // =====================================================================
     // FREENECT PAGE
     // =====================================================================
-    const char* PG = "Freenect";
+    const char* page0 = "Freenect";
 
     // --- Device ---
-    header("Hdrdevice", "Device", PG);
-    toggle("Active", "Active", 1.0, PG);
+    header("Hdrdevice", "Device", page0);
+    toggle("Active", "Active", 1.0, page0);
     {
         const char* names[]  = {"Kinect v1", "Kinect v2"};
         const char* labels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
-        menu("Hardwareversion", "Hardware Version", "Kinect v1", 2, names, labels, PG);
+        menu("Hardwareversion", "Hardware Version", "Kinect v1", 2, names, labels, page0);
     }
     {
-        OP_NumericParameter t; t.name = "Tilt"; t.label = "Tilt Angle (deg)"; t.page = PG;
+        OP_NumericParameter t; t.name = "Tilt"; t.label = "Tilt Angle"; t.page = page0;
         t.defaultValues[0] = 0.0; t.minValues[0] = t.minSliders[0] = -30.0; t.maxValues[0] = t.maxSliders[0] = 30.0;
         t.clampMins[0] = t.clampMaxes[0] = true;
         manager->appendFloat(t);
     }
 
     // --- Streams. The number is the Render Select TOP image index; 0 (RGB) is always on. ---
-    header("Hdrstreams", "Streams (number = Render Select index, 0 = RGB always on)", PG);
-    toggle("Enabledepth",      "1  Depth",              1.0, PG);
-    toggle("Enablepointcloud", "2  Point Cloud",        0.0, PG);
-    toggle("Enableir",         "3  IR",                 0.0, PG);
-    toggle("Enableregcolor",   "4  Registered Color",   0.0, PG);
-    toggle("Enableuv",         "5  Depth-to-Color UV",  0.0, PG);
+    header("Hdrstreams", "Streams", page0);
+    toggle("Enabledepth",      "Depth [1]",              1.0, page0);
+    toggle("Enablepointcloud", "Point Cloud [2]",        0.0, page0);
+    toggle("Enableir",         "IR [3]",                 0.0, page0);
+    toggle("Enableregcolor",   "Registered Color [4]",   0.0, page0);
+    toggle("Enableuv",         "Depth-to-Color UV [5]",  0.0, page0);
 
     // --- Depth & point cloud. One Format menu drives both: Registered puts depth AND the point
     //     cloud in the color camera (aligned to RGB); Raw keeps them in the depth camera. ---
-    header("Hdrdepth", "Depth & Point Cloud", PG);
+    header("Hdrdepth", "Depth & Point Cloud", page0);
     {
         const char* names[]  = {"Raw", "Rawundistorted", "Registered"};
-        const char* labels[] = {"Raw (depth camera)", "Raw, Undistorted (depth camera)", "Registered (aligned to RGB)"};
-        menu("Depthformat", "Format", "Raw", 3, names, labels, PG);
+        const char* labels[] = {"Raw", "Raw undistorted", "Registered (aligned to RGB)"};
+        menu("Depthformat", "Format", "Raw", 3, names, labels, page0);
     }
     {
         const char* names[]  = {"Normalized", "Millimeters", "Meters"};
         const char* labels[] = {"Normalized 16-bit (0-1 across depth range)", "Millimeters (32-bit float)", "Meters (32-bit float)"};
-        menu("Depthoutput", "Depth Output", "Normalized", 3, names, labels, PG);
+        menu("Depthoutput", "Depth Output", "Normalized", 3, names, labels, page0);
     }
-    toggle("Manualdepththresh", "Manual Depth Range", 0.0, PG);
+    toggle("Manualdepththresh", "Manual Depth Range", 0.0, page0);
     {
-        OP_NumericParameter t; t.name = "Depththreshmin"; t.label = "Depth Range Min (mm)"; t.page = PG;
+        OP_NumericParameter t; t.name = "Depththreshmin"; t.label = "Depth Range Min (mm)"; t.page = page0;
         t.defaultValues[0] = 0.0; t.minValues[0] = t.minSliders[0] = 0.0; t.maxValues[0] = t.maxSliders[0] = 5000.0; t.clampMins[0] = true;
         manager->appendFloat(t);
     }
     {
-        OP_NumericParameter t; t.name = "Depththreshmax"; t.label = "Depth Range Max (mm)"; t.page = PG;
+        OP_NumericParameter t; t.name = "Depththreshmax"; t.label = "Depth Range Max (mm)"; t.page = page0;
         t.defaultValues[0] = 5000.0; t.minValues[0] = t.minSliders[0] = 0.0; t.maxValues[0] = t.maxSliders[0] = 5000.0; t.clampMins[0] = true;
         manager->appendFloat(t);
     }
     // Point cloud native frame: +Y up, +Z away from the sensor, X follows the mirrored image.
-    toggle("Pcflipx", "Point Cloud Flip X", 0.0, PG);
-    toggle("Pcflipy", "Point Cloud Flip Y", 0.0, PG);
-    toggle("Pcflipz", "Point Cloud Flip Z (+Z toward viewer)", 0.0, PG);
+    toggle("Pcflipx", "Point Cloud Flip X", 0.0, page0);
+    toggle("Pcflipy", "Point Cloud Flip Y", 0.0, page0);
+    toggle("Pcflipz", "Point Cloud Flip Z (+Z toward viewer)", 0.0, page0);
     // Sentinels for invalid data. Alpha (point cloud) / 0-masking is still the authoritative validity
     // signal; these only decide what value lands in the dead pixels for pipelines that cannot read alpha.
     {
-        OP_NumericParameter t; t.name = "Unknowndepth"; t.label = "Unknown Depth Value (output units)"; t.page = PG;
+        OP_NumericParameter t; t.name = "Unknowndepth"; t.label = "Unknown Depth Value (output units)"; t.page = page0;
         t.defaultValues[0] = 0.0; t.minSliders[0] = -1.0; t.maxSliders[0] = 10000.0;
         manager->appendFloat(t);
     }
     {
-        OP_NumericParameter t; t.name = "Unknownpoint"; t.label = "Unknown Point Value"; t.page = PG;
+        OP_NumericParameter t; t.name = "Unknownpoint"; t.label = "Unknown Point Value"; t.page = page0;
         for (int i = 0; i < 3; ++i) { t.defaultValues[i] = 0.0; t.minSliders[i] = -10.0; t.maxSliders[i] = 100.0; }
         manager->appendXYZ(t);
     }
 
     // =====================================================================
-    // RESOLUTION PAGE - presets only; every size is a nearest-neighbour
-    // downscale of the native frame, the field of view never changes.
+    // RESOLUTION PAGE - presets only; every size is a downscale of the native
+    // frame, the field of view never changes. Depth and point cloud use
+    // nearest-neighbour, RGB and IR use vImage high-quality resampling.
     // =====================================================================
-    const char* PR = "Resolution";
-    header("Hdrresnote", "Downscale presets. Field of view never changes.", PR);
+    const char* page1 = "Resolution";
+    header("Hdrresnote", "Downscale presets. Field of view never changes.", page1);
 
-    header("Kinectv1resolution", "Kinect v1 (native 640x480)", PR);
+    header("Kinectv1resolution", "Kinect v1 (native 640x480)", page1);
     {
         const char* names[]  = {"640x480", "320x240", "160x120"};
-        menu("V1rgbres",   "RGB Resolution",   "640x480", 3, names, names, PR);
-        menu("V1depthres", "Depth Resolution", "640x480", 3, names, names, PR);
+        menu("V1rgbres",   "RGB Resolution",   "640x480", 3, names, names, page1);
+        menu("V1depthres", "Depth Resolution", "640x480", 3, names, names, page1);
     }
 
-    header("Kinectv2resolution", "Kinect v2 (native RGB 1920x1080, depth/IR 512x424)", PR);
+    header("Kinectv2resolution", "Kinect v2 (native RGB 1920x1080, depth/IR 512x424)", page1);
     {
         const char* rgbNames[]   = {"1920x1080", "1280x720", "960x540", "640x360"};
         const char* depthNames[] = {"512x424", "256x212", "128x106"};
-        menu("V2rgbres",   "RGB Resolution",         "1280x720", 4, rgbNames,   rgbNames,   PR);
-        menu("V2depthres", "Depth Resolution",       "512x424",  3, depthNames, depthNames, PR);
-        menu("V2pcres",    "Point Cloud Resolution", "512x424",  3, depthNames, depthNames, PR);
-        menu("V2irres",    "IR Resolution",          "512x424",  3, depthNames, depthNames, PR);
+        menu("V2rgbres",   "RGB Resolution",         "1280x720", 4, rgbNames,   rgbNames,   page1);
+        menu("V2depthres", "Depth Resolution",       "512x424",  3, depthNames, depthNames, page1);
+        menu("V2pcres",    "Point Cloud Resolution", "512x424",  3, depthNames, depthNames, page1);
+        menu("V2irres",    "IR Resolution",          "512x424",  3, depthNames, depthNames, page1);
     }
-    header("Hdrresnote2", "Registered depth / point cloud follow the RGB resolution.", PR);
+    header("Hdrresnote2", "Registered depth / point cloud follow the RGB resolution.", page1);
 
     // =====================================================================
     // ABOUT PAGE
     // =====================================================================
-    const char* PA = "About";
+    const char* page2 = "About";
     std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " - by @stosumarte";
-    header("Version", versionLabel.c_str(), PA);
-    header("Hdrcontrib", "Point cloud registration, float depth, POP workflow (v1.1): Dean Cheesman", PA);
-    header("Emptyheader1", " ", PA);
-    header("Hdroutputs",  "Outputs via Render Select TOP (Image index):", PA);
-    header("Hdroutputs0", "0 RGB   1 Depth   2 Point Cloud   3 IR", PA);
-    header("Hdroutputs1", "4 Registered Color   5 Depth-to-Color UV", PA);
-    header("Emptyheader2", " ", PA);
-    header("Updateheader", "Visit the following URL to check for updates:", PA);
+    header("Version", versionLabel.c_str(), page2);
+    header("Hdrcontrib", "Point cloud registration, float depth, POP workflow (v1.1): Dean Cheesman", page2);
+    header("Emptyheader1", " ", page2);
+    header("Hdroutputs",  "Outputs via Render Select TOP (Image index):", page2);
+    header("Hdroutputs0", "0 RGB   1 Depth   2 Point Cloud   3 IR", page2);
+    header("Hdroutputs1", "4 Registered Color   5 Depth-to-Color UV", page2);
+    header("Emptyheader2", " ", page2);
+    header("Updateheader", "Visit the following URL to check for updates:", page2);
     {
-        OP_StringParameter u; u.name = "Updateurl"; u.label = "Copy this -> "; u.page = PA;
+        OP_StringParameter u; u.name = "Updateurl"; u.label = "Copy this -> "; u.page = page2;
         u.defaultValue = "github.com/stosumarte/FreenectTD/releases/latest";
         manager->appendString(u);
     }
@@ -830,7 +831,6 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     dynamicParameterEnable("Pcflipy", false, true);
     dynamicParameterEnable("Pcflipz", false, true);
     dynamicParameterEnable("Unknownpoint", false, true);
-    dynamicParameterEnable("Enableregcolor", false, true);
     if (devType == "Kinect v2" && pcSpace == pcSpaceEnum::ColorCamera) {
         inputs->enablePar("V2pcres", false);
     }
