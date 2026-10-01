@@ -37,6 +37,8 @@ stays the same, otherwise changes won't be backwards compatible
 #include <cmath>
 #include <float.h>
 
+#include "BitMaskFlags.h"
+
 #ifndef PyObject_HEAD
 	struct _object;
 	typedef _object PyObject;
@@ -55,7 +57,7 @@ class POP_CPlusPlus;
 namespace TD
 {
 
-const int OP_CommonAPIVersion = 1;
+const int OP_CommonAPIVersion = 3;
 
 inline int32_t
 extractFamilyAPIVersion(int32_t version)
@@ -100,6 +102,30 @@ class POP_CPlusPlusBase;
 
 #pragma pack(push, 8)
 
+enum class OP_ParmIndexFlagBits : uint32_t
+{
+	None = 0,
+	X = 1 << 0,
+	Y = 1 << 1,
+	Z = 1 << 2,
+	W = 1 << 3,
+
+	R = X,
+	G = Y,
+	B = Z,
+	A = W,
+
+	e0 = X,
+	e1 = Y,
+	e2 = Z,
+	e3 = W,
+
+	All = 0xFFFFFFFF,
+};
+
+
+TD_ENABLE_BITMASK_FLAGS(OP_ParmIndex);
+
 enum class OP_PixelFormat : int32_t
 {
 	Invalid = -1,
@@ -143,9 +169,147 @@ enum class OP_PixelFormat : int32_t
 	RGB10A2Fixed = 700,
 	// 11-bit float, positive values only. B is actually 10 bits
 	RGB11Float,
-
-
 };
+
+inline bool
+isFloatFormat(OP_PixelFormat f)
+{
+	switch (f)
+	{
+		default:
+		case OP_PixelFormat::Invalid:
+		case OP_PixelFormat::BGRA8Fixed:
+		case OP_PixelFormat::RGBA8Fixed:
+		case OP_PixelFormat::RGBA16Fixed:
+		case OP_PixelFormat::Mono8Fixed:
+		case OP_PixelFormat::Mono16Fixed:
+		case OP_PixelFormat::RG8Fixed:
+		case OP_PixelFormat::RG16Fixed:
+		case OP_PixelFormat::A8Fixed:
+		case OP_PixelFormat::A16Fixed:
+		case OP_PixelFormat::MonoA8Fixed:
+		case OP_PixelFormat::MonoA16Fixed:
+		case OP_PixelFormat::RGB10A2Fixed:
+			return false;
+		case OP_PixelFormat::Mono16Float:
+		case OP_PixelFormat::Mono32Float:
+		case OP_PixelFormat::RG16Float:
+		case OP_PixelFormat::RG32Float:
+		case OP_PixelFormat::A16Float:
+		case OP_PixelFormat::A32Float:
+		case OP_PixelFormat::MonoA16Float:
+		case OP_PixelFormat::MonoA32Float:
+		case OP_PixelFormat::RGBA16Float:
+		case OP_PixelFormat::RGBA32Float:
+		case OP_PixelFormat::RGB11Float:
+			return true;
+	}
+}
+
+inline bool
+isBGRFormat(OP_PixelFormat f)
+{
+	switch (f)
+	{
+		default:
+		case OP_PixelFormat::Invalid:
+		case OP_PixelFormat::RGBA8Fixed:
+		case OP_PixelFormat::RGBA16Fixed:
+		case OP_PixelFormat::Mono8Fixed:
+		case OP_PixelFormat::Mono16Fixed:
+		case OP_PixelFormat::RG8Fixed:
+		case OP_PixelFormat::RG16Fixed:
+		case OP_PixelFormat::A8Fixed:
+		case OP_PixelFormat::A16Fixed:
+		case OP_PixelFormat::MonoA8Fixed:
+		case OP_PixelFormat::MonoA16Fixed:
+		case OP_PixelFormat::RGB10A2Fixed:
+		case OP_PixelFormat::Mono16Float:
+		case OP_PixelFormat::Mono32Float:
+		case OP_PixelFormat::RG16Float:
+		case OP_PixelFormat::RG32Float:
+		case OP_PixelFormat::A16Float:
+		case OP_PixelFormat::A32Float:
+		case OP_PixelFormat::MonoA16Float:
+		case OP_PixelFormat::MonoA32Float:
+		case OP_PixelFormat::RGBA16Float:
+		case OP_PixelFormat::RGBA32Float:
+		case OP_PixelFormat::RGB11Float:
+			return false;
+		case OP_PixelFormat::BGRA8Fixed:
+			return true;
+	}
+}
+
+inline bool
+isMonoAlphaFormat(OP_PixelFormat f)
+{
+	switch (f)
+	{
+		default:
+		case OP_PixelFormat::Invalid:
+		case OP_PixelFormat::RGBA8Fixed:
+		case OP_PixelFormat::RGBA16Fixed:
+		case OP_PixelFormat::Mono8Fixed:
+		case OP_PixelFormat::Mono16Fixed:
+		case OP_PixelFormat::RG8Fixed:
+		case OP_PixelFormat::RG16Fixed:
+		case OP_PixelFormat::A8Fixed:
+		case OP_PixelFormat::A16Fixed:
+		case OP_PixelFormat::RGB10A2Fixed:
+		case OP_PixelFormat::Mono16Float:
+		case OP_PixelFormat::Mono32Float:
+		case OP_PixelFormat::RG16Float:
+		case OP_PixelFormat::RG32Float:
+		case OP_PixelFormat::A16Float:
+		case OP_PixelFormat::A32Float:
+		case OP_PixelFormat::RGBA16Float:
+		case OP_PixelFormat::RGBA32Float:
+		case OP_PixelFormat::RGB11Float:
+		case OP_PixelFormat::BGRA8Fixed:
+			return false;
+		case OP_PixelFormat::MonoA8Fixed:
+		case OP_PixelFormat::MonoA16Fixed:
+		case OP_PixelFormat::MonoA16Float:
+		case OP_PixelFormat::MonoA32Float:
+			return true;
+	}
+}
+
+inline bool
+isAlphaFormat(OP_PixelFormat f)
+{
+	switch (f)
+	{
+		default:
+		case OP_PixelFormat::Invalid:
+		case OP_PixelFormat::RGBA8Fixed:
+		case OP_PixelFormat::RGBA16Fixed:
+		case OP_PixelFormat::Mono8Fixed:
+		case OP_PixelFormat::Mono16Fixed:
+		case OP_PixelFormat::RG8Fixed:
+		case OP_PixelFormat::RG16Fixed:
+		case OP_PixelFormat::RGB10A2Fixed:
+		case OP_PixelFormat::Mono16Float:
+		case OP_PixelFormat::Mono32Float:
+		case OP_PixelFormat::RG16Float:
+		case OP_PixelFormat::RG32Float:
+		case OP_PixelFormat::RGBA16Float:
+		case OP_PixelFormat::RGBA32Float:
+		case OP_PixelFormat::RGB11Float:
+		case OP_PixelFormat::BGRA8Fixed:
+		case OP_PixelFormat::MonoA8Fixed:
+		case OP_PixelFormat::MonoA16Fixed:
+		case OP_PixelFormat::MonoA16Float:
+		case OP_PixelFormat::MonoA32Float:
+			return false;
+		case OP_PixelFormat::A8Fixed:
+		case OP_PixelFormat::A16Fixed:
+		case OP_PixelFormat::A16Float:
+		case OP_PixelFormat::A32Float:
+			return true;
+	}
+}
 
 typedef OP_PixelFormat OP_CPUMemPixelType;
 
@@ -166,16 +330,47 @@ enum class OP_WorkingColorSpace : int32_t
 	// All colors provided and held in textures will be in ACEScg gamut (ACES AP1) with linear transfer function.
 	ACEScg,
 
-	// For the below color spaces, RGBA/BGRA 8-bit textures will use a sRGB transfer to store the data,
+	// For the below 3 color spaces, RGBA/BGRA 8-bit textures will use a sRGB transfer to store the data,
 	// so accessing the data in shaders etc gives a linearlized version of it.
 	// Otherwise it will be linear.
-	// All colors provided will be in sRGB gamut with linear transfer function.
+	// All colors provided will be in sRGB gamut with linear transfer function (sRGB for 8-bit textures).
+	// This is the same as Rec.709
 	SRGBLinear,
-	// All colors provided will be in Rec.2020 gamut with linear transfer function.
+	// All colors provided will be in Rec.2020 gamut with linear transfer function (sRGB for 8-bit textures)..
 	Rec2020Linear,
-	// All colors provided will be in DCI-P3 gamut with linear transfer function.
+	// All colors provided will be in DCI-P3 gamut with linear transfer function (sRGB for 8-bit textures)..
 	DCIP3Linear,
+
+	// All colors provided will be in ACES2065_1 with linear transfer function.
+	ACES2065_1
 };
+
+inline void
+getWorkingColorSpacePrimaries(OP_WorkingColorSpace wcs,
+							float* rx, float *ry, float* gx, float* gy, float* bx, float* by, float* wx, float* wy)
+{
+	switch (wcs)
+	{
+		case OP_WorkingColorSpace::SRGBLinear:
+			*rx = 0.64f; *ry = 0.33f; *gx = 0.3f; *gy = 0.6f; *bx = 0.15f; *by = 0.06f; *wx = 0.3127f; *wy = 0.3290f;
+			break;
+		case OP_WorkingColorSpace::Rec2020Linear:
+			*rx = 0.708f; *ry = 0.292f; *gx = 0.170f; *gy = 0.797f; *bx = 0.131f; *by = 0.046f; *wx = 0.3127f; *wy = 0.3290f;
+			break;
+		case OP_WorkingColorSpace::ACES2065_1:
+			*rx = 0.7347f; *ry = 0.2653f; *gx = 0.0f; *gy = 1.0f; *bx = 0.0001f; *by = -0.077f; *wx = 0.32168f; *wy = 0.33767f;
+			break;
+		case OP_WorkingColorSpace::ACEScg:
+			*rx = 0.713f; *ry = 0.293f; *gx = 0.165f; *gy = 0.830f; *bx = 0.128f; *by = 0.044f; *wx = 0.32168f; *wy = 0.33767f;
+			break;
+		case OP_WorkingColorSpace::DCIP3Linear:
+			*rx = 0.680f; *ry = 0.320f; *gx = 0.265f; *gy = 0.690f; *bx = 0.150f; *by = 0.060f; *wx = 0.314f; *wy = 0.351f;
+			break;
+		default:
+			*rx = 0.0f; *ry = 0.0f; *gx = 0.0f; *gy = 0.0f; *bx = 0.0f; *by = 0.0f; *wx = 0.0f; *wy = 0.0f;
+			break;
+	}
+}
 
 class OP_String;
 class OP_TOPInputOpenGL;
@@ -270,7 +465,7 @@ public:
 		operator=(t);
 	}
 
-	OP_SmartRef(OP_SmartRef<T>&& t) :
+	OP_SmartRef(OP_SmartRef<T>&& t) noexcept :
 		myTarget(nullptr)
 	{
 		operator=(std::move(t));
@@ -303,7 +498,7 @@ public:
 	}
 
 	void
-	operator=(OP_SmartRef<T>&& t)
+	operator=(OP_SmartRef<T>&& t) noexcept
 	{
 		if (this == &t || myTarget == t.myTarget)
 			return;
@@ -574,6 +769,48 @@ public:
 #endif
 };
 
+class OP_Parameters
+{
+public:
+	// Returns true on success, false if the parameter does not exist.
+	// Note, use getParRGB and getParRGBA for RGB and RGBA parameters.
+	virtual bool		getParDouble(const char* name, double& v, int32_t index = 0) const = 0;
+	virtual bool		getParDouble2(const char* name, double& v0, double& v1) const = 0;
+	virtual bool		getParDouble3(const char* name, double& v0, double& v1, double& v2) const = 0;
+	virtual bool		getParDouble4(const char* name, double& v0, double& v1, double& v2, double& v3) const = 0;
+
+	// Returns true on success, false if the parameter does not exist.
+	virtual bool		getParInt(const char* name, int32_t& v, int32_t index = 0) const = 0;
+	virtual bool		getParInt2(const char* name, int32_t& v0, int32_t& v1) const = 0;
+	virtual bool		getParInt3(const char* name, int32_t& v0, int32_t& v1, int32_t& v2) const = 0;
+	virtual bool		getParInt4(const char* name, int32_t& v0, int32_t& v1, int32_t& v2, int32_t& v3) const = 0;
+
+	// Returns the requested value
+	// The return value is valid until the parameters are rebuilt or it is called with the same parameter name.
+	// Return value usable for life of parameter
+	// The returned string will be in UTF-8 encoding.
+	// Can be used to get menu entries as well.
+	virtual const char*	getParString(const char* name) const = 0;
+
+	// This is similar to getParString, but will return an absolute path if it exists, with
+	// slash direction consistent with O/S requirements.
+	// To get the original parameter value, use getParString.
+	// Return value usable for life of parameter.
+	// The returned string will be in UTF-8 encoding.
+	virtual const char* getParFilePath(const char* name) const = 0;
+
+	// Will take the working color space into account (if enabled), and return the values in that space,
+	// using the Parameter Color Space parameter to interpret the values.
+	// That is, the values set in the parameters are in the color space chosen in the 'Parameter Color Space',
+	// parameter, will be converted so the values you get here will be in the working color space.
+	// Therefore they will always be in a linear transfer, since all of the OP_WorkingColorSpace are linear.
+	virtual bool		getParRGB(const char* name, double& r, double& g, double& b) const = 0;
+	virtual bool		getParRGBA(const char* name, double& r, double& g, double& b, double& a) const = 0;
+private:
+
+	int32_t				reserved[200] = {};
+};
+
 class OP_DATInput
 {
 public:
@@ -603,19 +840,23 @@ public:
 	// for more information
 	const OP_CustomOPInstance<DAT_CPlusPlusBase>* customOP;
 
-	int32_t			reserved[16] = {};
+	// This can be used to read parameters from this node.
+	const OP_Parameters*	parms = nullptr;
+
+private:
+
+	int32_t			reserved[14] = {};
 };
 
 enum class OP_ColorSpace : uint32_t
 {
-	// The data is in whatever color space the project's Working Color Space.
+	// For DefaultForWorkingColorSpace, the data is in whatever color space the project's Working Color Space.
 	// The Working Color Space can be obtained from OP_NodeInfo.workingColorSpace member.
 	// Note the special treatment for when 4-channel 8-bit textures some color spaces though.
 	//
-	// ACEScg
-	// All data in ACEScg (AP1) gamut with linear transfer.
-	// 
-	// SRGBLinear, Rec2020Linear, DCIP3Linear
+	// OP_WorkingColorSpace::SRGBLinear
+	// OP_WorkingColorSpace::Rec2020Linear
+	// OP_WorkingColorSpace::DCIP3Linear
 	// When the working color space is one of the above, and the OP_PixelFormat is RGBA8Fixed or BGRA8Fixed,
 	// the data will have an sRGB transfer, to maintain the extra detail for the darker colors.
 	// Note that this is a non-standard transfer for DCIP3, which is usually just gamma 2.6.
@@ -660,6 +901,7 @@ enum class OP_ReferenceWhite : uint32_t
 
 	SDR,
 	HDR,
+	UI,
 };
 
 class OP_TOPInputDownloadOptions
@@ -812,7 +1054,10 @@ public:
 	// for more information
 	const OP_CustomOPInstance<TOP_CPlusPlusBase>* customOP;
 
-	int32_t			reserved[12] = {};
+	// This can be used to read parameters from this node.
+	const OP_Parameters*	parms = nullptr;
+
+	int32_t			reserved[10] = {};
 
 protected:
 	virtual void*	reserved0() = 0;
@@ -846,6 +1091,12 @@ enum class POP_AttributeQualifier : uint32_t
 
 	// Treat a matrix attribute as a transform matrix.
 	TransformMatrix,
+
+	// Treat this attribute as a Color
+	Color,
+
+	// Treat this attribute as a Quaternion
+	Quaternion,
 };
 
 class POP_AttributeInfo
@@ -996,8 +1247,11 @@ public:
 	POP_BufferUsage		usage = POP_BufferUsage::Attribute;
 	POP_BufferLocation	location = POP_BufferLocation::CPU;
 
+	// If the location is CUDA, then this should be set to the cudaStream_t that will used the buffer
+	cudaStream_t		stream = 0;
+
 private:
-	int32_t				reserved[20] = {};
+	int32_t				reserved[18] = {};
 };
 
 class POP_Buffer : public OP_RefCount
@@ -1009,8 +1263,11 @@ protected:
 public:
 	POP_BufferInfo			info;
 
-	// When this buffer is retrieved from an input, getData() will stall until the GPU->CPU download has completed.
-	// You can use this to have another thread stall waiting for the data to be ready before processing.
+	// When this buffer is retrieved from an input, if if the location i POP_BufferLocation::CPU,
+	// then getData() will stall until the GPU->CPU download has completed.
+	// If the location is CUDA, then you will be immediately be given the CUDA device pointer.
+	//
+	// For CPU data, you can use this to have another thread stall waiting for the data to be ready before processing.
 	// Or you can hold onto the POP_Buffer until a later time (to avoid the stall) and consume the data
 	// on the next cook.
 	virtual void*			getData(void* reserved) = 0;
@@ -1022,11 +1279,25 @@ private:
 class POP_GetBufferInfo
 {
 public:
-	POP_BufferLocation	location = POP_BufferLocation::CPU;
+	// Specifies where you want the data to be located when returned. If the data is not currently
+	// where it is requested, it will be transfered to that location.
+	//
+	// Note that when requesting CUDA memory, it must be done before beginCUDAOperations() is called,
+	// and only inside of a POP.
+	POP_BufferLocation		location = POP_BufferLocation::CPU;
 
-	cudaStream_t		stream = 0;
+	// This should be set to the cudaStream_t that will be used for operations that will use
+	// the buffer.
+	cudaStream_t			stream = 0;
+
+	// You can optionally supply a previously used buffer you own as an candidate for the output buffer.
+	// If this buffer is suitable, the data will be copied into it instead of allocating a new
+	// buffer. You should not use this buffer agani after giving it to this function.
+	// It may get returned by the getBuffer() call.
+	// Currently only used if this is for a CUDA buffer.
+	OP_SmartRef<POP_Buffer>	outputBufferCandidate;
 private:
-	int32_t				reserved[20] = {};
+	int32_t				reserved[18] = {};
 };
 
 // When Point and/or Topology is only known on the GPU, we can't know the actual values on the CPU.
@@ -1160,6 +1431,9 @@ public:
 	// for more information
 	const OP_CustomOPInstance<POP_CPlusPlusBase>* customOP;
 
+	// This can be used to read parameters from this node.
+	const OP_Parameters*	parms = nullptr;
+
 	// Gets the number of attributes in that particular attribute class
 	virtual uint32_t				getNumAttributes(POP_AttributeClass) const = 0;
 	// These calls are fast, so you can safely loop over them multiple times to query attributes.
@@ -1197,7 +1471,7 @@ public:
 
 protected:
 
-	int32_t			reserved[12];
+	int32_t			reserved[10];
 };
 
 class OP_String
@@ -1261,7 +1535,12 @@ public:
 	// for more information
 	const OP_CustomOPInstance<CHOP_CPlusPlusBase>* customOP;
 
-	int32_t			reserved[16];
+	// This can be used to read parameters from this node.
+	const OP_Parameters*	parms = nullptr;
+
+private:
+
+	int32_t			reserved[14];
 };
 
 class OP_ObjectInput
@@ -1270,14 +1549,22 @@ public:
 	const char*		opPath;
 	uint32_t		opId;
 
-	// Use these methods to calculate object transforms
+	// These matrices are in column-vector convention. They are addressed via [r][c],
+	// and the translate is located in [0][3], [1][3] and [2][3].
+	// The memory layout is row-by-row though. Most APIs expect the memory layout
+	// to be vector-by-vector (so column-by-column for a column-vector matrix),
+	// So it may need to be converted for your API.
 	double			worldTransform[4][4];
 	double			localTransform[4][4];
 
 	// The number of times this node has cooked
 	int64_t			totalCooks;
 
-	int32_t			reserved[18];
+	// This can be used to read parameters from this node.
+	const OP_Parameters*	parms = nullptr;
+
+private:
+	int32_t			reserved[16] = {};
 };
 
 // The type of data the attribute holds.
@@ -1815,6 +2102,7 @@ public:
 		type = PrimitiveType::Invalid;
 		pointIndicesOffset = 0;
 		isClosed = true;
+		memset(reserved, 0, sizeof(reserved));
 	}
 
 	// number of vertices of this prim
@@ -1949,7 +2237,11 @@ public:
 	// for more information
 	const OP_CustomOPInstance<SOP_CPlusPlusBase>* customOP;
 
-	int32_t			reserved[95];
+	// This can be used to read parameters from this node.
+	const OP_Parameters*	parms = nullptr;
+
+private:
+	int32_t			reserved[93];
 };
 
 class OP_TimeInfo
@@ -1992,10 +2284,6 @@ public:
 class OP_Inputs
 {
 public:
-	// NOTE: When writting a TOP, none of these functions should
-	// be called inside a beginGLCommands()/endGLCommands() section
-	// as they may require GL themselves to complete execution.
-
 	// Inputs that are wired into the node. Note that since some inputs
 	// may not be connected this number doesn't mean that that the first N
 	// inputs are connected. For example on a 3 input node if the 3rd input
@@ -2065,6 +2353,7 @@ public:
 	virtual bool		getRelativeTransform(const char* from_name, const char* to_name, double matrix[4][4]) const = 0;
 
 	// disable or enable updating of the parameter
+	// using the workflow of `setParameterEnableStates()` callback is encouraged instead of using this function.
 	virtual void		 enablePar(const char* name, bool onoff) const = 0;
 
 	// these are defined by paths.
@@ -2111,8 +2400,16 @@ public:
 	virtual const OP_POPInput*		getInputPOP(int32_t index) const = 0;
 	virtual const OP_POPInput*		getParPOP(const char *name) const = 0;
 
+	// Will take the working color space into account (if enabled), and return the values in that,
+	// using the Parameter Color Space parameter to interpret the values.
+	// That is, the values written in the parameters are treated as what is set in the 'Parameter Color Space',
+	// parameter, and the values you get here will be in the working color space.
+	// Therefore, they will always be returns as one of the spaces in OP_WorkingColorSpace,
+	// which are always linear transfer.
 	virtual bool					getParRGB(const char* name, double &r, double &g, double &b) const = 0;
 	virtual bool					getParRGBA(const char* name, double &r, double &g, double &b, double &a) const = 0;
+
+	virtual const OP_POPInput*		getPOP(const char* path) const = 0;
 };
 
 class OP_InfoCHOPChan
@@ -2153,6 +2450,55 @@ public:
 	int32_t			reserved[10];
 };
 
+// Class for specifying labels for the node input connectors.
+class OP_InputLabel
+{
+public:
+	OP_String*			label;
+
+	int32_t			reserved[10] = {};
+};
+
+// Class for saving and loading arbitrary bytedata into and from the toe file.
+class OP_NodeSaveState
+{
+public:
+	// Save a key, value pair into the toe file.
+	// `data` is assumed to be a bytedata array.
+	// `dataByteSize` is the size in bytes of the bytedata array `data`.
+	// e.g saveEntry("entry1","value1",6);
+	virtual void saveEntry(const char* key, const void* data, int64_t dataByteSize) = 0;
+
+	int32_t	reserved[20] = {};
+};
+
+class OP_NodeLoadState
+{
+public:
+	// Returns the value stored under `key`.
+	// `dataByteSize` outputs the size of the stored bytedata array.
+	virtual const void* loadEntry(const char* key, int64_t* dataByteSize) const = 0;
+
+	// Return number of stored key,value pairs.
+	virtual int getKeyCount() const = 0;
+
+	// Return a key based on an index.
+	// Use the key returned from `getKey()` to get the value via `loadEntry()`.
+	virtual const char* getKey(int n) const = 0;
+
+	int32_t	reserved[20] = {};
+};
+
+// Class for managing the enable state of a parameter
+// used in the `setParameterEnableStates()` callback
+class OP_ParEnableState
+{
+public:
+	virtual void setEnableState(const char* parName, bool enableState, OP_ParmIndexFlags parmIndexFlags = OP_ParmIndexFlagBits::All) = 0;
+
+	int32_t	reserved[20] = {};
+};
+
 class OP_NumericParameter
 {
 public:
@@ -2160,6 +2506,7 @@ public:
 	{
 		name = iname;
 		label = page = nullptr;
+		help = nullptr;
 
 		for (int i = 0; i<4; i++)
 		{
@@ -2173,7 +2520,12 @@ public:
 
 			clampMins[i] = false;
 			clampMaxes[i] = false;
+
+			size = 1;
+
+			section = false;
 		}
+		memset(reserved, 0, sizeof(reserved));
 	}
 
 	// Any char* values passed are copied immediately by the append parameter functions,
@@ -2193,7 +2545,17 @@ public:
 	double		minSliders[4];
 	double		maxSliders[4];
 
-	int32_t		reserved[20];
+	// Set the number of values associated with the parameter. When greater than 1, the parameter will be shown as multiple adjacent fields.
+	// size is supported only for appendFloat(), appendInt(), appendToggle(), appendMomentary(). Will error if used otherwise.
+	int32_t		size;
+
+	// Set the parameter's separator status. When True, a visible separator is drawn between this parameter and the ones preceding it.
+	bool		section;
+
+	// Set the parameter's help text. To see any parameter's help, rollover the parameter while holding the Alt key.
+	const char* help;
+
+	int32_t		reserved[16];
 
 };
 
@@ -2205,6 +2567,10 @@ public:
 		name = iname;
 		label = page = nullptr;
 		defaultValue = nullptr;
+		size = 1;
+		section = false;
+		help = nullptr;
+		memset(reserved, 0, sizeof(reserved));
 	}
 
 	// Any char* values passed are copied immediately by the append parameter functions,
@@ -2218,7 +2584,17 @@ public:
 	// This should be in UTF-8 encoding.
 	const char*	defaultValue;
 
-	int32_t		reserved[20];
+	// Set the number of values associated with the parameter. When greater than 1, the parameter will be shown as multiple adjacent fields.
+	// size is supported only for appendMenu(). Will error if used otherwise.
+	int32_t size;
+
+	// Set the parameter's separator status. When True, a visible separator is drawn between this parameter and the ones preceding it.
+	bool		section;
+
+	// Set the parameter's help text. To see any parameter's help, rollover the parameter while holding the Alt key.
+	const char* help;
+
+	int32_t		reserved[16];
 };
 
 enum class OP_ParAppendResult : int32_t
@@ -2247,7 +2623,6 @@ public:
 
 class OP_ParameterManager
 {
-
 public:
 	// Returns OP_ParAppendResult::Success on success
 	virtual OP_ParAppendResult		appendFloat(const OP_NumericParameter &np, int32_t size = 1) = 0;
@@ -2270,6 +2645,7 @@ public:
 
 	virtual OP_ParAppendResult		appendString(const OP_StringParameter &sp) = 0;
 	virtual OP_ParAppendResult		appendFile(const OP_StringParameter &sp) = 0;
+	// appendFileSave() located further down in the class
 	virtual OP_ParAppendResult		appendFolder(const OP_StringParameter &sp) = 0;
 
 	virtual OP_ParAppendResult		appendDAT(const OP_StringParameter &sp) = 0;
@@ -2278,13 +2654,20 @@ public:
 	virtual OP_ParAppendResult		appendObject(const OP_StringParameter &sp) = 0;
 	// appendSOP() located further down in the class
 
-
+	// Add a menu that will always return a value that is present as one of the entries.
+	// This is different from a StringMenu, which can hold values that arn't one of the entries.
+	// If the entry selected is not longer in the menu's entries, it will default to the first entry.
+	// This can happen for example if the entries in the menu change between versions of the oeprator.
 	// Any char* values passed are copied immediately by the append parameter functions,
 	// and do not need to be retained by the calling function.
 	virtual OP_ParAppendResult		appendMenu(const OP_StringParameter &sp,
 		int32_t nitems, const char **names,
 		const char **labels) = 0;
 
+	// Add a string parameter that has a > dropdown on the right with menu entries.
+	// This allows for a string parameter with some quick auto-fill options.
+	// The parameter can still be set to values that are different from any of the
+	// entries though.
 	// Any char* values passed are copied immediately by the append parameter functions,
 	// and do not need to be retained by the calling function.
 	virtual OP_ParAppendResult		appendStringMenu(const OP_StringParameter &sp,
@@ -2306,12 +2689,26 @@ public:
 	virtual OP_ParAppendResult		appendMomentary(const OP_NumericParameter &np) = 0;
 	virtual OP_ParAppendResult		appendWH(const OP_NumericParameter &np) = 0;
 
-	// The buildDynamicMenu() function will be called in your class instance when required, allowing you to
+	// This has a confusing name, since it actually creates a menu that looks like what appendDynamicMenu() adds.
+	// It does not look like the one appendStringMenu adds.
+	// This is different from appendDynamicMenu() because the value of the menu may not match any of the entries.
+	// This can occur for example if the menu is a device list, and the project is loaded on another machine that
+	// doesn't have the device that thet the project was saved as. In that case the menu entries will show the
+	// devices the new machine has, but the value of the parameter stays as what was saved in the project,
+	// until the users picks a new entry in the dropdown for one of the current entries.
+	//
+	// The buildDynamicMenu() callback function will be called in your class instance when required, allowing you to
 	// fill the menu with custom entries based on other parameters or external state (such as available devices).
 	virtual OP_ParAppendResult		appendDynamicStringMenu(const OP_StringParameter &sp) = 0;
+	// Behaves like the appendMenu() type parameter, but with a dynamic list of entries.
 	virtual OP_ParAppendResult		appendDynamicMenu(const OP_NumericParameter &np) = 0;
 
 	virtual OP_ParAppendResult		appendXYZW(const OP_NumericParameter& np) = 0;
+
+	virtual OP_ParAppendResult		appendFileSave(const OP_StringParameter& sp) = 0;
+
+
+	virtual OP_ParAppendResult		appendPOP(const OP_StringParameter& sp) = 0;
 
 };
 
@@ -2432,6 +2829,12 @@ static_assert(sizeof(OP_InfoDATSize) == 52, "Incorrect Size");
 static_assert(offsetof(OP_InfoDATEntries, values) == 0, "Incorrect Alignment");
 static_assert(sizeof(OP_InfoDATEntries) == 48, "Incorrect Size");
 
+static_assert(sizeof(OP_InputLabel) == 48, "Incorrect Size");
+
+static_assert(sizeof(OP_NodeSaveState) == 88, "Incorrect Size");
+static_assert(sizeof(OP_NodeLoadState) == 88, "Incorrect Size");
+static_assert(sizeof(OP_ParEnableState) == 88, "Incorrect Size");
+
 static_assert(offsetof(OP_NumericParameter, name) == 0, "Incorrect Alignment");
 static_assert(offsetof(OP_NumericParameter, label) == 8, "Incorrect Alignment");
 static_assert(offsetof(OP_NumericParameter, page) == 16, "Incorrect Alignment");
@@ -2463,6 +2866,17 @@ static_assert(offsetof(PY_GetInfo, autoCook) == 0, "Incorrect Alignment");
 static_assert(sizeof(PY_GetInfo) == 204, "Incorrect Size");
 static_assert(sizeof(PY_Context) == 208, "Incorrect Size");
 static_assert(offsetof(PY_Struct, context) == OP_STRUCT_HEADER_ENTRIES * sizeof(int32_t), "Incorrect Alignment");
+
+static_assert(offsetof(POP_BufferInfo, size) == 0, "Incorrect Alignment");
+static_assert(offsetof(POP_BufferInfo, mode) == 8, "Incorrect Alignment");
+static_assert(offsetof(POP_BufferInfo, usage) == 12, "Incorrect Alignment");
+static_assert(offsetof(POP_BufferInfo, location) == 16, "Incorrect Alignment");
+static_assert(offsetof(POP_BufferInfo, stream) == 24, "Incorrect Alignment");
+static_assert(sizeof(POP_BufferInfo) == 104, "Incorrect Size");
+
+static_assert(offsetof(POP_GetBufferInfo, location) == 0, "Incorrect Alignment");
+static_assert(offsetof(POP_GetBufferInfo, stream) == 8, "Incorrect Alignment");
+static_assert(sizeof(POP_GetBufferInfo) == 96, "Incorrect Size");
 
 static_assert(sizeof(OP_TOPDownloadResult) == sizeof(OP_RefCount) + sizeof(OP_TextureDesc) + 12 + 32 * sizeof(int32_t), "Incorrect Size");
 

@@ -204,7 +204,7 @@ public:
 	uint64_t		size = 0;
 	TOP_BufferFlags flags = TOP_BufferFlags::None;
 
-	int32_t		reserved[50];
+	int32_t		reserved[50] = {};
 
 protected:
 
@@ -257,6 +257,8 @@ protected:
 /***** FUNCTION CALL ORDER DURING INITIALIZATION ******/
 /*
 	When the Custom TOP is created, or the C++ TOP creates an instead of this class. Functions will be called in this order
+
+	loadData(const OP_NodeLoadState* loader);
 	setupParameters(OP_ParameterManager* m);
 */
 
@@ -468,20 +470,52 @@ public:
 	}
 
 	// This is called whenever a dynamic menu type custom parameter needs to have it's content's
-	// updated. It may happen often, so this could should be efficient.
+	// updated. It may happen often, so this call should be efficient.
 	virtual void
 	buildDynamicMenu(const OP_Inputs* inputs, OP_BuildDynamicMenuInfo* info, void* reserved1)
 	{
 	}
 
+	// Override this method if you want to save arbitrary bytedata with this operator into the toe file.
+	// `OP_NodeSaveState* saver` has methods like `saveEntry()` that are used to add key, value pairs to be saved.
+	// This is called whenever the project file is saved or the custom operator is unloaded.
+	// Usage example in Samples/CPlusPlus/CHOP sample project.
+	virtual void
+	saveData(OP_NodeSaveState* saver, void* reserved1)
+	{
+	}
+
+	// Override this method if you want to load the bytedata that was saved into the toe file through `saveData()`.
+	// `OP_NodeLoadState* loader` has methods like `getKey()`, `getKeyCount()`, `loadEntry()` that are used to retrieve key, value pairs.
+	// This is called during startup of the project file, or whenever the custom operator is loaded/reloaded.
+	// Usage example in Samples/CPlusPlus/CHOP sample project.
+	virtual void
+	loadData(const OP_NodeLoadState* loader, void* reserved1)
+	{
+	}
+
+	// Override this method if you want to specify a descriptor string when hovering over the input connectors of the node.
+	// `inputLabel->label->setString()` sets the label for the input index.
+	// Usage example in Samples/CPlusPlus/CHOP sample project.
+	// Note that this label is only visible when the dll is loaded as a Custom Operator, not in the CPlusPlus OPs.
+	virtual void
+	inputConnectorLabel(int index, OP_InputLabel* inputLabel, void* reserved1)
+	{
+	}
+
+	// Override this method in order to enable/disable custom parameters by setting their enable states
+	// `parEnableState->setEnableState()` sets the enable state.
+	// this workflow supersedes the usage of `inputs->enablePar()`.
+	// Note that this callback may be called anytime, not just during cooking
+	// Usage example in Samples/CPlusPlus/CHOP sample project.
+	virtual void
+	setParameterEnableStates(const OP_Inputs* inputs, OP_ParEnableState* parEnableState, void* reserved1)
+	{
+	}
 
 	// END PUBLIC INTERFACE
 
 	// Reserved for future features
-	virtual int32_t	reservedFunc6() { return 0; }
-	virtual int32_t	reservedFunc7() { return 0; }
-	virtual int32_t	reservedFunc8() { return 0; }
-	virtual int32_t	reservedFunc9() { return 0; }
 	virtual int32_t	reservedFunc10() { return 0; }
 	virtual int32_t	reservedFunc11() { return 0; }
 	virtual int32_t	reservedFunc12() { return 0; }
