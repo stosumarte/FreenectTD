@@ -227,20 +227,20 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
 // ---------------------------------------------------------------------------
 // Process-wide sensor ownership: only one FreenectTOP instance may open the Kinect.
 // ---------------------------------------------------------------------------
-std::mutex   FreenectTOP::s_ownerMutex;
-FreenectTOP* FreenectTOP::s_owner = nullptr;
+std::mutex   FreenectTOP::sensorOwnerMutex;
+FreenectTOP* FreenectTOP::sensorOwner = nullptr;
 
 bool FreenectTOP::claimSensor() {
-    std::lock_guard<std::mutex> lock(s_ownerMutex);
-    if (s_owner == nullptr) s_owner = this;
-    return s_owner == this;
+    std::lock_guard<std::mutex> lock(sensorOwnerMutex);
+    if (sensorOwner == nullptr) sensorOwner = this;
+    return sensorOwner == this;
 }
 
 void FreenectTOP::releaseSensor() {
     bool wasOwner = false;
     {
-        std::lock_guard<std::mutex> lock(s_ownerMutex);
-        if (s_owner == this) { s_owner = nullptr; wasOwner = true; }
+        std::lock_guard<std::mutex> lock(sensorOwnerMutex);
+        if (sensorOwner == this) { sensorOwner = nullptr; wasOwner = true; }
     }
     if (wasOwner) {
         // Close the device so the next node that becomes active can open it.
@@ -680,29 +680,29 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
 
     // --- Registered color (index 4) and depth-to-color UV map (index 5) ---
     if (streamEnabledRegColor || streamEnabledUV) {
-        const int rw = MyFreenect2Device::DEPTH_WIDTH;
-        const int rh = MyFreenect2Device::DEPTH_HEIGHT;
+        const int regWidth = MyFreenect2Device::DEPTH_WIDTH;
+        const int regHeight = MyFreenect2Device::DEPTH_HEIGHT;
         std::vector<uint8_t> regColor;
         std::vector<float> regUV;
         if (fntdContext && fn2_device->getRegisteredColorFrame(regColor, regUV)) {
             TD::TOP_UploadInfo info;
-            info.textureDesc.width = rw;
-            info.textureDesc.height = rh;
+            info.textureDesc.width = regWidth;
+            info.textureDesc.height = regHeight;
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             if (streamEnabledRegColor) {
-                TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext->createOutputBuffer(rw * rh * 4, TD::TOP_BufferFlags::None, nullptr);
+                TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext->createOutputBuffer(regWidth * regHeight * 4, TD::TOP_BufferFlags::None, nullptr);
                 if (buf) {
-                    std::memcpy(buf->data, regColor.data(), rw * rh * 4);
+                    std::memcpy(buf->data, regColor.data(), regWidth * regHeight * 4);
                     info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
                     info.colorBufferIndex = 4;
                     output->uploadBuffer(&buf, info, nullptr);
                 }
             }
             if (streamEnabledUV) {
-                TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext->createOutputBuffer(rw * rh * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr);
+                TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext->createOutputBuffer(regWidth * regHeight * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr);
                 if (buf) {
-                    std::memcpy(buf->data, regUV.data(), rw * rh * 4 * sizeof(float));
+                    std::memcpy(buf->data, regUV.data(), regWidth * regHeight * 4 * sizeof(float));
                     info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
                     info.colorBufferIndex = 5;
                     output->uploadBuffer(&buf, info, nullptr);
@@ -957,7 +957,7 @@ void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
     std::vector<uint8_t> black(fallbackSize, 0);
 
     // Allocate and initialize each fallback buffer if not already
-    for (int i = 0; i < kNumOutputs; ++i) {
+    for (int i = 0; i < NUM_OUTPUTS; ++i) {
         if (!fallbackBuffers[i]) {
             fallbackBuffers[i] = fntdContext ? fntdContext->createOutputBuffer(
                 fallbackSize,
@@ -976,11 +976,11 @@ void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
     info.textureDesc.texDim = TD::OP_TexDim::e2D;
     info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
 
-    if (targetIndex >= 0 && targetIndex < kNumOutputs) {
+    if (targetIndex >= 0 && targetIndex < NUM_OUTPUTS) {
         info.colorBufferIndex = targetIndex;
         myCurrentOutput->uploadBuffer(&fallbackBuffers[targetIndex], info, nullptr);
     } else {
-        for (int i = 0; i < kNumOutputs; ++i) {
+        for (int i = 0; i < NUM_OUTPUTS; ++i) {
             info.colorBufferIndex = i;
             myCurrentOutput->uploadBuffer(&fallbackBuffers[i], info, nullptr);
         }

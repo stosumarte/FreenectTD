@@ -96,11 +96,11 @@ private:
     void fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void uploadFallbackBuffer(int targetIndex = -1);
     // One active FreenectTOP per process (see claimSensor in FreenectTOP.cpp)
-    static std::mutex   s_ownerMutex;
-    static FreenectTOP* s_owner;
+    static std::mutex   sensorOwnerMutex;
+    static FreenectTOP* sensorOwner;
     bool claimSensor();
     void releaseSensor();
-    static constexpr int kNumOutputs = 6; // 0 RGB, 1 depth, 2 point cloud, 3 IR, 4 registered color, 5 depth->color UV
+    static constexpr int NUM_OUTPUTS = 6; // 0 RGB, 1 depth, 2 point cloud, 3 IR, 4 registered color, 5 depth->color UV
     void uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height);
     
     // Error/warning string handling
@@ -112,7 +112,7 @@ private:
     // Current output pointer
     TD::TOP_Output* myCurrentOutput = nullptr;
 
-    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, kNumOutputs> fallbackBuffers;
+    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, NUM_OUTPUTS> fallbackBuffers;
 
     // V1 background init members
     std::atomic<bool> fn1InitInProgress{false};

@@ -87,10 +87,10 @@ private:
     std::vector<float>      flipDstBuffer;
     std::vector<float>      pcScratch;
     std::vector<int>        colorDepthMap;
-    uint64_t                depthSeq_ = 0;   // incremented for every new depth frame
-    uint64_t                regSeq_ = 0;     // depthSeq_ the cached registration was computed for
-    bool                    regHasBigdepth_ = false;
-    libfreenect2::Freenect2Device::ColorCameraParams colorParams_{};
+    uint64_t                depthSeq = 0;   // incremented for every new depth frame
+    uint64_t                regSeq = 0;     // depthSeq the cached registration was computed for
+    bool                    regHasBigdepth = false;
+    libfreenect2::Freenect2Device::ColorCameraParams colorCameraParams{};
     bool ensureRegistration(bool needBigdepth);
     std::mutex              mutex;
     bool                    hasNewRGB;
