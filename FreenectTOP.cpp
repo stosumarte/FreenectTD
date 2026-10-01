@@ -67,18 +67,34 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
 
     // Small helpers so every parameter is declared the same way
     auto header = [&](const char* name, const char* label, const char* page) {
-        OP_StringParameter h; h.name = name; h.label = label; h.page = page;
-        manager->appendHeader(h);
+        OP_StringParameter headerParam;
+        headerParam.name = name;
+        headerParam.label = label;
+        headerParam.page = page;
+        manager->appendHeader(headerParam);
     };
-    auto toggle = [&](const char* name, const char* label, double def, const char* page) {
-        OP_NumericParameter t; t.name = name; t.label = label; t.page = page; t.defaultValues[0] = def;
-        t.minValues[0] = t.minSliders[0] = 0.0; t.maxValues[0] = t.maxSliders[0] = 1.0;
-        t.clampMins[0] = t.clampMaxes[0] = true;
-        manager->appendToggle(t);
+    auto toggle = [&](const char* name, const char* label, double defaultValue, const char* page) {
+        OP_NumericParameter toggleParam;
+        toggleParam.name = name;
+        toggleParam.label = label;
+        toggleParam.page = page;
+        toggleParam.defaultValues[0] = defaultValue;
+        toggleParam.minValues[0] = 0.0;
+        toggleParam.maxValues[0] = 1.0;
+        toggleParam.minSliders[0] = 0.0;
+        toggleParam.maxSliders[0] = 1.0;
+        toggleParam.clampMins[0] = true;
+        toggleParam.clampMaxes[0] = true;
+        manager->appendToggle(toggleParam);
     };
-    auto menu = [&](const char* name, const char* label, const char* def, int n, const char** names, const char** labels, const char* page) {
-        OP_StringParameter m; m.name = name; m.label = label; m.page = page; m.defaultValue = def;
-        manager->appendMenu(m, n, names, labels);
+    auto menu = [&](const char* name, const char* label, const char* defaultValue, int count,
+                    const char** names, const char** labels, const char* page) {
+        OP_StringParameter menuParam;
+        menuParam.name = name;
+        menuParam.label = label;
+        menuParam.page = page;
+        menuParam.defaultValue = defaultValue;
+        manager->appendMenu(menuParam, count, names, labels);
     };
 
     // =====================================================================
@@ -95,10 +111,18 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         menu("Hardwareversion", "Hardware Version", "Kinect v1", 2, names, labels, page0);
     }
     {
-        OP_NumericParameter t; t.name = "Tilt"; t.label = "Tilt Angle"; t.page = page0;
-        t.defaultValues[0] = 0.0; t.minValues[0] = t.minSliders[0] = -30.0; t.maxValues[0] = t.maxSliders[0] = 30.0;
-        t.clampMins[0] = t.clampMaxes[0] = true;
-        manager->appendFloat(t);
+        OP_NumericParameter tiltAngleParam;
+        tiltAngleParam.name = "Tilt";
+        tiltAngleParam.label = "Tilt Angle";
+        tiltAngleParam.page = page0;
+        tiltAngleParam.defaultValues[0] = 0.0;
+        tiltAngleParam.minValues[0] = -30.0;
+        tiltAngleParam.maxValues[0] = 30.0;
+        tiltAngleParam.minSliders[0] = -30.0;
+        tiltAngleParam.maxSliders[0] = 30.0;
+        tiltAngleParam.clampMins[0] = true;
+        tiltAngleParam.clampMaxes[0] = true;
+        manager->appendFloat(tiltAngleParam);
     }
 
     // --- Streams. The number is the Render Select TOP image index; 0 (RGB) is always on. ---
@@ -124,14 +148,30 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     }
     toggle("Manualdepththresh", "Manual Depth Range", 0.0, page0);
     {
-        OP_NumericParameter t; t.name = "Depththreshmin"; t.label = "Depth Range Min (mm)"; t.page = page0;
-        t.defaultValues[0] = 0.0; t.minValues[0] = t.minSliders[0] = 0.0; t.maxValues[0] = t.maxSliders[0] = 5000.0; t.clampMins[0] = true;
-        manager->appendFloat(t);
+        OP_NumericParameter depthThreshMinParam;
+        depthThreshMinParam.name = "Depththreshmin";
+        depthThreshMinParam.label = "Depth Range Min (mm)";
+        depthThreshMinParam.page = page0;
+        depthThreshMinParam.defaultValues[0] = 0.0;
+        depthThreshMinParam.minValues[0] = 0.0;
+        depthThreshMinParam.maxValues[0] = 5000.0;
+        depthThreshMinParam.minSliders[0] = 0.0;
+        depthThreshMinParam.maxSliders[0] = 5000.0;
+        depthThreshMinParam.clampMins[0] = true;
+        manager->appendFloat(depthThreshMinParam);
     }
     {
-        OP_NumericParameter t; t.name = "Depththreshmax"; t.label = "Depth Range Max (mm)"; t.page = page0;
-        t.defaultValues[0] = 5000.0; t.minValues[0] = t.minSliders[0] = 0.0; t.maxValues[0] = t.maxSliders[0] = 5000.0; t.clampMins[0] = true;
-        manager->appendFloat(t);
+        OP_NumericParameter depthThreshMaxParam;
+        depthThreshMaxParam.name = "Depththreshmax";
+        depthThreshMaxParam.label = "Depth Range Max (mm)";
+        depthThreshMaxParam.page = page0;
+        depthThreshMaxParam.defaultValues[0] = 5000.0;
+        depthThreshMaxParam.minValues[0] = 0.0;
+        depthThreshMaxParam.maxValues[0] = 5000.0;
+        depthThreshMaxParam.minSliders[0] = 0.0;
+        depthThreshMaxParam.maxSliders[0] = 5000.0;
+        depthThreshMaxParam.clampMins[0] = true;
+        manager->appendFloat(depthThreshMaxParam);
     }
     // Point cloud native frame: +Y up, +Z away from the sensor, X follows the mirrored image.
     toggle("Pcflipx", "Point Cloud Flip X", 0.0, page0);
@@ -140,14 +180,26 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // Sentinels for invalid data. Alpha (point cloud) / 0-masking is still the authoritative validity
     // signal; these only decide what value lands in the dead pixels for pipelines that cannot read alpha.
     {
-        OP_NumericParameter t; t.name = "Unknowndepth"; t.label = "Unknown Depth Value (output units)"; t.page = page0;
-        t.defaultValues[0] = 0.0; t.minSliders[0] = -1.0; t.maxSliders[0] = 10000.0;
-        manager->appendFloat(t);
+        OP_NumericParameter unknownDepthParam;
+        unknownDepthParam.name = "Unknowndepth";
+        unknownDepthParam.label = "Unknown Depth Value (output units)";
+        unknownDepthParam.page = page0;
+        unknownDepthParam.defaultValues[0] = 0.0;
+        unknownDepthParam.minSliders[0] = -1.0;
+        unknownDepthParam.maxSliders[0] = 10000.0;
+        manager->appendFloat(unknownDepthParam);
     }
     {
-        OP_NumericParameter t; t.name = "Unknownpoint"; t.label = "Unknown Point Value"; t.page = page0;
-        for (int i = 0; i < 3; ++i) { t.defaultValues[i] = 0.0; t.minSliders[i] = -10.0; t.maxSliders[i] = 100.0; }
-        manager->appendXYZ(t);
+        OP_NumericParameter unknownPointParam;
+        unknownPointParam.name = "Unknownpoint";
+        unknownPointParam.label = "Unknown Point Value";
+        unknownPointParam.page = page0;
+        for (int i = 0; i < 3; ++i) {
+            unknownPointParam.defaultValues[i] = 0.0;
+            unknownPointParam.minSliders[i] = -10.0;
+            unknownPointParam.maxSliders[i] = 100.0;
+        }
+        manager->appendXYZ(unknownPointParam);
     }
 
     // =====================================================================
@@ -190,9 +242,12 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     header("Emptyheader2", " ", page2);
     header("Updateheader", "Visit the following URL to check for updates:", page2);
     {
-        OP_StringParameter u; u.name = "Updateurl"; u.label = "Copy this -> "; u.page = page2;
-        u.defaultValue = "github.com/stosumarte/FreenectTD/releases/latest";
-        manager->appendString(u);
+        OP_StringParameter updateUrlParam;
+        updateUrlParam.name = "Updateurl";
+        updateUrlParam.label = "Copy this -> ";
+        updateUrlParam.page = page2;
+        updateUrlParam.defaultValue = "github.com/stosumarte/FreenectTD/releases/latest";
+        manager->appendString(updateUrlParam);
     }
 }
 
@@ -240,7 +295,10 @@ void FreenectTOP::releaseSensor() {
     bool wasOwner = false;
     {
         std::lock_guard<std::mutex> lock(sensorOwnerMutex);
-        if (sensorOwner == this) { sensorOwner = nullptr; wasOwner = true; }
+        if (sensorOwner == this) {
+            sensorOwner = nullptr;
+            wasOwner = true;
+        }
     }
     if (wasOwner) {
         // Close the device so the next node that becomes active can open it.
@@ -673,7 +731,9 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             info.colorBufferIndex = 2;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             output->uploadBuffer(&pointCloudFrameBuffer, info, nullptr);
-        } else {errorString = "Failed to get point cloud frame from Kinect v2";}
+        } else {
+            errorString = "Failed to get point cloud frame from Kinect v2";
+        }
     } else {
         uploadFallbackBuffer(2);
     }
@@ -789,11 +849,16 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     fn1_tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     
     // Resolution presets ("WxH" menu strings)
-    auto parseRes = [&](const char* parName, int& w, int& h, int defW, int defH) {
-        const char* c = inputs->getParString(parName);
-        int pw = 0, ph = 0;
-        if (c && std::sscanf(c, "%dx%d", &pw, &ph) == 2 && pw > 0 && ph > 0) { w = pw; h = ph; }
-        else { w = defW; h = defH; }
+    auto parseRes = [&](const char* parName, int& width, int& height, int defaultWidth, int defaultHeight) {
+        const char* preset = inputs->getParString(parName);
+        int parsedWidth = 0, parsedHeight = 0;
+        if (preset && std::sscanf(preset, "%dx%d", &parsedWidth, &parsedHeight) == 2 && parsedWidth > 0 && parsedHeight > 0) {
+            width = parsedWidth;
+            height = parsedHeight;
+        } else {
+            width = defaultWidth;
+            height = defaultHeight;
+        }
     };
     parseRes("V1rgbres",   fn1_colorW, fn1_colorH, MyFreenectDevice::WIDTH, MyFreenectDevice::HEIGHT);
     parseRes("V1depthres", fn1_depthW, fn1_depthH, MyFreenectDevice::WIDTH, MyFreenectDevice::HEIGHT);
@@ -923,9 +988,12 @@ void FreenectTOP::uploadDepthFrame(TD::TOP_Output* output, const std::vector<flo
         #pragma omp parallel for if(pixelCount > 100000)
         for (size_t i = 0; i < pixelCount; ++i) {
             const float d = depthMM[i];
-            if (d <= 0.0f) { dst[i] = static_cast<uint16_t>(std::clamp(unknownDepth, 0.0f, 1.0f) * 65535.0f + 0.5f); continue; }
-            const float n = std::clamp((d - depthThreshMin) / denom, 0.0f, 1.0f);
-            dst[i] = static_cast<uint16_t>(n * 65535.0f + 0.5f);
+            if (d <= 0.0f) {
+                dst[i] = static_cast<uint16_t>(std::clamp(unknownDepth, 0.0f, 1.0f) * 65535.0f + 0.5f);
+            } else {
+                const float normalized = std::clamp((d - depthThreshMin) / denom, 0.0f, 1.0f);
+                dst[i] = static_cast<uint16_t>(normalized * 65535.0f + 0.5f);
+            }
         }
     } else {
         float* dst = static_cast<float*>(buf->data);

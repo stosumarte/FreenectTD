@@ -494,7 +494,10 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum 
                     point[2] = signZ * z;
                     point[3] = 1.0f;
                 } else {
-                    point[0] = unknownX; point[1] = unknownY; point[2] = unknownZ; // unknown point value, alpha stays 0
+                    // Unknown point value, alpha stays 0
+                    point[0] = unknownX;
+                    point[1] = unknownY;
+                    point[2] = unknownZ;
                     point[3] = 0.0f;
                 }
             }
@@ -512,7 +515,10 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum 
                     point[2] = signZ * z;
                     point[3] = 1.0f;
                 } else {
-                    point[0] = unknownX; point[1] = unknownY; point[2] = unknownZ; // unknown point value, alpha stays 0
+                    // Unknown point value, alpha stays 0
+                    point[0] = unknownX;
+                    point[1] = unknownY;
+                    point[2] = unknownZ;
                     point[3] = 0.0f;
                 }
             }
