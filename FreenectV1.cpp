@@ -183,7 +183,7 @@ bool MyFreenectDevice::getDepthFrame(std::vector<float>& out, depthFormatEnum ty
     // Nearest-neighbour resample straight from the 16-bit mm buffer, then mask the depth range
     resampleNearest(depthBuffer.data(), srcWidth, srcHeight, 1, out.data(), dstWidth, dstHeight, /*flipX=*/false);
     for (float& depth : out) {
-        if (depth < depthThreshMin || depth > depthThreshMax) {
+        if (!isDepthInRange(depth, depthThreshMin, depthThreshMax)) {
             depth = 0.0f;
         }
     }

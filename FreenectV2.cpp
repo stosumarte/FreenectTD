@@ -399,8 +399,9 @@ bool MyFreenect2Device::getDepthFrame(std::vector<float>& out, depthFormatEnum t
 
     #pragma omp parallel for if(pixelCount > 100000)
     for (size_t i = 0; i < pixelCount; ++i) {
-        const float d = out[i];
-        if (!std::isfinite(d) || d <= depthThreshMin || d >= depthThreshMax) out[i] = 0.0f;
+        if (!isDepthInRange(out[i], depthThreshMin, depthThreshMax)) {
+            out[i] = 0.0f;
+        }
     }
 
     LOG("[FreenectV2.cpp] getDepthFrame(): success, size=" + std::to_string(dstWidth) + "x" + std::to_string(dstHeight));
@@ -453,7 +454,7 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum 
             for (int c = 0; c < srcWidth; ++c) {
                 const float depth = row[c];
                 float* point = dstRow + c * 4;
-                if (std::isfinite(depth) && depth > depthThreshMin && depth < depthThreshMax) {
+                if (isDepthInRange(depth, depthThreshMin, depthThreshMax)) {
                     const float z = depth * 0.001f;
                     point[0] = signX * (c + 0.5f - colorParams.cx) * fxInv * z;
                     point[1] = signY * yNorm * z;
@@ -475,7 +476,7 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum 
                 reg->getPointXYZ(&undistortedFrame, r, c, x, y, z);
                 float* point = points + (static_cast<size_t>(r) * srcWidth + c) * 4;
                 const float zMillimeters = z * 1000.0f;
-                if (std::isfinite(z) && zMillimeters > depthThreshMin && zMillimeters < depthThreshMax) {
+                if (isDepthInRange(zMillimeters, depthThreshMin, depthThreshMax)) {
                     point[0] = signX * x;
                     point[1] = -signY * y;
                     point[2] = signZ * z;

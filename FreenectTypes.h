@@ -8,6 +8,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 
 // How the depth map is generated
@@ -32,6 +33,13 @@ enum class pcSpaceEnum {
     DepthCamera,  // "Raw": 512x424, XYZ (m) relative to the depth/IR camera; aligned with Registered Color / UV outputs
     ColorCamera   // "Registered": 1920x1080, XYZ (m) relative to the color camera, pixel-aligned to the RGB output
 };
+
+// True if a depth value (mm) is a real reading inside the inclusive [min, max] depth range.
+// 0, NaN and infinity are what the sensors report for "no reading".
+inline bool isDepthInRange(float depthMM, float depthThreshMin, float depthThreshMax)
+{
+    return std::isfinite(depthMM) && depthMM > 0.0f && depthMM >= depthThreshMin && depthMM <= depthThreshMax;
+}
 
 // Nearest-neighbour resample with optional horizontal mirror, converting each value
 // from TSrc to TDst. Depth / XYZ data must never be interpolated (bilinear blending
