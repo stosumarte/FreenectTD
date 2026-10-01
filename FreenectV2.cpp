@@ -435,9 +435,9 @@ bool MyFreenect2Device::getDepthFrame(std::vector<float>& out, depthFormatEnum t
 //               applied as a texture with plain (u,v) = pixel position.
 bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum space, float depthThreshMin, float depthThreshMax,
                                            bool flipX, bool flipY, bool flipZ, const float* unknownXYZ) {
-    const float unknownX = unknownXYZ ? unknownXYZ[0] : 0.0f;
-    const float unknownY = unknownXYZ ? unknownXYZ[1] : 0.0f;
-    const float unknownZ = unknownXYZ ? unknownXYZ[2] : 0.0f;
+    const float unknownX = unknownXYZ[0];
+    const float unknownY = unknownXYZ[1];
+    const float unknownZ = unknownXYZ[2];
     LOG("[FreenectV2.cpp] getPointCloudFrame(): called, space=" + std::to_string(static_cast<int>(space)));
     int dstWidth = 0;
     int dstHeight = 0;

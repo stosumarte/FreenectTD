@@ -54,9 +54,9 @@ public:
     bool getIRFrame(std::vector<uint16_t>& out);
     // XYZ (m) + validity in A; space selects depth-camera (512x424) or color-camera (1920x1080) frame
     // flipX/flipY/flipZ negate the corresponding axis (e.g. flipZ makes +Z point toward the viewer, TouchDesigner style)
-    // unknownXYZ (3 floats, may be null = 0,0,0) is written to XYZ of invalid points; their alpha is always 0
+    // unknownXYZ (3 floats) is written to XYZ of invalid points; their alpha is always 0
     bool getPointCloudFrame(std::vector<float>& out, pcSpaceEnum space, float depthThreshMin, float depthThreshMax,
-                            bool flipX = false, bool flipY = false, bool flipZ = false, const float* unknownXYZ = nullptr);
+                            bool flipX, bool flipY, bool flipZ, const float* unknownXYZ);
     // RGB mapped onto the depth grid (512x424 RGBA8) + depth->color UV map (512x424 RGBA32F)
     bool getRegisteredColorFrame(std::vector<uint8_t>& color, std::vector<float>& uv);
     // Setters for buffer injection

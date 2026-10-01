@@ -17,11 +17,14 @@ enum class depthFormatEnum {
 // How depth values are packed into the output texture
 enum class depthOutputEnum {
     Normalized,   // Mono16Fixed, 0..1 across [threshMin, threshMax] (legacy behaviour)
-    Millimeters,  // Mono32Float, value in mm, 0 = invalid / outside threshold
-    Meters        // Mono32Float, value in m,  0 = invalid / outside threshold
+    Millimeters,  // Mono32Float, value in mm
+    Meters        // Mono32Float, value in m
+    // In every mode, invalid / out-of-range pixels get the Unknown Depth Value
+    // (clamped to 0..1 in Normalized)
 };
 
-// Point Cloud Format parameter (v2 only): which camera the point cloud is expressed in
+// Which camera the v2 point cloud is expressed in; derived from the Format menu
+// (Registered -> ColorCamera, Raw / Raw undistorted -> DepthCamera)
 enum class pcSpaceEnum {
     DepthCamera,  // "Raw": 512x424, XYZ (m) relative to the depth/IR camera; aligned with Registered Color / UV outputs
     ColorCamera   // "Registered": 1920x1080, XYZ (m) relative to the color camera, pixel-aligned to the RGB output
