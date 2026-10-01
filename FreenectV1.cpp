@@ -12,7 +12,6 @@
 #include <chrono>
 #include <Accelerate/Accelerate.h>
 
-
 // MyFreenectDevice class constructor
 MyFreenectDevice::MyFreenectDevice
     (freenect_context* ctx, int index,

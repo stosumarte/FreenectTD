@@ -13,7 +13,6 @@
 #include <thread>
 #include <Accelerate/Accelerate.h>
 
-
 // MyFreenect2Device class constructor
 MyFreenect2Device::MyFreenect2Device(
     libfreenect2::Freenect2Device* dev,
@@ -285,10 +284,6 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out) {
     return true;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 // Nearest-neighbour resample with optional horizontal mirror.
 // Depth / XYZ data must never be interpolated (bilinear blending across a depth
 // edge invents points that float between foreground and background), so all
@@ -361,10 +356,6 @@ bool MyFreenect2Device::ensureRegistration(bool needBigdepth) {
     return true;
 }
 
-// ---------------------------------------------------------------------------
-// Depth
-// ---------------------------------------------------------------------------
-
 // Output: float depth in millimetres, 0 = invalid or outside [threshMin, threshMax].
 // Size is depthWidth_ x depthHeight_ (Raw/RawUndistorted) or bigdepthWidth_ x bigdepthHeight_ (Registered).
 bool MyFreenect2Device::getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
@@ -436,10 +427,6 @@ bool MyFreenect2Device::getDepthFrame(std::vector<float>& out, depthFormatEnum t
     LOG("[FreenectV2.cpp] getDepthFrame(): success, size=" + std::to_string(dstWidth) + "x" + std::to_string(dstHeight));
     return true;
 }
-
-// ---------------------------------------------------------------------------
-// Point cloud
-// ---------------------------------------------------------------------------
 
 // Output: RGBA32F, XYZ in metres, A = 1 for valid points and 0 for invalid ones.
 //  DepthCamera: 512x424 grid, XYZ relative to the depth camera (libfreenect2 getPointXYZ).
@@ -532,10 +519,7 @@ bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum 
     return true;
 }
 
-// ---------------------------------------------------------------------------
 // Registered color + depth-to-color UV map (512x424, aligned with the depth-camera point cloud)
-// ---------------------------------------------------------------------------
-
 // color: RGBA8, the RGB image re-sampled onto the depth grid (A = 255 where a color pixel exists, 0 otherwise)
 // uv:    RGBA32F, (u, v, 0, valid) giving where each depth pixel lands in the RGB output, in
 //        TouchDesigner UV convention (0..1, origin bottom-left, already mirrored to match the flipped RGB output).

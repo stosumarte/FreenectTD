@@ -97,9 +97,9 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         manager->appendMenu(menuParam, count, names, labels);
     };
 
-    // =====================================================================
+    // -------------
     // FREENECT PAGE
-    // =====================================================================
+    // -------------
     const char* page0 = "Freenect";
 
     // --- Device ---
@@ -125,7 +125,8 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         manager->appendFloat(tiltAngleParam);
     }
 
-    // --- Streams. The number is the Render Select TOP image index; 0 (RGB) is always on. ---
+    // --- Streams ---
+    // The number is the Render Select TOP image index; 0 (RGB) is always on.
     header("Hdrstreams", "Streams", page0);
     toggle("Enabledepth",      "Depth [1]",              1.0, page0);
     toggle("Enablepointcloud", "Point Cloud [2]",        0.0, page0);
@@ -133,8 +134,9 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     toggle("Enableregcolor",   "Registered Color [4]",   0.0, page0);
     toggle("Enableuv",         "Depth-to-Color UV [5]",  0.0, page0);
 
-    // --- Depth & point cloud. One Format menu drives both: Registered puts depth AND the point
-    //     cloud in the color camera (aligned to RGB); Raw keeps them in the depth camera. ---
+    // --- Depth & point cloud ---
+    // One Format menu drives both: Registered puts depth AND the point cloud in the
+    // color camera (aligned to RGB); Raw keeps them in the depth camera.
     header("Hdrdepth", "Depth & Point Cloud", page0);
     {
         const char* names[]  = {"Raw", "Rawundistorted", "Registered"};
@@ -202,11 +204,12 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         manager->appendXYZ(unknownPointParam);
     }
 
-    // =====================================================================
-    // RESOLUTION PAGE - presets only; every size is a downscale of the native
-    // frame, the field of view never changes. Depth and point cloud use
-    // nearest-neighbour, RGB and IR use vImage high-quality resampling.
-    // =====================================================================
+    // ---------------
+    // RESOLUTION PAGE
+    // ---------------
+    // Presets only; every size is a downscale of the native frame, the field of view
+    // never changes. Depth and point cloud use nearest-neighbour, RGB and IR use vImage
+    // high-quality resampling.
     const char* page1 = "Resolution";
     header("Hdrresnote", "Downscale presets. Field of view never changes.", page1);
 
@@ -228,9 +231,9 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     }
     header("Hdrresnote2", "Registered depth / point cloud follow the RGB resolution.", page1);
 
-    // =====================================================================
+    // ----------
     // ABOUT PAGE
-    // =====================================================================
+    // ----------
     const char* page2 = "About";
     std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " - by @stosumarte";
     header("Version", versionLabel.c_str(), page2);
@@ -279,9 +282,7 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     // Do not initialize device here, will be done in execute
 }
 
-// ---------------------------------------------------------------------------
-// Process-wide sensor ownership: only one FreenectTOP instance may open the Kinect.
-// ---------------------------------------------------------------------------
+// Process-wide sensor ownership: only one FreenectTOP instance may open the Kinect
 std::mutex   FreenectTOP::sensorOwnerMutex;
 FreenectTOP* FreenectTOP::sensorOwner = nullptr;
 

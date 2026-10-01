@@ -12,13 +12,13 @@
 #include <libfreenect2/libfreenect2.hpp>
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/registration.h>
-#include "FreenectTypes.h"
 #include <libfreenect2/packet_pipeline.h>
+
+#include "FreenectTypes.h"
 
 #include <thread>
 #include <mutex>
 #include <atomic>
-
 
 class MyFreenect2Device {
 public:
@@ -91,7 +91,6 @@ private:
     uint64_t                regSeq = 0;     // depthSeq the cached registration was computed for
     bool                    regHasBigdepth = false;
     libfreenect2::Freenect2Device::ColorCameraParams colorCameraParams{};
-    bool ensureRegistration(bool needBigdepth);
     std::mutex              mutex;
     bool                    hasNewRGB;
     bool                    hasNewDepth;
@@ -109,4 +108,5 @@ private:
     std::thread             workerThread;
     std::atomic<bool>       stopWorker{true};
     void runWorker();
+    bool ensureRegistration(bool needBigdepth);
 };
