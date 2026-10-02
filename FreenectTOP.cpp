@@ -194,7 +194,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     {
         OP_NumericParameter unknownDepthParam;
         unknownDepthParam.name = "Unknowndepth";
-        unknownDepthParam.label = "Unknown Depth Value (output units)";
+        unknownDepthParam.label = "Unknown Depth Value";
         unknownDepthParam.page = page0;
         unknownDepthParam.defaultValues[0] = 0.0;
         unknownDepthParam.minSliders[0] = -1.0;
@@ -207,7 +207,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     toggle("Pcflipx", "Point Cloud Flip X", 0.0, page0,
            "Native frame: +Y up, +Z away from the sensor, X follows the mirrored image.", true);
     toggle("Pcflipy", "Point Cloud Flip Y", 0.0, page0);
-    toggle("Pcflipz", "Point Cloud Flip Z (+Z toward viewer)", 0.0, page0);
+    toggle("Pcflipz", "Point Cloud Flip Z", 0.0, page0);
     {
         OP_NumericParameter unknownPointParam;
         unknownPointParam.name = "Unknownpoint";
