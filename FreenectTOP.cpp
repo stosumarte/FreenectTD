@@ -65,15 +65,27 @@ extern "C" {
 void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     using namespace TD;
 
+    // Separator line above the parameter and Alt+hover help text (TouchDesigner 2025 API only)
+    auto layout = [](auto& param, const char* help, bool section) {
+#if TD_VERSION == 2025
+        param.help = help;
+        param.section = section;
+#else
+        (void)param; (void)help; (void)section;
+#endif
+    };
+
     // Small helpers so every parameter is declared the same way
-    auto header = [&](const char* name, const char* label, const char* page) {
+    auto header = [&](const char* name, const char* label, const char* page, bool section = false) {
         OP_StringParameter headerParam;
         headerParam.name = name;
         headerParam.label = label;
         headerParam.page = page;
+        layout(headerParam, nullptr, section);
         manager->appendHeader(headerParam);
     };
-    auto toggle = [&](const char* name, const char* label, double defaultValue, const char* page) {
+    auto toggle = [&](const char* name, const char* label, double defaultValue, const char* page,
+                      const char* help = nullptr, bool section = false) {
         OP_NumericParameter toggleParam;
         toggleParam.name = name;
         toggleParam.label = label;
@@ -85,15 +97,18 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         toggleParam.maxSliders[0] = 1.0;
         toggleParam.clampMins[0] = true;
         toggleParam.clampMaxes[0] = true;
+        layout(toggleParam, help, section);
         manager->appendToggle(toggleParam);
     };
     auto menu = [&](const char* name, const char* label, const char* defaultValue, int count,
-                    const char** names, const char** labels, const char* page) {
+                    const char** names, const char** labels, const char* page,
+                    const char* help = nullptr, bool section = false) {
         OP_StringParameter menuParam;
         menuParam.name = name;
         menuParam.label = label;
         menuParam.page = page;
         menuParam.defaultValue = defaultValue;
+        layout(menuParam, help, section);
         manager->appendMenu(menuParam, count, names, labels);
     };
 
@@ -103,7 +118,6 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     const char* page0 = "Freenect";
 
     // --- Device ---
-    header("Hdrdevice", "Device", page0);
     toggle("Active", "Active", 1.0, page0);
     {
         const char* names[]  = {"Kinect v1", "Kinect v2"};
@@ -126,9 +140,8 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     }
 
     // --- Streams ---
-    // The number is the Render Select TOP image index; 0 (RGB) is always on.
-    header("Hdrstreams", "Streams", page0);
-    toggle("Enabledepth",      "Depth [1]",              1.0, page0);
+    toggle("Enabledepth",      "Depth [1]",              1.0, page0,
+           "Number in brackets = Render Select TOP image index. RGB is always on, at index 0.", true);
     toggle("Enablepointcloud", "Point Cloud [2]",        0.0, page0);
     toggle("Enableir",         "IR [3]",                 0.0, page0);
     toggle("Enableregcolor",   "Registered Color [4]",   0.0, page0);
@@ -137,16 +150,17 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // --- Depth & point cloud ---
     // One Format menu drives both: Registered puts depth AND the point cloud in the
     // color camera (aligned to RGB); Raw keeps them in the depth camera.
-    header("Hdrdepth", "Depth & Point Cloud", page0);
     {
         const char* names[]  = {"Raw", "Rawundistorted", "Registered"};
         const char* labels[] = {"Raw", "Raw undistorted", "Registered (aligned to RGB)"};
-        menu("Depthformat", "Format", "Raw", 3, names, labels, page0);
+        menu("Depthformat", "Format", "Raw", 3, names, labels, page0,
+             "Registered aligns depth and point cloud to the RGB image; Raw keeps them in the depth camera.", true);
     }
     {
         const char* names[]  = {"Normalized", "Millimeters", "Meters"};
         const char* labels[] = {"Normalized 16-bit (0-1 across depth range)", "Millimeters (32-bit float)", "Meters (32-bit float)"};
-        menu("Depthoutput", "Depth Output", "Normalized", 3, names, labels, page0);
+        menu("Depthoutput", "Depth Output", "Normalized", 3, names, labels, page0,
+             "Normalized = 16-bit 0-1 across the depth range. Millimeters / Meters = 32-bit float.");
     }
     toggle("Manualdepththresh", "Manual Depth Range", 0.0, page0);
     {
@@ -175,10 +189,6 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         depthThreshMaxParam.clampMins[0] = true;
         manager->appendFloat(depthThreshMaxParam);
     }
-    // Point cloud native frame: +Y up, +Z away from the sensor, X follows the mirrored image.
-    toggle("Pcflipx", "Point Cloud Flip X", 0.0, page0);
-    toggle("Pcflipy", "Point Cloud Flip Y", 0.0, page0);
-    toggle("Pcflipz", "Point Cloud Flip Z (+Z toward viewer)", 0.0, page0);
     // Sentinels for invalid data. Alpha (point cloud) / 0-masking is still the authoritative validity
     // signal; these only decide what value lands in the dead pixels for pipelines that cannot read alpha.
     {
@@ -189,8 +199,15 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         unknownDepthParam.defaultValues[0] = 0.0;
         unknownDepthParam.minSliders[0] = -1.0;
         unknownDepthParam.maxSliders[0] = 10000.0;
+        layout(unknownDepthParam, "Written to depth pixels with no reading or outside the depth range.", false);
         manager->appendFloat(unknownDepthParam);
     }
+
+    // --- Point cloud ---
+    toggle("Pcflipx", "Point Cloud Flip X", 0.0, page0,
+           "Native frame: +Y up, +Z away from the sensor, X follows the mirrored image.", true);
+    toggle("Pcflipy", "Point Cloud Flip Y", 0.0, page0);
+    toggle("Pcflipz", "Point Cloud Flip Z (+Z toward viewer)", 0.0, page0);
     {
         OP_NumericParameter unknownPointParam;
         unknownPointParam.name = "Unknownpoint";
@@ -201,6 +218,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
             unknownPointParam.minSliders[i] = -10.0;
             unknownPointParam.maxSliders[i] = 100.0;
         }
+        layout(unknownPointParam, "XYZ written to invalid points; their alpha is always 0.", false);
         manager->appendXYZ(unknownPointParam);
     }
 
@@ -238,12 +256,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " - by @stosumarte";
     header("Version", versionLabel.c_str(), page2);
     header("Hdrcontrib", "Point cloud registration, float depth, POP workflow (v1.1): Dean Cheesman", page2);
-    header("Emptyheader1", " ", page2);
-    header("Hdroutputs",  "Outputs via Render Select TOP (Image index):", page2);
-    header("Hdroutputs0", "0 RGB   1 Depth   2 Point Cloud   3 IR", page2);
-    header("Hdroutputs1", "4 Registered Color   5 Depth-to-Color UV", page2);
-    header("Emptyheader2", " ", page2);
-    header("Updateheader", "Visit the following URL to check for updates:", page2);
+    header("Updateheader", "Visit the following URL to check for updates:", page2, /*section=*/true);
     {
         OP_StringParameter updateUrlParam;
         updateUrlParam.name = "Updateurl";
