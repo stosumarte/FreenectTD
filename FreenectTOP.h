@@ -68,6 +68,7 @@ private:
     std::thread                             fn2_eventThread;
     
     std::atomic<bool>                       fn2_deviceAvailable{false};
+    std::atomic<bool>                       fn2_slowUSB{false};
     std::thread                             fn2_enumThread;
     std::atomic<bool>                       fn2_enumThreadRunning;
 

@@ -16,6 +16,7 @@
 #include <future>
 #include <array>
 #include <cmath>
+#include <libusb.h>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
@@ -421,6 +422,36 @@ void FreenectTOP::fn1_cleanupDevice() {
     LOG("[FreenectTOP] fn1_cleanupDevice: end");
 }
 
+// True if a Kinect v2 is attached at less than USB 3 speed; libfreenect2 crashes the process opening it there.
+// ponytail: checks every Kinect v2, not just the one libfreenect2 picks; match by serial if multi-Kinect setups matter
+static bool fn2_onSlowUSB() {
+    libusb_context* usb = nullptr;
+    if (libusb_init(&usb) != 0) {
+        return false;
+    }
+    libusb_device** list = nullptr;
+    ssize_t count = libusb_get_device_list(usb, &list);
+    bool slow = false;
+    for (ssize_t i = 0; i < count; ++i) {
+        libusb_device_descriptor desc;
+        if (libusb_get_device_descriptor(list[i], &desc) != 0) {
+            continue;
+        }
+        // Same IDs libfreenect2 enumerates: Kinect for Windows v2 and Xbox One Kinect
+        bool isKinect2 = desc.idVendor == 0x045E && (desc.idProduct == 0x02C4 || desc.idProduct == 0x02D8);
+        int speed = libusb_get_device_speed(list[i]);
+        // LIBUSB_SPEED_UNKNOWN is let through so an unreported speed doesn't block a working setup
+        if (isKinect2 && speed != LIBUSB_SPEED_UNKNOWN && speed < LIBUSB_SPEED_SUPER) {
+            slow = true;
+        }
+    }
+    if (count >= 0) {
+        libusb_free_device_list(list, 1);
+    }
+    libusb_exit(usb);
+    return slow;
+}
+
 // Start the background enumeration thread for Kinect v2
 void FreenectTOP::fn2_startEnumThread() {
     LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThreadRunning before = " + std::to_string(fn2_enumThreadRunning.load()));
@@ -432,8 +463,13 @@ void FreenectTOP::fn2_startEnumThread() {
     LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThreadRunning after = " + std::to_string(fn2_enumThreadRunning.load()));
     fn2_enumThread = std::thread([this]() {
         while (fn2_enumThreadRunning.load()) {
-            libfreenect2::Freenect2 ctx;
-            fn2_deviceAvailable = (ctx.enumerateDevices() > 0);
+            // libfreenect2 enumeration opens the device, which makes it flicker out of other scans,
+            // so it is skipped while the device sits on USB 2 and can't be used anyway
+            fn2_slowUSB = fn2_onSlowUSB();
+            if (!fn2_slowUSB.load()) {
+                libfreenect2::Freenect2 ctx;
+                fn2_deviceAvailable = (ctx.enumerateDevices() > 0);
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     });
@@ -461,8 +497,14 @@ bool FreenectTOP::fn2_initDevice() {
     LOG("[FreenectTOP] fn2_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
     fn2_startEnumThread();
+    if (fn2_slowUSB.load()) {
+        errorString = "Kinect v2 is on a USB 2 port, connect it to USB 3";
+        LOG("[FreenectTOP] fn2_initDevice: (end) device on USB 2");
+        return false;
+    }
     if (!fn2_deviceAvailable.load()) {
         LOG("[FreenectTOP] fn2_initDevice: no device available");
+        errorString = "No Kinect v2 devices found";
         return false;
     }
     if (fn2_ctx) {
@@ -491,13 +533,10 @@ bool FreenectTOP::fn2_initDevice() {
     LOG(std::string("[FreenectTOP] fn2_initDevice: openDevice returned dev = ") + std::to_string(reinterpret_cast<uintptr_t>(dev)));
     if (!dev) {
         errorString.clear();
-        errorString = "Failed to open Kinect v2 device";
+        errorString = "Failed to open Kinect v2 device, is it on a USB 3 port?";
         delete fn2_device;
-        if (fn2_pipeline) {
-            delete fn2_pipeline;
-            fn2_pipeline = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_pipeline deleted and set to nullptr");
-        }
+        // openDevice owns the pipeline and already deleted it on failure; deleting it again crashes TD
+        fn2_pipeline = nullptr;
         if (fn2_ctx) {
             delete fn2_ctx;
             fn2_ctx = nullptr;
@@ -691,8 +730,7 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         LOG("[FreenectTOP] executeV2: fn2_device is null, attempting initialization");
         fn2_startInitThread();
         if (!fn2_initSuccess.load()) {
-            errorString = "No Kinect v2 devices found";
-            uploadFallbackBuffer();
+            uploadFallbackBuffer(); // fn2_initDevice set errorString
             return;
         }
     }
