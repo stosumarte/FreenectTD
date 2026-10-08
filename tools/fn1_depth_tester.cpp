@@ -265,14 +265,6 @@ int main(int argc, char** argv) {
         }
 
         device = std::make_unique<MyFreenectDevice>(ctx, 0, rgbReady, depthReady);
-        device->setResolutions(
-            MyFreenectDevice::WIDTH,
-            MyFreenectDevice::HEIGHT,
-            MyFreenectDevice::WIDTH,
-            MyFreenectDevice::HEIGHT,
-            MyFreenectDevice::WIDTH,
-            MyFreenectDevice::HEIGHT
-        );
 
         device->startVideo();
         device->startDepth();

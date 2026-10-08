@@ -65,8 +65,9 @@ public:
     // Setters for buffer injection
     void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
     void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
-    // Set resolutions
-    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int pcWidth, int pcHeight, int irWidth, int irHeight);
+    // Size of the RGB output, and of the Registered depth and color-space point cloud that are pixel-aligned with it:
+    // 1920x1080 natively, 1280x720 on Non-Commercial TouchDesigner. Everything else is always native.
+    void setColorSize(int width, int height);
     
     libfreenect2::Freenect2Device* getDevice() { return device; }
     
@@ -96,16 +97,7 @@ private:
     bool                    hasNewRGB;
     bool                    hasNewDepth;
     bool                    hasNewIR;
-    int rgbWidth_ = RGB_WIDTH,
-        rgbHeight_ = RGB_HEIGHT,
-        depthWidth_ = DEPTH_WIDTH,
-        depthHeight_ = DEPTH_HEIGHT,
-        pcWidth_ = DEPTH_WIDTH,
-        pcHeight_ = DEPTH_HEIGHT,
-        irWidth_ = IR_WIDTH,
-        irHeight_ = IR_HEIGHT,
-        bigdepthWidth_ = BIGDEPTH_WIDTH,
-        bigdepthHeight_ = BIGDEPTH_HEIGHT - 2; // Crop to 1080 from 1082
+    int rgbWidth_ = RGB_WIDTH, rgbHeight_ = RGB_HEIGHT;
     std::thread             workerThread;
     std::atomic<bool>       stopWorker{true};
     void runWorker();

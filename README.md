@@ -86,12 +86,12 @@ By default, FreenectTOP outputs RGB data. To get other streams, you must use Ren
 
 Invalid pixels (no reading, or outside the depth range) are written with *Unknown Depth Value* (default 0, in the output units; in Normalized mode it is clamped to 0–1). Invalid points in the point cloud get *Unknown Point Value* for XYZ (default 0,0,0) and always have alpha 0, so alpha remains the reliable validity mask. Use a finite sentinel outside the valid range (e.g. 10000 mm, or a point far behind the camera) rather than NaN/infinity, which spread through blurs and averages.
 
-The Resolution page offers downscale presets per stream. Every size is a nearest-neighbour downscale of the native frame (v1: 640x480, v2: 1920x1080 RGB and 512x424 depth/IR), so no depth values are interpolated across object edges and the field of view never changes. Registered depth and the Registered point cloud follow the RGB resolution.
+Every stream comes out at the sensor's native resolution (v1: 640x480; v2: 1920x1080 RGB, 512x424 depth and IR). Registered depth and the Registered point cloud follow the RGB resolution. With a Non-Commercial license, v2 RGB (and those two) is 1280x720 instead. To scale further, use a Resolution TOP, with *Input Smoothness* set to *Nearest Pixel* for depth and point cloud so no values are blended across object edges.
 
 ### Aligning the point cloud with the RGB image (Kinect v2)
 There are two ways to get a colored point cloud:
 
-* **Format = Registered** – stream 2 becomes a 1920x1080 XYZ map in the color camera's coordinate frame, pixel-aligned with the RGB output (stream 0) and with the *Registered* depth map. Use the pixel position as the texture coordinate to color each point. The point cloud resolution follows the RGB resolution in this mode.
+* **Format = Registered** – stream 2 becomes an XYZ map (1920x1080, or 1280x720 on Non-Commercial) in the color camera's coordinate frame, pixel-aligned with the RGB output (stream 0) and with the *Registered* depth map. Use the pixel position as the texture coordinate to color each point.
 * **Format = Raw** (default) with stream 4 (Registered Color) and/or stream 5 (UV) enabled – stream 2 stays 512x424 in the depth camera frame. Stream 4 gives the color for each point directly, and stream 5 gives the UV of each point in the RGB output, which you can feed to a Remap TOP together with stream 0 to sample color at full resolution.
 
 Note that the two spaces are offset by the physical baseline between the two cameras (roughly 5 cm along X), so do not mix them in one render.

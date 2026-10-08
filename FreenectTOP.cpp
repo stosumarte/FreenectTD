@@ -226,46 +226,19 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         manager->appendXYZ(unknownPointParam);
     }
 
-    // ---------------
-    // RESOLUTION PAGE
-    // ---------------
-    // Presets only; every size is a downscale of the native frame, the field of view
-    // never changes. Depth and point cloud use nearest-neighbour, RGB and IR use vImage
-    // high-quality resampling.
-    const char* page1 = "Resolution";
-    header("Hdrresnote", "Downscale presets. Field of view never changes.", page1);
-
-    header("Kinectv1resolution", "Kinect v1 (native 640x480)", page1);
-    {
-        const char* names[]  = {"640x480", "320x240", "160x120"};
-        menu("V1rgbres",   "RGB Resolution",   "640x480", 3, names, names, page1);
-        menu("V1depthres", "Depth Resolution", "640x480", 3, names, names, page1);
-    }
-
-    header("Kinectv2resolution", "Kinect v2 (native RGB 1920x1080, depth/IR 512x424)", page1);
-    {
-        const char* rgbNames[]   = {"1920x1080", "1280x720", "960x540", "640x360"};
-        const char* depthNames[] = {"512x424", "256x212", "128x106"};
-        menu("V2rgbres",   "RGB Resolution",         "1280x720", 4, rgbNames,   rgbNames,   page1);
-        menu("V2depthres", "Depth Resolution",       "512x424",  3, depthNames, depthNames, page1);
-        menu("V2pcres",    "Point Cloud Resolution", "512x424",  3, depthNames, depthNames, page1);
-        menu("V2irres",    "IR Resolution",          "512x424",  3, depthNames, depthNames, page1);
-    }
-    header("Hdrresnote2", "Registered depth / point cloud follow the RGB resolution.", page1);
-
     // ----------
     // ABOUT PAGE
     // ----------
-    const char* page2 = "About";
+    const char* page1 = "About";
     std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " - by @stosumarte";
-    header("Version", versionLabel.c_str(), page2);
-    header("Hdrcontrib", "Point cloud registration, float depth, POP workflow (v1.1): Dean Cheesman", page2);
-    header("Updateheader", "Visit the following URL to check for updates:", page2, /*section=*/true);
+    header("Version", versionLabel.c_str(), page1);
+    header("Hdrcontrib", "Point cloud registration, float depth, POP workflow (v1.1): Dean Cheesman", page1);
+    header("Updateheader", "Visit the following URL to check for updates:", page1, /*section=*/true);
     {
         OP_StringParameter updateUrlParam;
         updateUrlParam.name = "Updateurl";
         updateUrlParam.label = "Copy this -> ";
-        updateUrlParam.page = page2;
+        updateUrlParam.page = page1;
         updateUrlParam.defaultValue = "github.com/stosumarte/FreenectTD/releases/latest";
         manager->appendString(updateUrlParam);
     }
@@ -713,8 +686,6 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         return;
     }
     
-    fn1_device->setResolutions(fn1_colorW, fn1_colorH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
-    
     // Only touch the motor when the value actually changes: setting tilt every
     // cook stalls the v1 depth stream (see #21).
     if (std::isnan(fn1_lastAppliedTilt) || std::fabs(fn1_tilt - fn1_lastAppliedTilt) > 0.01f) {
@@ -735,7 +706,7 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     fn1_device->setIR(streamEnabledIR);
     
     // Create output buffers
-    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext && !streamEnabledIR ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext && !streamEnabledIR ? fntdContext->createOutputBuffer(MyFreenectDevice::WIDTH * MyFreenectDevice::HEIGHT * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
@@ -743,10 +714,10 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         uploadFallbackBuffer(0);
     } else if (colorFrameBuffer && fn1_device->getColorFrame(colorFrame, colorType)) {
         errorString.clear();
-        std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn1_colorW * fn1_colorH * 4);
+        std::memcpy(colorFrameBuffer->data, colorFrame.data(), MyFreenectDevice::WIDTH * MyFreenectDevice::HEIGHT * 4);
         TD::TOP_UploadInfo info;
-        info.textureDesc.width = fn1_colorW;
-        info.textureDesc.height = fn1_colorH;
+        info.textureDesc.width = MyFreenectDevice::WIDTH;
+        info.textureDesc.height = MyFreenectDevice::HEIGHT;
         info.textureDesc.texDim = TD::OP_TexDim::e2D;
         info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
         info.colorBufferIndex = 0;
@@ -761,7 +732,7 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         std::vector<float> depthFrame; // millimetres, 0 = invalid
         if (fn1_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
             errorString.clear();
-            uploadDepthFrame(output, depthFrame, fn1_depthW, fn1_depthH);
+            uploadDepthFrame(output, depthFrame, MyFreenectDevice::WIDTH, MyFreenectDevice::HEIGHT);
         }
     } else {
         uploadFallbackBuffer(1);
@@ -810,13 +781,13 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         return;
     }
 
-    fn2_device->setResolutions(fn2_colorW, fn2_colorH, fn2_depthW, fn2_depthH, fn2_pcW, fn2_pcH, fn2_irW, fn2_irH);
+    fn2_device->setColorSize(fn2_colorW, fn2_colorH);
     // libfreenect2 clips depth to 4.5 m by default; use the TOP's depth range instead so v2 can see up to ~8 m
     fn2_device->setDepthRange(depthThreshMin, depthThreshMax);
 
     // Create output buffers
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_colorW * fn2_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_irW * fn2_irH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+    TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(MyFreenect2Device::IR_WIDTH * MyFreenect2Device::IR_HEIGHT * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
 
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
@@ -911,10 +882,10 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         std::vector<uint16_t> irFrame;
         if (irFrameBuffer && fn2_device->getIRFrame(irFrame)) {
             errorString.clear();
-            std::memcpy(irFrameBuffer->data, irFrame.data(), fn2_irW * fn2_irH * 2);
+            std::memcpy(irFrameBuffer->data, irFrame.data(), MyFreenect2Device::IR_WIDTH * MyFreenect2Device::IR_HEIGHT * 2);
             TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn2_irW;
-            info.textureDesc.height = fn2_irH;
+            info.textureDesc.width = MyFreenect2Device::IR_WIDTH;
+            info.textureDesc.height = MyFreenect2Device::IR_HEIGHT;
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 3;
@@ -992,40 +963,16 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     fn1_tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     
-    // Resolution presets ("WxH" menu strings)
-    auto parseRes = [&](const char* parName, int& width, int& height, int defaultWidth, int defaultHeight) {
-        const char* preset = inputs->getParString(parName);
-        int parsedWidth = 0, parsedHeight = 0;
-        if (preset && std::sscanf(preset, "%dx%d", &parsedWidth, &parsedHeight) == 2 && parsedWidth > 0 && parsedHeight > 0) {
-            width = parsedWidth;
-            height = parsedHeight;
-        } else {
-            width = defaultWidth;
-            height = defaultHeight;
-        }
-    };
-    parseRes("V1rgbres",   fn1_colorW, fn1_colorH, MyFreenectDevice::WIDTH, MyFreenectDevice::HEIGHT);
-    parseRes("V1depthres", fn1_depthW, fn1_depthH, MyFreenectDevice::WIDTH, MyFreenectDevice::HEIGHT);
-    parseRes("V2rgbres",   fn2_colorW, fn2_colorH, MyFreenect2Device::SCALED_WIDTH, MyFreenect2Device::SCALED_HEIGHT);
-    parseRes("V2depthres", fn2_depthW, fn2_depthH, MyFreenect2Device::DEPTH_WIDTH, MyFreenect2Device::DEPTH_HEIGHT);
-    parseRes("V2pcres",    fn2_pcW,    fn2_pcH,    MyFreenect2Device::DEPTH_WIDTH, MyFreenect2Device::DEPTH_HEIGHT);
-    parseRes("V2irres",    fn2_irW,    fn2_irH,    MyFreenect2Device::IR_WIDTH,    MyFreenect2Device::IR_HEIGHT);
-    // Non-Commercial TouchDesigner is limited to 1280x1280 and doesn't scale a C++ TOP's larger outputs
-    // itself, so cap the only stream that exceeds it (Registered depth and point cloud follow RGB below)
-    fn2_rgbLimited = nonCommercial && (fn2_colorW > 1280 || fn2_colorH > 1280);
-    if (fn2_rgbLimited) {
-        fn2_colorW = MyFreenect2Device::SCALED_WIDTH;
-        fn2_colorH = MyFreenect2Device::SCALED_HEIGHT;
-    }
-    if (devType == "Kinect v2" && depthFormat == depthFormatEnum::Registered) {
-        fn2_depthW = fn2_colorW;
-        fn2_depthH = fn2_colorH;
-    }
-    if (devType == "Kinect v2" && pcSpace == pcSpaceEnum::ColorCamera) {
-        // Color-space point cloud is pixel-aligned with the RGB output
-        fn2_pcW = fn2_colorW;
-        fn2_pcH = fn2_colorH;
-    }
+    // Kinect v2 RGB is native 1920x1080, except on Non-Commercial TouchDesigner: it's limited to 1280x1280
+    // and doesn't scale a C++ TOP's larger outputs itself, so RGB is 1280x720 there. Registered depth and
+    // the color-space point cloud are pixel-aligned with RGB and follow it; every other output is native.
+    fn2_colorW = nonCommercial ? MyFreenect2Device::SCALED_WIDTH : MyFreenect2Device::RGB_WIDTH;
+    fn2_colorH = nonCommercial ? MyFreenect2Device::SCALED_HEIGHT : MyFreenect2Device::RGB_HEIGHT;
+    const bool registered = (depthFormat == depthFormatEnum::Registered);
+    fn2_depthW = registered ? fn2_colorW : MyFreenect2Device::DEPTH_WIDTH;
+    fn2_depthH = registered ? fn2_colorH : MyFreenect2Device::DEPTH_HEIGHT;
+    fn2_pcW = (pcSpace == pcSpaceEnum::ColorCamera) ? fn2_colorW : MyFreenect2Device::DEPTH_WIDTH;
+    fn2_pcH = (pcSpace == pcSpaceEnum::ColorCamera) ? fn2_colorH : MyFreenect2Device::DEPTH_HEIGHT;
     
     // Enable/disable parameters based on device type
     auto dynamicParameterEnable = [&](const char* name, bool v1, bool v2, bool other = true) {
@@ -1036,29 +983,12 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     // Device-specific parameters
     dynamicParameterEnable("Tilt", true, false);
     dynamicParameterEnable("Enablepointcloud", false, true);
-    dynamicParameterEnable("V1rgbres", true, false);
-    dynamicParameterEnable("V2rgbres", false, true);
-    dynamicParameterEnable("V2irres", false, true);
-    dynamicParameterEnable("V2pcres", false, true);
     dynamicParameterEnable("Enableregcolor", false, true);
     dynamicParameterEnable("Enableuv", false, true);
     dynamicParameterEnable("Pcflipx", false, true);
     dynamicParameterEnable("Pcflipy", false, true);
     dynamicParameterEnable("Pcflipz", false, true);
     dynamicParameterEnable("Unknownpoint", false, true);
-    if (devType == "Kinect v2" && pcSpace == pcSpaceEnum::ColorCamera) {
-        inputs->enablePar("V2pcres", false);
-    }
-    
-    
-    // Enable/disable depthResolution based on depthFormat
-    if (depthFormat == depthFormatEnum::Registered) {
-        dynamicParameterEnable("V1depthres", false, false);
-        dynamicParameterEnable("V2depthres", false, false);
-    } else {
-        dynamicParameterEnable("V1depthres", true, false);
-        dynamicParameterEnable("V2depthres", false, true);
-    }
     
     // Enable/disable depthThreshMin/Max based on manualDepthThresh
     if (!manualDepthThresh) {
@@ -1090,7 +1020,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
                devType == "Kinect v1" && format && std::string(format) == "Rawundistorted") {
         // A single menu entry can't be disabled, so say what happens instead
         warningString = "Raw undistorted is Kinect v2 only; Kinect v1 uses Raw";
-    } else if (devType == "Kinect v2" && fn2_rgbLimited) {
+    } else if (devType == "Kinect v2" && nonCommercial) {
         warningString = licenseKnown ? "Non-Commercial license: Kinect v2 RGB is limited to 1280x720"
                                      : "Couldn't detect the TouchDesigner license: Kinect v2 RGB is limited to 1280x720";
     } else {
