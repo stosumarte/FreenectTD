@@ -62,9 +62,11 @@ bool MyFreenectDevice::start() {
 }
 
 // Stop video and depth streams (using libfreenect.hpp API)
+// Runs from the destructor, so it must not throw: stopping fails when a stream is already
+// stopped, e.g. after the Kinect was unplugged.
 void MyFreenectDevice::stop() {
-    stopVideo();
-    stopDepth();
+    try { stopVideo(); } catch (const std::exception&) {}
+    try { stopDepth(); } catch (const std::exception&) {}
 }
 
 // Set RGB, depth and IR resolutions
