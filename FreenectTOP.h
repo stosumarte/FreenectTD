@@ -122,11 +122,12 @@ private:
     void fn1_startInitThread();
 
     // Device init and cleanup run as jobs on a background thread so opening or closing the device
-    // never stalls the cook. Jobs run one after another; the thread is shared by all instances
-    // because only one of them owns the device at a time and a close must finish before the next open.
-    static std::thread      deviceThread;
-    static std::atomic<int> deviceJobsPending; // queued or running jobs; 0 = idle
-    static void runOnDeviceThread(std::function<void()> job);
+    // never stalls the cook. Each instance has its own thread, so deleting a node only waits for its
+    // own jobs. deviceIOMutex makes jobs from all instances take turns, so a close finishes before the next open.
+    std::thread      deviceThread;
+    std::atomic<int> deviceJobsPending{0}; // queued or running jobs; 0 = idle
+    static std::mutex deviceIOMutex;
+    void runOnDeviceThread(std::function<void()> job);
     std::string initError; // written by init jobs, read by the cook thread only while the device thread is idle
     
     // Parameters variables

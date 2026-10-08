@@ -320,18 +320,20 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
 std::mutex   FreenectTOP::deviceOwnerMutex;
 FreenectTOP* FreenectTOP::deviceOwner = nullptr;
 
-std::thread      FreenectTOP::deviceThread;
-std::atomic<int> FreenectTOP::deviceJobsPending{0};
+std::mutex FreenectTOP::deviceIOMutex;
 
-// Queue a job behind whatever the device thread is doing; each job's thread joins the previous one first.
-// Only called from the cook thread and destructors (TD's main thread), so `deviceThread` itself needs no lock.
+// Queue a job behind whatever this instance's device thread is doing; each job's thread joins the previous one first.
+// Only called from the cook thread and the destructor (TD's main thread), so `deviceThread` itself needs no lock.
 void FreenectTOP::runOnDeviceThread(std::function<void()> job) {
     ++deviceJobsPending;
-    deviceThread = std::thread([prev = std::move(deviceThread), job = std::move(job)]() mutable {
+    deviceThread = std::thread([this, prev = std::move(deviceThread), job = std::move(job)]() mutable {
         if (prev.joinable()) {
             prev.join();
         }
-        job();
+        {
+            std::lock_guard<std::mutex> lock(deviceIOMutex);
+            job();
+        }
         --deviceJobsPending;
     });
 }
@@ -362,9 +364,7 @@ void FreenectTOP::releaseDevice() {
 // Destructor for FreenectTOP
 FreenectTOP::~FreenectTOP() {
     LOG("[FreenectTOP] Destructor called, cleaning up devices");
-    fn2_cleanupDevice();
-    fn1_cleanupDevice();
-    releaseDevice();
+    releaseDevice(); // closes the device if this instance owns it
     if (deviceThread.joinable()) {
         deviceThread.join();
     }
