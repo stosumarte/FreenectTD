@@ -1020,6 +1020,10 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         errorString.clear();
         releaseDevice(); // let another FreenectTOP take the device
         return;
+    } else if (const char* format = inputs->getParString("Depthformat");
+               devType == "Kinect v1" && format && std::string(format) == "Rawundistorted") {
+        // A single menu entry can't be disabled, so say what happens instead
+        warningString = "Raw undistorted is Kinect v2 only; Kinect v1 uses Raw";
     } else {
         warningString.clear();
     }
