@@ -11,7 +11,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 ### Requirements
 * Apple Silicon Mac
 * macOS 12.4+ (Monterey)
-* TouchDesigner 2025+ (any license)
+* TouchDesigner 2025.33230+ (any license; the plugin is built against this SDK version)
 * Kinect V1 / Kinect V2
 
 ### Supported features
