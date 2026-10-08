@@ -104,6 +104,9 @@ private:
     
     // Error/warning string handling
     std::string errorString;
+    bool nonCommercial = true;   // TouchDesigner license, read each time the TOP becomes active
+    bool wasActive = false;      // Active on the previous cook
+    bool licenseKnown = false;   // false if it couldn't be read; nonCommercial is then assumed
     std::string warningString;
     void getErrorString(TD::OP_String* error, void* reserved1) override;
     void getWarningString(TD::OP_String* warning, void* reserved1) override;
@@ -127,17 +130,14 @@ private:
     std::string initError; // written by init jobs, read by the cook thread only while the device thread is idle
     
     // Parameters variables
-    int fn1_colorW, fn1_colorH;
-    int fn1_depthW, fn1_depthH;
-    int fn1_irW, fn1_irH;
     float fn1_tilt = 0.0f;
     float fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     std::chrono::steady_clock::time_point fn1_lastDepthTime; // last cook a depth frame had arrived
     
-    int fn2_colorW, fn2_colorH;
-    int fn2_depthW, fn2_depthH;
-    int fn2_irW, fn2_irH;
-    int fn2_pcW, fn2_pcH;
+    // Output sizes, set each cook (see execute): RGB depends on the license, depth and point cloud on Format
+    int fn2_colorW = 0, fn2_colorH = 0;
+    int fn2_depthW = 0, fn2_depthH = 0;
+    int fn2_pcW = 0, fn2_pcH = 0;
     static constexpr uint64_t NO_POINT_CLOUD = std::numeric_limits<uint64_t>::max();
     uint64_t fn2_lastPointCloudSeq = NO_POINT_CLOUD; // depthSeq of the last uploaded point cloud
     

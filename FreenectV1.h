@@ -41,7 +41,6 @@ public:
     void applyStreamModes();
     bool start();
     void stop();
-    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight);
 private:
     std::atomic<bool>&    rgbReady;
     std::atomic<bool>&    depthReady;
@@ -55,10 +54,4 @@ private:
     std::atomic<bool>     wantIR{false};
     std::atomic<freenect_depth_format> wantDepthFormat{FREENECT_DEPTH_MM};
     bool                  streamingIR = false; // event thread only
-    int rgbWidth_ = WIDTH;
-    int rgbHeight_ = HEIGHT;
-    int depthWidth_ = WIDTH;
-    int depthHeight_ = HEIGHT;
-    int irWidth_ = WIDTH;
-    int irHeight_ = HEIGHT;
 };

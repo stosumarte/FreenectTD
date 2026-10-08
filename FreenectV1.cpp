@@ -82,16 +82,6 @@ void MyFreenectDevice::stop() {
     try { stopDepth(); } catch (const std::exception&) {}
 }
 
-// Set RGB, depth and IR resolutions
-void MyFreenectDevice::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight) {
-    rgbWidth_ = rgbWidth;
-    rgbHeight_ = rgbHeight;
-    depthWidth_ = depthWidth;
-    depthHeight_ = depthHeight;
-    irWidth_ = irWidth;
-    irHeight_ = irHeight;
-}
-
 // Request RGB or IR on the video stream
 void MyFreenectDevice::setIR(bool ir) {
     wantIR = ir;
@@ -147,66 +137,26 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
     return true;
 }
 
-// Get color frame
+// Get color frame (RGBA, 640x480)
 bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType type) {
-    const int srcWidth = WIDTH, srcHeight = HEIGHT;
-    const int dstWidth = rgbWidth_, dstHeight = rgbHeight_;
-    
-    /*switch (type) {
-        case fn1_colorType::RGB:
-            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_RGB);
-            break;
-        case fn1_colorType::IR:
-            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_IR_10BIT);
-            break;
-        default:
-            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_RGB);
-            break;
-    }*/
-
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewRGB) return false;
 
-    const size_t dstPixelCount = static_cast<size_t>(dstWidth) * dstHeight;
-    out.resize(dstPixelCount * 4);
-
-    // Source buffer (RGB888)
+    out.resize(static_cast<size_t>(WIDTH) * HEIGHT * 4);
     vImage_Buffer src = {
         .data = rgbBuffer.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * 3)
+        .height = (vImagePixelCount)HEIGHT,
+        .width = (vImagePixelCount)WIDTH,
+        .rowBytes = static_cast<size_t>(WIDTH * 3)
     };
-
-    // Temporary ARGB buffer (same size as source)
-    std::vector<uint8_t> tmpARGB(srcWidth * srcHeight * 4);
-    vImage_Buffer tmpARGBbuf = {
-        .data = tmpARGB.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * 4)
-    };
-
-    // Destination RGBA buffer (scaled)
     vImage_Buffer dst = {
         .data = out.data(),
-        .height = (vImagePixelCount)dstHeight,
-        .width = (vImagePixelCount)dstWidth,
-        .rowBytes = static_cast<size_t>(dstWidth * 4)
+        .height = (vImagePixelCount)HEIGHT,
+        .width = (vImagePixelCount)WIDTH,
+        .rowBytes = static_cast<size_t>(WIDTH * 4)
     };
-
-    // Convert RGB → ARGB
-    vImageConvert_RGB888toARGB8888(&src, nullptr, 255, &tmpARGBbuf, false, kvImageNoFlags);
-
-    // Scale ARGB
-    if (dstWidth != srcWidth || dstHeight != srcHeight) {
-        vImageScale_ARGB8888(&tmpARGBbuf, &dst, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
-    } else {
-        // Same size, copy directly
-        std::memcpy(out.data(), tmpARGB.data(), tmpARGB.size());
-    }
-
-    // Convert ARGB → RGBA in place (safe, same 4 bytes per pixel)
+    // RGB -> ARGB, then ARGB -> RGBA in place
+    vImageConvert_RGB888toARGB8888(&src, nullptr, 255, &dst, false, kvImageNoFlags);
     vImagePermuteChannels_ARGB8888(&dst, &dst, (uint8_t[]){1, 2, 3, 0}, kvImageNoFlags);
 
     hasNewRGB = false;
@@ -215,21 +165,14 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType ty
 
 // Get depth frame
 bool MyFreenectDevice::getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
-    const int srcWidth = WIDTH, srcHeight = HEIGHT;
-    const int dstWidth = depthWidth_, dstHeight = depthHeight_;
-
     // Both Raw and RawUndistorted use FREENECT_DEPTH_MM for v1
     wantDepthFormat = (type == depthFormatEnum::Registered) ? FREENECT_DEPTH_REGISTERED : FREENECT_DEPTH_MM;
 
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
-    if (dstWidth <= 0 || dstHeight <= 0) return false;
 
-    const size_t dstPixelCount = static_cast<size_t>(dstWidth) * dstHeight;
-    out.resize(dstPixelCount);
-
-    // Nearest-neighbour resample straight from the 16-bit mm buffer, then mask the depth range
-    resampleNearest(depthBuffer.data(), srcWidth, srcHeight, 1, out.data(), dstWidth, dstHeight, /*flipX=*/false);
+    // 16-bit mm to float, then mask the depth range
+    out.assign(depthBuffer.begin(), depthBuffer.end());
     for (float& depth : out) {
         if (!isDepthInRange(depth, depthThreshMin, depthThreshMax)) {
             depth = 0.0f;
