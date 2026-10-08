@@ -426,6 +426,7 @@ bool FreenectTOP::fn1_initDevice() {
 void FreenectTOP::fn1_cleanupDevice() {
     fn1_initSuccess = false;
     fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
+    fn1_lastDepthTime = {};
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] fn1_cleanupDevice: start");
         fn1_runEvents = false;
@@ -648,6 +649,18 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             LOG("[FreenectTOP] executeV1: device not ready, queueing init");
             fn1_startInitThread();
         }
+        uploadFallbackBuffer();
+        return;
+    }
+    
+    // An unplugged v1 just stops sending frames, so treat 2 s without depth as a disconnect.
+    // The depth stream always runs, even when its output is off.
+    const auto now = std::chrono::steady_clock::now();
+    if (fn1_depthReady.exchange(false) || fn1_lastDepthTime == std::chrono::steady_clock::time_point{}) {
+        fn1_lastDepthTime = now;
+    } else if (now - fn1_lastDepthTime > std::chrono::seconds(2)) {
+        LOG("[FreenectTOP] executeV1: no depth frames for 2 s, closing the device");
+        fn1_cleanupDevice();
         uploadFallbackBuffer();
         return;
     }

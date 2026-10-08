@@ -30,6 +30,7 @@
 #include <mutex>
 #include <limits>
 #include <functional>
+#include <chrono>
 
 #include "FreenectCommon.h"
 #include "FreenectV1.h"
@@ -131,6 +132,7 @@ private:
     int fn1_irW, fn1_irH;
     float fn1_tilt = 0.0f;
     float fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
+    std::chrono::steady_clock::time_point fn1_lastDepthTime; // last cook a depth frame had arrived
     
     int fn2_colorW, fn2_colorH;
     int fn2_depthW, fn2_depthH;
