@@ -20,7 +20,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 | RGB streaming                                 | ✅         | ✅         |
 | Depth map streaming                           | ✅         | ✅         |
 | Point cloud map streaming                     | ❌         | ✅         |
-| IR streaming                                  | TBA       | ✅         |
+| IR streaming                                  | ✅         | ✅         |
 | Tilt control                                  | ✅         | ❌         |
 | Depth undistortion (Depth Format menu)        | ❌         | ✅         |
 | Depth registration (align depth map to color) | ✅         | ✅         |
@@ -69,7 +69,7 @@ By default, FreenectTOP outputs RGB data. To get other streams, you must use Ren
 | 0 | RGB | RGBA8 | |
 | 1 | Depth | Mono16 or Mono32F | See *Depth Output* below |
 | 2 | Point cloud (v2) | RGBA32F | XYZ in meters, A = 1 for valid points, 0 for invalid |
-| 3 | IR (v2) | Mono16 | |
+| 3 | IR | Mono16 | v1: 640x480, replaces RGB (index 0 goes blank) while on, since both share one stream |
 | 4 | Registered color (v2) | RGBA8, 512x424 | RGB image resampled onto the depth grid, A = 0 where no color pixel exists |
 | 5 | Depth→color UV map (v2) | RGBA32F, 512x424 | (u, v, 0, valid) in TouchDesigner UV space, pointing into the RGB output. Lets you sample full-resolution RGB per depth pixel (Remap TOP / GLSL) instead of the 512x424 pre-sampled stream 4 |
 

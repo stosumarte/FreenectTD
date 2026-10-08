@@ -82,7 +82,7 @@ private:
     void fn2_stopEnumThread();
 
     // Device init/cleanup methods
-    bool fn1_initDevice();
+    bool fn1_initDevice(bool ir);
     void fn1_cleanupDevice();
     bool fn2_initDevice();
     void fn2_cleanupDevice();
