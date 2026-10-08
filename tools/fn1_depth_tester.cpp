@@ -308,7 +308,9 @@ int main(int argc, char** argv) {
                     gotFrame = true;
                 }
             } else {
-                if (device->getDepthFrame(frame, currentFormat, options.thresholdMin, options.thresholdMax)) {
+                std::vector<float> depthMm; // getDepthFrame returns millimetres, 0 = invalid
+                if (device->getDepthFrame(depthMm, currentFormat, options.thresholdMin, options.thresholdMax)) {
+                    frame.assign(depthMm.begin(), depthMm.end());
                     gotFrame = true;
                 }
             }

@@ -8,9 +8,10 @@
 #pragma once
 
 #include "logger.h"
-#include "FreenectCommon.h"
 
 #include <libfreenect/libfreenect.hpp>
+
+#include "FreenectCommon.h"
 
 enum class fn1_colorType {
     RGB,
@@ -30,7 +31,8 @@ public:
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<uint16_t>& out);
     bool getColorFrame(std::vector<uint8_t>& out, fn1_colorType type);
-    bool getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax);
+    // Depth in millimetres (float), 0 = invalid / outside threshold
+    bool getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax);
     bool start();
     void stop();
     void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight);
@@ -48,6 +50,4 @@ private:
     int depthHeight_ = HEIGHT;
     int irWidth_ = WIDTH;
     int irHeight_ = HEIGHT;
-    uint64_t              depthFrameCounter_ = 0;
-    depthFormatEnum       lastRequestedDepthFormat_ = depthFormatEnum::Raw;
 };

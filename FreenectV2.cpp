@@ -7,10 +7,12 @@
 
 #include "FreenectV2.h"
 #include <cstring>
+#include <cmath>
 #include <algorithm>
 #include <iostream>
 #include <thread>
 #include <Accelerate/Accelerate.h>
+#include <dispatch/dispatch.h>
 
 // MyFreenect2Device class constructor
 MyFreenect2Device::MyFreenect2Device(
@@ -113,6 +115,12 @@ void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWid
         " IR: " + std::to_string(irWidth_) + "x" + std::to_string(irHeight_));*/
 }
 
+// Sequence number of the latest depth frame; changes whenever a new depth frame arrives
+uint64_t MyFreenect2Device::getDepthSeq() {
+    std::lock_guard<std::mutex> lock(mutex);
+    return depthSeq;
+}
+
 // Process incoming frames
 void MyFreenect2Device::processFrames() {
     if (!listener) {
@@ -144,6 +152,7 @@ void MyFreenect2Device::processFrames() {
         if (depth && depth->data && depth->width == DEPTH_WIDTH && depth->height == DEPTH_HEIGHT) {
             const float* src = reinterpret_cast<const float*>(depth->data);
             std::copy(src, src + DEPTH_WIDTH * DEPTH_HEIGHT, depthBuffer.begin());
+            ++depthSeq;
             hasNewDepth = true;
             depthReady = true;
             LOG("[FreenectV2.cpp] processFrames(): Depth frame copied");
@@ -282,11 +291,62 @@ bool MyFreenect2Device::getColorFrame(std::vector<uint8_t>& out) {
     return true;
 }
 
-bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
+// Run libfreenect2 registration once per depth frame and cache the results
+// (undistortedFrame, registeredFrame, colorDepthMap and optionally bigdepthFrame)
+// so that depth, point cloud and registered color outputs share one apply() call.
+bool MyFreenect2Device::ensureRegistration(bool needBigdepth) {
+    libfreenect2::Freenect2Device* localDevice = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (!device) {
+            LOG("[FreenectV2.cpp] ensureRegistration(): device is null");
+            return false;
+        }
+        if (depthSeq == regSeq && (regHasBigdepth || !needBigdepth) && depthSeq != 0) {
+            return true; // already registered this depth frame
+        }
+        localDevice = device;
+        if (rgbBuffer.size() != static_cast<size_t>(RGB_WIDTH * RGB_HEIGHT * 4) ||
+            depthBuffer.size() != static_cast<size_t>(DEPTH_WIDTH * DEPTH_HEIGHT)) {
+            LOG("[FreenectV2.cpp] ensureRegistration(): invalid buffers");
+            return false;
+        }
+        // rgbFrame / depthFrame are only touched from the cook thread, so copying
+        // straight into them under the lock avoids an extra 8 MB copy per frame.
+        std::memcpy(rgbFrame.data, rgbBuffer.data(), RGB_WIDTH * RGB_HEIGHT * 4);
+        std::memcpy(depthFrame.data, depthBuffer.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
+        regSeq = depthSeq;
+    }
+
+    if (!reg) {
+        const auto& irParams = localDevice->getIrCameraParams();
+        const auto& colorParams = localDevice->getColorCameraParams();
+        LOG("[FreenectV2.cpp] ensureRegistration(): IR params fx=" + std::to_string(irParams.fx) + " fy=" + std::to_string(irParams.fy) + " cx=" + std::to_string(irParams.cx) + " cy=" + std::to_string(irParams.cy));
+        LOG("[FreenectV2.cpp] ensureRegistration(): Color params fx=" + std::to_string(colorParams.fx) + " fy=" + std::to_string(colorParams.fy) + " cx=" + std::to_string(colorParams.cx) + " cy=" + std::to_string(colorParams.cy));
+        colorCameraParams = colorParams;
+        reg = std::make_unique<libfreenect2::Registration>(irParams, colorParams);
+        if (!reg) {
+            LOG("[FreenectV2.cpp] ensureRegistration(): failed to create Registration");
+            return false;
+        }
+    }
+
+    if (colorDepthMap.size() != static_cast<size_t>(DEPTH_WIDTH * DEPTH_HEIGHT))
+        colorDepthMap.assign(DEPTH_WIDTH * DEPTH_HEIGHT, -1);
+
+    reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame,
+               /*enable_filter=*/true,
+               needBigdepth ? &bigdepthFrame : nullptr,
+               colorDepthMap.data());
+    regHasBigdepth = needBigdepth;
+    return true;
+}
+
+// Output: float depth in millimetres, 0 = invalid or outside [threshMin, threshMax].
+// Size is depthWidth_ x depthHeight_ (Raw/RawUndistorted) or bigdepthWidth_ x bigdepthHeight_ (Registered).
+bool MyFreenect2Device::getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
     LOG("[FreenectV2.cpp] getDepthFrame(): called with type=" + std::to_string(static_cast<int>(type)));
     std::vector<float> localDepth;
-    std::vector<uint8_t> localRGB;
-    libfreenect2::Freenect2Device* localDevice = nullptr;
     int dstWidth = 0;
     int dstHeight = 0;
     {
@@ -299,31 +359,12 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnu
             LOG("[FreenectV2.cpp] getDepthFrame(): device is null");
             return false;
         }
-        localDevice = device;
-        localDepth = depthBuffer;
         hasNewDepth = false;
-        if (type == depthFormatEnum::Registered) {
-            localRGB = rgbBuffer;
+        if (type == depthFormatEnum::Raw) {
+            localDepth = depthBuffer;
         }
         dstWidth = (type == depthFormatEnum::Registered) ? bigdepthWidth_ : depthWidth_;
         dstHeight = (type == depthFormatEnum::Registered) ? bigdepthHeight_ : depthHeight_;
-    }
-
-    if (!localDevice || localDepth.size() != static_cast<size_t>(DEPTH_WIDTH * DEPTH_HEIGHT)) {
-        LOG("[FreenectV2.cpp] getDepthFrame(): invalid local buffers");
-        return false;
-    }
-
-    if (!reg) {
-        LOG("[FreenectV2.cpp] getDepthFrame(): creating Registration object");
-        const auto& irParams = localDevice->getIrCameraParams();
-        const auto& colorParams = localDevice->getColorCameraParams();
-        reg = std::make_unique<libfreenect2::Registration>(irParams, colorParams);
-        if (!reg) {
-            LOG("[FreenectV2.cpp] getDepthFrame(): Failed to create Registration object");
-            return false;
-        }
-        LOG("[FreenectV2.cpp] getDepthFrame(): Registration object created successfully");
     }
 
     const float* srcData = nullptr;
@@ -331,60 +372,25 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnu
 
     switch (type) {
         case depthFormatEnum::Raw: {
+            if (localDepth.size() != static_cast<size_t>(DEPTH_WIDTH * DEPTH_HEIGHT)) return false;
             srcData = localDepth.data();
             srcWidth = DEPTH_WIDTH;
             srcHeight = DEPTH_HEIGHT;
             break;
         }
         case depthFormatEnum::RawUndistorted: {
-            std::memcpy(depthFrame.data, localDepth.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
-            reg->undistortDepth(&depthFrame, &undistortedFrame);
-            srcData = reinterpret_cast<float*>(undistortedFrame.data);
+            if (!ensureRegistration(false)) return false;
+            srcData = reinterpret_cast<const float*>(undistortedFrame.data);
             srcWidth = DEPTH_WIDTH;
             srcHeight = DEPTH_HEIGHT;
             break;
         }
         case depthFormatEnum::Registered: {
-            if (localRGB.size() != static_cast<size_t>(RGB_WIDTH * RGB_HEIGHT * 4)) {
-                LOG("[FreenectV2.cpp] getDepthFrame(): RGB buffer missing for registered depth");
-                return false;
-            }
-            std::memcpy(rgbFrame.data, localRGB.data(), RGB_WIDTH * RGB_HEIGHT * 4);
-            std::memcpy(depthFrame.data, localDepth.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
-            reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame, true, &bigdepthFrame);
-
-            const float* bigDepthData = reinterpret_cast<float*>(bigdepthFrame.data);
-            const int croppedH = BIGDEPTH_HEIGHT - 2;
-
-            if (registeredCroppedBuffer.size() != static_cast<size_t>(BIGDEPTH_WIDTH * croppedH))
-                registeredCroppedBuffer.resize(BIGDEPTH_WIDTH * croppedH);
-
-            for (int y = 0; y < croppedH; ++y) {
-                const float* srcRow = bigDepthData + (y + 1) * BIGDEPTH_WIDTH;
-                float* dstRow = registeredCroppedBuffer.data() + y * BIGDEPTH_WIDTH;
-                std::memcpy(dstRow, srcRow, BIGDEPTH_WIDTH * sizeof(float));
-            }
-
-            int validPixels = 0;
-            for (float& v : registeredCroppedBuffer) {
-                if (!std::isfinite(v)) v = 0.f;
-                if (v > 100.0f && v < 4500.0f) validPixels++;
-            }
-            int totalPixels = BIGDEPTH_WIDTH * croppedH;
-            int requiredValidPixels = totalPixels / 10;
-            lastRegisteredDepthValid = (validPixels >= requiredValidPixels);
-            if (!lastRegisteredDepthValid) {
-                LOG("[FreenectV2.cpp] Not enough valid pixels in registered depth: " + std::to_string(validPixels) + "/" + std::to_string(totalPixels));
-                return false;
-            }
-            static int frameCounter = 0;
-            frameCounter++;
-            if (frameCounter % 30 == 0) {
-                LOG("[FreenectV2.cpp] Frame " + std::to_string(frameCounter) + ": Valid pixels: " + std::to_string(validPixels) + "/" + std::to_string(totalPixels));
-            }
-            srcData = registeredCroppedBuffer.data();
+            if (!ensureRegistration(true)) return false;
+            // bigdepth is 1920x1082 with one padding row on top and bottom
+            srcData = reinterpret_cast<const float*>(bigdepthFrame.data) + BIGDEPTH_WIDTH;
             srcWidth = BIGDEPTH_WIDTH;
-            srcHeight = croppedH;
+            srcHeight = BIGDEPTH_HEIGHT - 2;
             break;
         }
     }
@@ -394,48 +400,14 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnu
         return false;
     }
 
-    std::vector<float> flipped(srcWidth * srcHeight);
-    vImage_Buffer srcBuf = {
-        .data = const_cast<float*>(srcData),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * sizeof(float))
-    };
-    vImage_Buffer flipBuf = {
-        .data = flipped.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * sizeof(float))
-    };
-    vImageHorizontalReflect_PlanarF(&srcBuf, &flipBuf, kvImageDoNotTile);
-
-    std::vector<float> scaled(static_cast<size_t>(dstWidth) * dstHeight);
-    vImage_Buffer dstBuf = {
-        .data = scaled.data(),
-        .height = (vImagePixelCount)dstHeight,
-        .width = (vImagePixelCount)dstWidth,
-        .rowBytes = static_cast<size_t>(dstWidth * sizeof(float))
-    };
-
-    if (dstWidth != srcWidth || dstHeight != srcHeight) {
-        vImageScale_PlanarF(&flipBuf, &dstBuf, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
-    } else {
-        std::memcpy(scaled.data(), flipped.data(), flipped.size() * sizeof(float));
-    }
-
     const size_t pixelCount = static_cast<size_t>(dstWidth) * dstHeight;
     out.resize(pixelCount);
-    const float denom = std::max(depthThreshMax - depthThreshMin, 1.0f);
+    resampleNearest(srcData, srcWidth, srcHeight, 1, out.data(), dstWidth, dstHeight, /*flipX=*/true);
 
     #pragma omp parallel for if(pixelCount > 100000)
     for (size_t i = 0; i < pixelCount; ++i) {
-        const float d = scaled[i];
-        if (!std::isfinite(d) || d <= depthThreshMin || d >= depthThreshMax) {
-            out[i] = 0;
-        } else {
-            float normalized = (d - depthThreshMin) / denom;
-            normalized = std::clamp(normalized, 0.0f, 1.0f);
-            out[i] = static_cast<uint16_t>(normalized * 65535.0f);
+        if (!isDepthInRange(out[i], depthThreshMin, depthThreshMax)) {
+            out[i] = 0.0f;
         }
     }
 
@@ -443,117 +415,139 @@ bool MyFreenect2Device::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnu
     return true;
 }
 
-bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out) {
-    LOG("[FreenectV2.cpp] getPointCloudFrame(): called");
-    std::vector<uint8_t> localRGB;
-    std::vector<float> localDepth;
-    libfreenect2::Freenect2Device* localDevice = nullptr;
+// Output: RGBA32F, XYZ in metres, A = 1 for valid points and 0 for invalid ones.
+//  DepthCamera: 512x424 grid, XYZ relative to the depth camera (libfreenect2 getPointXYZ).
+//  ColorCamera: 1920x1080 grid, XYZ relative to the color camera, pixel-aligned with
+//               the RGB output and the Registered depth map so the RGB image can be
+//               applied as a texture with plain (u,v) = pixel position.
+bool MyFreenect2Device::getPointCloudFrame(std::vector<float>& out, pcSpaceEnum space, float depthThreshMin, float depthThreshMax,
+                                           bool flipX, bool flipY, bool flipZ, const float* unknownXYZ) {
+    const float unknownX = unknownXYZ[0];
+    const float unknownY = unknownXYZ[1];
+    const float unknownZ = unknownXYZ[2];
+    LOG("[FreenectV2.cpp] getPointCloudFrame(): called, space=" + std::to_string(static_cast<int>(space)));
     int dstWidth = 0;
     int dstHeight = 0;
     {
         std::lock_guard<std::mutex> lock(mutex);
-        if (!device) {
-            LOG("[FreenectV2.cpp] getPointCloudFrame(): device is null");
-            return false;
-        }
-        /*if (!hasNewDepth) {
-            LOG("[FreenectV2.cpp] getPointCloudFrame(): no new depth data");
-            return false;
-        }*/
-        localDevice = device;
-        localDepth = depthBuffer;
-        localRGB = rgbBuffer;
         dstWidth = pcWidth_;
         dstHeight = pcHeight_;
     }
+    if (dstWidth <= 0 || dstHeight <= 0) return false;
 
-    LOG("[FreenectV2.cpp] getPointCloudFrame(): localDepth size = " + std::to_string(localDepth.size()));
-    LOG("[FreenectV2.cpp] getPointCloudFrame(): localRGB size = " + std::to_string(localRGB.size()));
-    LOG("[FreenectV2.cpp] getPointCloudFrame(): DEPTH_WIDTH * DEPTH_HEIGHT = " + std::to_string(DEPTH_WIDTH * DEPTH_HEIGHT));
-    LOG("[FreenectV2.cpp] getPointCloudFrame(): RGB_WIDTH * RGB_HEIGHT * 4 = " + std::to_string(RGB_WIDTH * RGB_HEIGHT * 4));
+    const bool colorSpace = (space == pcSpaceEnum::ColorCamera);
+    if (!ensureRegistration(colorSpace)) return false;
 
-    if (!localDevice || localDepth.size() != static_cast<size_t>(DEPTH_WIDTH * DEPTH_HEIGHT)) {
-        LOG("[FreenectV2.cpp] getPointCloudFrame(): device is null or depth size mismatch");
-        return false;
-    }
+    const int srcWidth  = colorSpace ? BIGDEPTH_WIDTH : DEPTH_WIDTH;
+    const int srcHeight = colorSpace ? (BIGDEPTH_HEIGHT - 2) : DEPTH_HEIGHT;
+    const float signX = flipX ? -1.0f : 1.0f;
+    const float signY = flipY ? -1.0f : 1.0f;
+    const float signZ = flipZ ? -1.0f : 1.0f;
 
-    if (!reg) {
-        LOG("[FreenectV2.cpp] getPointCloudFrame(): creating Registration object");
-        const auto& irParams = localDevice->getIrCameraParams();
-        const auto& colorParams = localDevice->getColorCameraParams();
-        LOG("[FreenectV2.cpp] getPointCloudFrame(): IR params: fx = " + std::to_string(irParams.fx) + ", fy = " + std::to_string(irParams.fy) + ", cx = " + std::to_string(irParams.cx) + ", cy = " + std::to_string(irParams.cy));
-        LOG("[FreenectV2.cpp] getPointCloudFrame(): Color params: fx = " + std::to_string(colorParams.fx) + ", fy = " + std::to_string(colorParams.fy) + ", cx = " + std::to_string(colorParams.cx) + ", cy = " + std::to_string(colorParams.cy));
-        reg = std::make_unique<libfreenect2::Registration>(irParams, colorParams);
-        if (!reg) {
-            LOG("[FreenectV2.cpp] getPointCloudFrame(): Failed to create Registration object");
-            return false;
-        }
-        LOG("[FreenectV2.cpp] getPointCloudFrame(): Registration object created");
-    }
+    if (pcScratch.size() != static_cast<size_t>(srcWidth) * srcHeight * 4)
+        pcScratch.resize(static_cast<size_t>(srcWidth) * srcHeight * 4);
+    float* points = pcScratch.data();
 
-    std::memcpy(rgbFrame.data, localRGB.data(), RGB_WIDTH * RGB_HEIGHT * 4);
-    std::memcpy(depthFrame.data, localDepth.data(), DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(float));
-    reg->apply(&rgbFrame, &depthFrame, &undistortedFrame, &registeredFrame, true, nullptr);
-
-    const int srcWidth = DEPTH_WIDTH;
-    const int srcHeight = DEPTH_HEIGHT;
-
-    out.resize(static_cast<size_t>(srcWidth) * srcHeight * 4);
-    float* outPtr = out.data();
-    for (int r = 0; r < srcHeight; ++r) {
-        for (int c = 0; c < srcWidth; ++c) {
-            float x, y, z;
-            reg->getPointXYZ(&undistortedFrame, r, c, x, y, z);
-            size_t idx = (r * srcWidth + c) * 4;
-            if (z > 0) {
-                outPtr[idx + 0] = x;
-                outPtr[idx + 1] = -y;
-                outPtr[idx + 2] = z;
-            } else {
-                outPtr[idx + 0] = 0.0f;
-                outPtr[idx + 1] = 0.0f;
-                outPtr[idx + 2] = 0.0f;
+    if (colorSpace) {
+        const auto& colorParams = colorCameraParams; // captured when the Registration object was created
+        const float fxInv = 1.0f / colorParams.fx;
+        const float fyInv = 1.0f / colorParams.fy;
+        const float* bigdepthRows = reinterpret_cast<const float*>(bigdepthFrame.data) + BIGDEPTH_WIDTH; // skip padding row
+        // Rows are independent, so spread them across cores (dispatch_apply returns when all are done)
+        dispatch_apply(srcHeight, DISPATCH_APPLY_AUTO, ^(size_t r) {
+            const float* row = bigdepthRows + r * BIGDEPTH_WIDTH;
+            float* dstRow = points + r * srcWidth * 4;
+            const float yNorm = -(r + 0.5f - colorParams.cy) * fyInv; // negate: +Y up (matches depth-camera path)
+            for (int c = 0; c < srcWidth; ++c) {
+                const float depth = row[c];
+                float* point = dstRow + c * 4;
+                if (isDepthInRange(depth, depthThreshMin, depthThreshMax)) {
+                    const float z = depth * 0.001f;
+                    point[0] = signX * (c + 0.5f - colorParams.cx) * fxInv * z;
+                    point[1] = signY * yNorm * z;
+                    point[2] = signZ * z;
+                    point[3] = 1.0f;
+                } else {
+                    // Unknown point value, alpha stays 0
+                    point[0] = unknownX;
+                    point[1] = unknownY;
+                    point[2] = unknownZ;
+                    point[3] = 0.0f;
+                }
             }
-            outPtr[idx + 3] = 1.0f;
-        }
-    }
-
-    const float* srcData = out.data();
-    const int pcDstWidth = dstWidth;
-    const int pcDstHeight = dstHeight;
-
-    std::vector<float> flipped(static_cast<size_t>(srcWidth) * srcHeight * 4);
-    vImage_Buffer srcBuf = {
-        .data = const_cast<float*>(srcData),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * 4 * sizeof(float))
-    };
-    vImage_Buffer flipBuf = {
-        .data = flipped.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * 4 * sizeof(float))
-    };
-    vImageHorizontalReflect_ARGBFFFF(&srcBuf, &flipBuf, kvImageDoNotTile);
-
-    std::vector<float> scaled(static_cast<size_t>(pcDstWidth) * pcDstHeight * 4);
-    vImage_Buffer dstBuf = {
-        .data = scaled.data(),
-        .height = (vImagePixelCount)pcDstHeight,
-        .width = (vImagePixelCount)pcDstWidth,
-        .rowBytes = static_cast<size_t>(pcDstWidth * 4 * sizeof(float))
-    };
-
-    if (pcDstWidth != srcWidth || pcDstHeight != srcHeight) {
-        vImageScale_ARGBFFFF(&flipBuf, &dstBuf, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
+        });
     } else {
-        std::memcpy(scaled.data(), flipped.data(), flipped.size() * sizeof(float));
+        dispatch_apply(srcHeight, DISPATCH_APPLY_AUTO, ^(size_t r) {
+            for (int c = 0; c < srcWidth; ++c) {
+                float x, y, z;
+                reg->getPointXYZ(&undistortedFrame, static_cast<int>(r), c, x, y, z);
+                float* point = points + (r * srcWidth + c) * 4;
+                const float zMillimeters = z * 1000.0f;
+                if (isDepthInRange(zMillimeters, depthThreshMin, depthThreshMax)) {
+                    point[0] = signX * x;
+                    point[1] = -signY * y;
+                    point[2] = signZ * z;
+                    point[3] = 1.0f;
+                } else {
+                    // Unknown point value, alpha stays 0
+                    point[0] = unknownX;
+                    point[1] = unknownY;
+                    point[2] = unknownZ;
+                    point[3] = 0.0f;
+                }
+            }
+        });
     }
 
-    out = std::move(scaled);
+    out.resize(static_cast<size_t>(dstWidth) * dstHeight * 4);
+    resampleNearest(points, srcWidth, srcHeight, 4, out.data(), dstWidth, dstHeight, /*flipX=*/true);
 
     LOG("[FreenectV2.cpp] getPointCloudFrame(): success");
+    return true;
+}
+
+// Registered color + depth-to-color UV map (512x424, aligned with the depth-camera point cloud)
+// color: RGBA8, the RGB image re-sampled onto the depth grid (A = 255 where a color pixel exists, 0 otherwise)
+// uv:    RGBA32F, (u, v, 0, valid) giving where each depth pixel lands in the RGB output, in
+//        TouchDesigner UV convention (0..1, origin bottom-left, already mirrored to match the flipped RGB output).
+//        Feed it to a Remap TOP together with the RGB output to get registered color at full resolution.
+bool MyFreenect2Device::getRegisteredColorFrame(std::vector<uint8_t>& color, std::vector<float>& uv) {
+    if (!ensureRegistration(false)) return false;
+
+    const int width = DEPTH_WIDTH, height = DEPTH_HEIGHT;
+    color.resize(static_cast<size_t>(width) * height * 4);
+    uv.resize(static_cast<size_t>(width) * height * 4);
+
+    const uint8_t* registeredData = registeredFrame.data; // BGRX
+    const float invRgbWidth = 1.0f / RGB_WIDTH;
+    const float invRgbHeight = 1.0f / RGB_HEIGHT;
+
+    for (int r = 0; r < height; ++r) {
+        for (int c = 0; c < width; ++c) {
+            const size_t srcIndex = static_cast<size_t>(r) * width + c;
+            const size_t dstIndex = static_cast<size_t>(r) * width + (width - 1 - c); // mirror to match other outputs
+            const int colorIndex = colorDepthMap[srcIndex];
+            const bool valid = colorIndex >= 0;
+
+            uint8_t* colorPixel = color.data() + dstIndex * 4;
+            colorPixel[0] = registeredData[srcIndex * 4 + 2];
+            colorPixel[1] = registeredData[srcIndex * 4 + 1];
+            colorPixel[2] = registeredData[srcIndex * 4 + 0];
+            colorPixel[3] = valid ? 255 : 0;
+
+            float* uvPixel = uv.data() + dstIndex * 4;
+            if (valid) {
+                const int colorX = colorIndex % RGB_WIDTH;
+                const int colorY = colorIndex / RGB_WIDTH;
+                uvPixel[0] = 1.0f - (colorX + 0.5f) * invRgbWidth; // RGB output is mirrored
+                uvPixel[1] = 1.0f - (colorY + 0.5f) * invRgbHeight; // TD UV origin is bottom-left
+                uvPixel[2] = 0.0f;
+                uvPixel[3] = 1.0f;
+            } else {
+                uvPixel[0] = uvPixel[1] = uvPixel[2] = uvPixel[3] = 0.0f;
+            }
+        }
+    }
     return true;
 }
 
@@ -642,6 +636,7 @@ void MyFreenect2Device::setRGBBuffer(const std::vector<uint8_t>& buffer, bool ma
 void MyFreenect2Device::setDepthBuffer(const std::vector<float>& buffer, bool markReady) {
     std::lock_guard<std::mutex> lock(mutex);
     depthBuffer = buffer;
+    ++depthSeq;
     hasNewDepth = markReady;
     if (markReady) depthReady = true;
 }

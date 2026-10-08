@@ -8,7 +8,6 @@
 #pragma once
 
 #include "logger.h"
-#include "FreenectCommon.h"
 
 // Disable warnings from TouchDesigner headers for non-standard offsetof usage
 #pragma clang diagnostic push
@@ -29,9 +28,9 @@
 #include <atomic>
 #include <vector>
 #include <mutex>
-#include <chrono>
 #include <limits>
 
+#include "FreenectCommon.h"
 #include "FreenectV1.h"
 #include "FreenectV2.h"
 
@@ -73,10 +72,10 @@ private:
     std::atomic<bool>                       fn2_enumThreadRunning;
 
     // V2 background init members
-    std::atomic<bool>                       fn2_InitInProgress{false};
-    //std::atomic<bool>                       fn2_InitDone{false};
-    std::atomic<bool>                       fn2_InitSuccess{false};
-    std::thread                             fn2_InitThread;
+    std::atomic<bool>                       fn2_initInProgress{false};
+    //std::atomic<bool>                       fn2_initDone{false};
+    std::atomic<bool>                       fn2_initSuccess{false};
+    std::thread                             fn2_initThread;
     
     // Add declarations for v2 enumeration thread helpers
     void fn2_startEnumThread();
@@ -96,6 +95,13 @@ private:
     void fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
     void uploadFallbackBuffer(int targetIndex = -1);
+    void uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height);
+    
+    // One active FreenectTOP per process (see claimDevice in FreenectTOP.cpp)
+    static std::mutex   deviceOwnerMutex;
+    static FreenectTOP* deviceOwner;
+    bool claimDevice();
+    void releaseDevice();
     
     // Error/warning string handling
     std::string errorString;
@@ -106,12 +112,13 @@ private:
     // Current output pointer
     TD::TOP_Output* myCurrentOutput = nullptr;
 
-    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, 4> fallbackBuffers;
+    static constexpr int NUM_OUTPUTS = 6; // 0 RGB, 1 depth, 2 point cloud, 3 IR, 4 registered color, 5 depth->color UV
+    std::array<TD::OP_SmartRef<TD::TOP_Buffer>, NUM_OUTPUTS> fallbackBuffers;
 
     // V1 background init members
-    std::atomic<bool> fn1InitInProgress{false};
-    std::atomic<bool> fn1InitSuccess{false};
-    std::thread fn1_InitThread;
+    std::atomic<bool> fn1_initInProgress{false};
+    std::atomic<bool> fn1_initSuccess{false};
+    std::thread fn1_initThread;
     void fn1_startInitThread();
     
     // Parameters variables
@@ -119,27 +126,29 @@ private:
     int fn1_depthW, fn1_depthH;
     int fn1_irW, fn1_irH;
     float fn1_tilt = 0.0f;
-    float fn1LastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
+    float fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     
     int fn2_colorW, fn2_colorH;
     int fn2_depthW, fn2_depthH;
     int fn2_irW, fn2_irH;
     int fn2_pcW, fn2_pcH;
+    static constexpr uint64_t NO_POINT_CLOUD = std::numeric_limits<uint64_t>::max();
+    uint64_t fn2_lastPointCloudSeq = NO_POINT_CLOUD; // depthSeq of the last uploaded point cloud
     
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;
     depthFormatEnum depthFormat = depthFormatEnum::Raw;
+    std::string lastDeviceType = "Kinect v1"; // per instance; used to tear down devices when Hardware Version changes
+    depthOutputEnum depthOutput = depthOutputEnum::Normalized;
+    pcSpaceEnum pcSpace = pcSpaceEnum::DepthCamera;
+    bool pcFlipX = false, pcFlipY = false, pcFlipZ = false;
+    float unknownDepth = 0.0f;                 // written to invalid depth pixels, in output units
+    float unknownPoint[3] = {0.0f, 0.0f, 0.0f}; // written to XYZ of invalid points
     
     bool streamEnabledIR;
     bool streamEnabledDepth;
     bool streamEnabledPC;
-
-    uint64_t fn1DepthCookCounter = 0;
-    uint64_t fn1DepthUploadCounter = 0;
-    uint64_t fn1DepthMissCounter = 0;
-    uint64_t fn1DepthAllZeroCounter = 0;
-    depthFormatEnum fn1LastLoggedDepthFormat = depthFormatEnum::Raw;
-    bool fn1LastLoggedDepthEnabled = true;
-    std::chrono::steady_clock::time_point fn1LastDepthUploadTime{};
+    bool streamEnabledRegColor = false;
+    bool streamEnabledUV = false;
     
 };
