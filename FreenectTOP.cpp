@@ -15,6 +15,8 @@
 #include <iostream>
 #include <future>
 #include <array>
+#include <dlfcn.h>
+#include <optional>
 #include <cmath>
 #include <libusb.h>
 
@@ -287,6 +289,50 @@ void FreenectTOP::getErrorString(TD::OP_String* error, void* reserved1) {
 void FreenectTOP::getWarningString(TD::OP_String* warning, void* reserved1) {
     if (!warningString.empty())
         warning->setString(warningString.c_str());
+}
+
+// Reads td.licenses.isNonCommercial from TouchDesigner's own Python. The C++ SDK has no license query,
+// so the CPython functions are looked up at runtime in the TD process: nothing is linked at build time,
+// and a TD that ships a different Python version still works. Returns nullopt if anything is missing.
+// Must run on TD's main thread (execute does): Python can't be entered from the device threads.
+static std::optional<bool> readIsNonCommercial() {
+    using Fn_IsInit  = int (*)();
+    using Fn_Ensure  = int (*)();
+    using Fn_Release = void (*)(int);
+    using Fn_Import  = void* (*)(const char*);
+    using Fn_GetAttr = void* (*)(void*, const char*);
+    using Fn_IsTrue  = int (*)(void*);
+    using Fn_DecRef  = void (*)(void*);
+    using Fn_ErrClr  = void (*)();
+    auto isInit  = reinterpret_cast<Fn_IsInit>(dlsym(RTLD_DEFAULT, "Py_IsInitialized"));
+    auto ensure  = reinterpret_cast<Fn_Ensure>(dlsym(RTLD_DEFAULT, "PyGILState_Ensure"));
+    auto release = reinterpret_cast<Fn_Release>(dlsym(RTLD_DEFAULT, "PyGILState_Release"));
+    auto import  = reinterpret_cast<Fn_Import>(dlsym(RTLD_DEFAULT, "PyImport_ImportModule"));
+    auto getAttr = reinterpret_cast<Fn_GetAttr>(dlsym(RTLD_DEFAULT, "PyObject_GetAttrString"));
+    auto isTrue  = reinterpret_cast<Fn_IsTrue>(dlsym(RTLD_DEFAULT, "PyObject_IsTrue"));
+    auto decRef  = reinterpret_cast<Fn_DecRef>(dlsym(RTLD_DEFAULT, "Py_DecRef"));
+    auto errClr  = reinterpret_cast<Fn_ErrClr>(dlsym(RTLD_DEFAULT, "PyErr_Clear"));
+    if (!isInit || !ensure || !release || !import || !getAttr || !isTrue || !decRef || !errClr || !isInit()) {
+        return std::nullopt;
+    }
+
+    std::optional<bool> result;
+    const int gil = ensure();
+    void* td = import("td");
+    void* licenses = td ? getAttr(td, "licenses") : nullptr;
+    void* nonCommercial = licenses ? getAttr(licenses, "isNonCommercial") : nullptr;
+    if (nonCommercial) {
+        const int value = isTrue(nonCommercial); // -1 on error
+        if (value >= 0) {
+            result = (value == 1);
+        }
+    }
+    errClr();
+    if (nonCommercial) decRef(nonCommercial);
+    if (licenses) decRef(licenses);
+    if (td) decRef(td);
+    release(gil);
+    return result;
 }
 
 // Constructor for FreenectTOP
@@ -900,6 +946,17 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
     const char* devTypeCStr = inputs->getParString("Hardwareversion");
     std::string devType = devTypeCStr ? devTypeCStr : "Kinect v1";
+
+    // Read the license whenever the TOP becomes active (including the first cook), so a key installed
+    // while TD runs takes effect by toggling Active. If it can't be read, assume Non-Commercial:
+    // a too-large output corrupts there, while limiting a commercial license only costs resolution.
+    if (isActive && !wasActive) {
+        const std::optional<bool> isNonCommercial = readIsNonCommercial();
+        licenseKnown = isNonCommercial.has_value();
+        nonCommercial = isNonCommercial.value_or(true);
+        LOG(std::string("[FreenectTOP] license: ") + (licenseKnown ? (nonCommercial ? "Non-Commercial" : "Commercial or Pro") : "unknown"));
+    }
+    wasActive = isActive;
     
     // Set depthFormat from parameters
     {
@@ -953,6 +1010,13 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     parseRes("V2depthres", fn2_depthW, fn2_depthH, MyFreenect2Device::DEPTH_WIDTH, MyFreenect2Device::DEPTH_HEIGHT);
     parseRes("V2pcres",    fn2_pcW,    fn2_pcH,    MyFreenect2Device::DEPTH_WIDTH, MyFreenect2Device::DEPTH_HEIGHT);
     parseRes("V2irres",    fn2_irW,    fn2_irH,    MyFreenect2Device::IR_WIDTH,    MyFreenect2Device::IR_HEIGHT);
+    // Non-Commercial TouchDesigner is limited to 1280x1280 and doesn't scale a C++ TOP's larger outputs
+    // itself, so cap the only stream that exceeds it (Registered depth and point cloud follow RGB below)
+    fn2_rgbLimited = nonCommercial && (fn2_colorW > 1280 || fn2_colorH > 1280);
+    if (fn2_rgbLimited) {
+        fn2_colorW = MyFreenect2Device::SCALED_WIDTH;
+        fn2_colorH = MyFreenect2Device::SCALED_HEIGHT;
+    }
     if (devType == "Kinect v2" && depthFormat == depthFormatEnum::Registered) {
         fn2_depthW = fn2_colorW;
         fn2_depthH = fn2_colorH;
@@ -1026,6 +1090,9 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
                devType == "Kinect v1" && format && std::string(format) == "Rawundistorted") {
         // A single menu entry can't be disabled, so say what happens instead
         warningString = "Raw undistorted is Kinect v2 only; Kinect v1 uses Raw";
+    } else if (devType == "Kinect v2" && fn2_rgbLimited) {
+        warningString = licenseKnown ? "Non-Commercial license: Kinect v2 RGB is limited to 1280x720"
+                                     : "Couldn't detect the TouchDesigner license: Kinect v2 RGB is limited to 1280x720";
     } else {
         warningString.clear();
     }

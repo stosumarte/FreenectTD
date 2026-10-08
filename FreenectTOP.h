@@ -104,6 +104,10 @@ private:
     
     // Error/warning string handling
     std::string errorString;
+    bool nonCommercial = true;   // TouchDesigner license, read each time the TOP becomes active
+    bool wasActive = false;      // Active on the previous cook
+    bool licenseKnown = false;   // false if it couldn't be read; nonCommercial is then assumed
+    bool fn2_rgbLimited = false; // v2 RGB capped to 1280x720 this cook because of nonCommercial
     std::string warningString;
     void getErrorString(TD::OP_String* error, void* reserved1) override;
     void getWarningString(TD::OP_String* warning, void* reserved1) override;
