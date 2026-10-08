@@ -32,6 +32,8 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 ### Known issues
 Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). This is due to a mix of different factors in libfreenect and Kinect official firmware.
 
+The V1 IR image is covered in bright dots. This is expected: it is the pattern the V1's laser projector casts to measure depth, and it can't be turned off without losing depth. A Blur TOP after the IR output smooths most of it away.
+
 ## [RECOMMENDED] Installing using installer
 
 1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP_Installer.pkg) 
