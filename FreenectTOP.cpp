@@ -171,9 +171,9 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         depthThreshMinParam.page = page0;
         depthThreshMinParam.defaultValues[0] = 0.0;
         depthThreshMinParam.minValues[0] = 0.0;
-        depthThreshMinParam.maxValues[0] = 5000.0;
+        depthThreshMinParam.maxValues[0] = 8000.0;
         depthThreshMinParam.minSliders[0] = 0.0;
-        depthThreshMinParam.maxSliders[0] = 5000.0;
+        depthThreshMinParam.maxSliders[0] = 8000.0;
         depthThreshMinParam.clampMins[0] = true;
         manager->appendFloat(depthThreshMinParam);
     }
@@ -184,9 +184,9 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         depthThreshMaxParam.page = page0;
         depthThreshMaxParam.defaultValues[0] = 5000.0;
         depthThreshMaxParam.minValues[0] = 0.0;
-        depthThreshMaxParam.maxValues[0] = 5000.0;
+        depthThreshMaxParam.maxValues[0] = 8000.0;
         depthThreshMaxParam.minSliders[0] = 0.0;
-        depthThreshMaxParam.maxSliders[0] = 5000.0;
+        depthThreshMaxParam.maxSliders[0] = 8000.0;
         depthThreshMaxParam.clampMins[0] = true;
         manager->appendFloat(depthThreshMaxParam);
     }
@@ -724,6 +724,8 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     }
 
     fn2_device->setResolutions(fn2_colorW, fn2_colorH, fn2_depthW, fn2_depthH, fn2_pcW, fn2_pcH, fn2_irW, fn2_irH);
+    // libfreenect2 clips depth to 4.5 m by default; use the TOP's depth range instead so v2 can see up to ~8 m
+    fn2_device->setDepthRange(depthThreshMin, depthThreshMax);
 
     // Create output buffers
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_colorW * fn2_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();

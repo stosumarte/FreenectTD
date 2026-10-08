@@ -115,6 +115,21 @@ void MyFreenect2Device::setResolutions(int rgbWidth, int rgbHeight, int depthWid
         " IR: " + std::to_string(irWidth_) + "x" + std::to_string(irHeight_));*/
 }
 
+// Set the range libfreenect2's depth processor clips to; its filters keep their defaults (on)
+void MyFreenect2Device::setDepthRange(float minMM, float maxMM) {
+    // The v2 can't measure closer than 0.5 m; readings below it are noise libfreenect2 should drop
+    minMM = std::max(minMM, 500.0f);
+    if (minMM == depthRangeMin && maxMM == depthRangeMax) {
+        return;
+    }
+    libfreenect2::Freenect2Device::Config config;
+    config.MinDepth = minMM / 1000.0f;
+    config.MaxDepth = maxMM / 1000.0f;
+    device->setConfiguration(config);
+    depthRangeMin = minMM;
+    depthRangeMax = maxMM;
+}
+
 // Sequence number of the latest depth frame; changes whenever a new depth frame arrives
 uint64_t MyFreenect2Device::getDepthSeq() {
     std::lock_guard<std::mutex> lock(mutex);

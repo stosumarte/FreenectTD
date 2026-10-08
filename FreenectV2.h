@@ -58,6 +58,8 @@ public:
     bool getPointCloudFrame(std::vector<float>& out, pcSpaceEnum space, float depthThreshMin, float depthThreshMax,
                             bool flipX, bool flipY, bool flipZ, const float* unknownXYZ);
     uint64_t getDepthSeq();
+    // Range libfreenect2 itself clips depth to (its default is 500-4500 mm). Only touches the device on a change.
+    void setDepthRange(float minMM, float maxMM);
     // RGB mapped onto the depth grid (512x424 RGBA8) + depth->color UV map (512x424 RGBA32F)
     bool getRegisteredColorFrame(std::vector<uint8_t>& color, std::vector<float>& uv);
     // Setters for buffer injection
@@ -70,6 +72,7 @@ public:
     
 private:
     libfreenect2::Freenect2Device* device;
+    float depthRangeMin = 0.0f, depthRangeMax = 0.0f; // last range sent to libfreenect2, 0 = none yet
     libfreenect2::SyncMultiFrameListener* listener;
     libfreenect2::Frame depthFrame;
     libfreenect2::Frame rgbFrame;

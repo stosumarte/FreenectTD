@@ -77,10 +77,10 @@ By default, FreenectTOP outputs RGB data. To get other streams, you must use Ren
 *Format* applies to both the depth map and the point cloud: Raw and Raw Undistorted keep them in the depth camera (512x424 on v2), Registered re-projects both into the color camera so they line up with the RGB output pixel for pixel. (v1 has no point cloud and no undistortion; the menu only changes the depth map there.) *Depth Output* selects how depth is packed into stream 1:
 
 * **Normalized 16-bit** (default, legacy) – 0..1 across the *Depth Threshold Min/Max* window.
-
-*Depth Threshold Min/Max* are in millimetres on both devices (defaults when *Manual Depth Threshold* is off: 400–4500 mm for v1, 100–4500 mm for v2). Pixels outside the window are set to 0 in every depth mode and dropped from the point cloud.
 * **Millimeters (32-bit float)** – raw sensor value in mm, no rescaling. 0 = invalid or outside the threshold window.
 * **Meters (32-bit float)** – same, divided by 1000.
+
+*Depth Threshold Min/Max* are in millimetres on both devices (defaults when *Manual Depth Threshold* is off: 400–4500 mm for v1, 100–4500 mm for v2). Pixels outside the window are set to 0 in every depth mode and dropped from the point cloud. The range goes up to 8000 mm; the v2 is rated to 4.5 m and gets noisier beyond it.
 
 Invalid pixels (no reading, or outside the depth range) are written with *Unknown Depth Value* (default 0, in the output units; in Normalized mode it is clamped to 0–1). Invalid points in the point cloud get *Unknown Point Value* for XYZ (default 0,0,0) and always have alpha 0, so alpha remains the reliable validity mask. Use a finite sentinel outside the valid range (e.g. 10000 mm, or a point far behind the camera) rather than NaN/infinity, which spread through blurs and averages.
 
