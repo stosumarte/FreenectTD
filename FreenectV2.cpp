@@ -127,10 +127,14 @@ void MyFreenect2Device::processFrames() {
         LOG("[FreenectV2.cpp] processFrames(): listener is null");
         return;
     }
-    libfreenect2::FrameMap frames;
-    if (!listener->waitForNewFrame(frames, 50)) {
+    // Our libfreenect2 is built with TinyThread, where waitForNewFrame ignores its timeout and
+    // blocks until a frame arrives. After an unplug none ever does and stop() hangs joining this
+    // thread, so only wait once a frame is ready (this thread is the listener's only consumer).
+    if (!listener->hasNewFrame()) {
         return;
     }
+    libfreenect2::FrameMap frames;
+    listener->waitForNewFrame(frames);
     libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
     libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
     libfreenect2::Frame* ir = frames[libfreenect2::Frame::Ir];

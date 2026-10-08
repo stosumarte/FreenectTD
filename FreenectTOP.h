@@ -29,6 +29,7 @@
 #include <vector>
 #include <mutex>
 #include <limits>
+#include <functional>
 
 #include "FreenectCommon.h"
 #include "FreenectV1.h"
@@ -68,14 +69,12 @@ private:
     std::thread                             fn2_eventThread;
     
     std::atomic<bool>                       fn2_deviceAvailable{false};
+    std::atomic<bool>                       fn2_slowUSB{false};
     std::thread                             fn2_enumThread;
     std::atomic<bool>                       fn2_enumThreadRunning;
 
     // V2 background init members
-    std::atomic<bool>                       fn2_initInProgress{false};
-    //std::atomic<bool>                       fn2_initDone{false};
     std::atomic<bool>                       fn2_initSuccess{false};
-    std::thread                             fn2_initThread;
     
     // Add declarations for v2 enumeration thread helpers
     void fn2_startEnumThread();
@@ -87,7 +86,6 @@ private:
     bool fn2_initDevice();
     void fn2_cleanupDevice();
     void fn2_startInitThread();
-    void fn2_waitInitThread();
     std::mutex freenectMutex;
     std::mutex fn1_eventMutex; // Separate mutex for v1 event thread
     
@@ -116,10 +114,16 @@ private:
     std::array<TD::OP_SmartRef<TD::TOP_Buffer>, NUM_OUTPUTS> fallbackBuffers;
 
     // V1 background init members
-    std::atomic<bool> fn1_initInProgress{false};
     std::atomic<bool> fn1_initSuccess{false};
-    std::thread fn1_initThread;
     void fn1_startInitThread();
+
+    // Device init and cleanup run as jobs on a background thread so opening or closing the device
+    // never stalls the cook. Jobs run one after another; the thread is shared by all instances
+    // because only one of them owns the device at a time and a close must finish before the next open.
+    static std::thread      deviceThread;
+    static std::atomic<int> deviceJobsPending; // queued or running jobs; 0 = idle
+    static void runOnDeviceThread(std::function<void()> job);
+    std::string initError; // written by init jobs, read by the cook thread only while the device thread is idle
     
     // Parameters variables
     int fn1_colorW, fn1_colorH;
