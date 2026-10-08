@@ -11,7 +11,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 ### Requirements
 * Apple Silicon Mac
 * macOS 12.4+ (Monterey)
-* TouchDesigner 2025.33230+ (any license; the plugin is built against this SDK version). With a Non-Commercial license, Kinect V2 RGB (and Registered depth / point cloud, which follow it) is limited to 1280x720 to stay within TouchDesigner's 1280x1280 limit.
+* TouchDesigner 2025.33230+ (any license)
 * Kinect V1 / Kinect V2
 
 ### Supported features
@@ -22,9 +22,9 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 | Point cloud map streaming                     | ❌         | ✅         |
 | IR streaming                                  | ✅         | ✅         |
 | Tilt control                                  | ✅         | ❌         |
-| Depth undistortion (Depth Format menu)        | ❌         | ✅         |
+| Depth undistortion (Format menu)              | ❌         | ✅         |
 | Depth registration (align depth map to color) | ✅         | ✅         |
-| Manual depth range threshold                  | ✅         | ✅         |
+| Manual depth range                            | ✅         | ✅         |
 | Depth output in millimeters / meters (32-bit) | ✅         | ✅         |
 | Color-camera-space point cloud (aligned to RGB) | ❌       | ✅         |
 | Registered color + depth→color UV map         | ❌         | ✅         |
@@ -32,7 +32,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 ### Known issues
 Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). This is due to a mix of different factors in libfreenect and Kinect official firmware.
 
-The V1 IR image is covered in bright dots. This is expected: it is the pattern the V1's laser projector casts to measure depth, and it can't be turned off without losing depth. A Blur TOP after the IR output smooths most of it away.
+The V1 IR image is covered in bright dots. This is expected: it is the pattern the V1's laser projector casts to measure depth.
 
 ## [RECOMMENDED] Installing using installer
 
@@ -64,75 +64,53 @@ You should now find FreenectTOP under the "Custom" OPs panel.
 You should now be able to open your .toe and find FreenectTOP under the "Custom" OPs panel.
 
 ## Usage
-By default, FreenectTOP outputs RGB data. To get other streams, you must use Render Select TOPs and reference the following indexes:
+FreenectTOP outputs RGB. Every other stream is reached with a Render Select TOP set to its index:
 
-| Index | Stream | Format | Notes |
-| ----- | ------ | ------ | ----- |
-| 0 | RGB | RGBA8 | |
-| 1 | Depth | Mono16 or Mono32F | See *Depth Output* below |
-| 2 | Point cloud (v2) | RGBA32F | XYZ in meters, A = 1 for valid points, 0 for invalid |
-| 3 | IR | Mono16 | v1: 640x480, replaces RGB (index 0 goes blank) while on, since both share one stream |
-| 4 | Registered color (v2) | RGBA8, 512x424 | RGB image resampled onto the depth grid, A = 0 where no color pixel exists |
-| 5 | Depth→color UV map (v2) | RGBA32F, 512x424 | (u, v, 0, valid) in TouchDesigner UV space, pointing into the RGB output. Lets you sample full-resolution RGB per depth pixel (Remap TOP / GLSL) instead of the 512x424 pre-sampled stream 4 |
+| Index | Stream | Format |
+| ----- | ------ | ------ |
+| 0 | RGB | RGBA8 |
+| 1 | Depth | Mono16 (Normalized) or Mono32F (mm / m) |
+| 2 | Point cloud (v2) | RGBA32F: XYZ in meters, A = 1 for valid points |
+| 3 | IR | Mono16 |
+| 4 | Registered color (v2) | RGBA8: RGB resampled onto the depth grid, A = 0 where there is no color |
+| 5 | Depth→color UV (v2) | RGBA32F: (u, v, 0, valid) into the RGB output, for a Remap TOP |
 
-### Depth Output
-*Format* applies to both the depth map and the point cloud: Raw and Raw Undistorted keep them in the depth camera (512x424 on v2), Registered re-projects both into the color camera so they line up with the RGB output pixel for pixel. (v1 has no point cloud and no undistortion; the menu only changes the depth map there.) *Depth Output* selects how depth is packed into stream 1:
+Streams come out at native resolution: 640x480 on v1; on v2 1920x1080 RGB and 512x424 for everything else, except Registered depth and point cloud, which match RGB. With a Non-Commercial license, v2 RGB (and those two) is 1280x720. To scale further, use a Resolution TOP (*Input Smoothness* = *Nearest Pixel* for depth and point cloud).
 
-* **Normalized 16-bit** (default, legacy) – 0..1 across the *Depth Threshold Min/Max* window.
-* **Millimeters (32-bit float)** – raw sensor value in mm, no rescaling. 0 = invalid or outside the threshold window.
-* **Meters (32-bit float)** – same, divided by 1000.
+Example projects are in `toe_examples/`.
 
-*Depth Threshold Min/Max* are in millimetres on both devices (defaults when *Manual Depth Threshold* is off: 400–4500 mm for v1, 100–4500 mm for v2). Pixels outside the window are set to 0 in every depth mode and dropped from the point cloud. The range goes up to 8000 mm; the v2 is rated to 4.5 m and gets noisier beyond it.
+### Parameters
 
-Invalid pixels (no reading, or outside the depth range) are written with *Unknown Depth Value* (default 0, in the output units; in Normalized mode it is clamped to 0–1). Invalid points in the point cloud get *Unknown Point Value* for XYZ (default 0,0,0) and always have alpha 0, so alpha remains the reliable validity mask. Use a finite sentinel outside the valid range (e.g. 10000 mm, or a point far behind the camera) rather than NaN/infinity, which spread through blurs and averages.
+**Device**
+* *Active* – only one FreenectTOP can be active per TouchDesigner process; turn it off to hand the Kinect to another one.
+* *Hardware Version* – Kinect v1 (Xbox 360) or Kinect v2 (Xbox One).
+* *Tilt Angle* – v1 motor tilt.
 
-Every stream comes out at the sensor's native resolution (v1: 640x480; v2: 1920x1080 RGB, 512x424 depth and IR). Registered depth and the Registered point cloud follow the RGB resolution. With a Non-Commercial license, v2 RGB (and those two) is 1280x720 instead. To scale further, use a Resolution TOP, with *Input Smoothness* set to *Nearest Pixel* for depth and point cloud so no values are blended across object edges.
+**Streams** – toggles for streams 1–5. On v1, RGB and IR share one stream, so RGB [0] is blank while *IR* is on.
 
-### Aligning the point cloud with the RGB image (Kinect v2)
-There are two ways to get a colored point cloud:
+**Depth**
+* *Format* – *Raw* keeps depth and the point cloud in the depth camera; *Raw undistorted* also removes lens distortion (v2 only); *Registered* re-projects both into the color camera, pixel-aligned with RGB.
+* *Depth Output* – *Normalized 16-bit* (0–1 across the depth range), *Millimeters* or *Meters* (32-bit float).
+* *Manual Depth Range*, *Depth Range Min/Max* – the valid depth window in mm, up to 8000 (the v2 is rated to 4.5 m and gets noisier beyond). When off: 400–4500 mm on v1, 500–4500 mm on v2.
+* *Unknown Depth Value* – written to pixels with no reading or outside the range (clamped to 0–1 in Normalized).
 
-* **Format = Registered** – stream 2 becomes an XYZ map (1920x1080, or 1280x720 on Non-Commercial) in the color camera's coordinate frame, pixel-aligned with the RGB output (stream 0) and with the *Registered* depth map. Use the pixel position as the texture coordinate to color each point.
-* **Format = Raw** (default) with stream 4 (Registered Color) and/or stream 5 (UV) enabled – stream 2 stays 512x424 in the depth camera frame. Stream 4 gives the color for each point directly, and stream 5 gives the UV of each point in the RGB output, which you can feed to a Remap TOP together with stream 0 to sample color at full resolution.
+**Point Cloud** (v2)
+* *Point Cloud Flip X/Y/Z* – the native frame is +Y up, +Z away from the sensor; *Flip Z* gives a TouchDesigner-style cloud in front of a camera looking down -Z.
+* *Unknown Point Value* – XYZ written to invalid points; their alpha is always 0, so alpha stays the reliable validity mask.
 
-Note that the two spaces are offset by the physical baseline between the two cameras (roughly 5 cm along X), so do not mix them in one render.
+Use finite values for the unknown values (e.g. 10000 mm) rather than NaN, which spreads through blurs and averages.
 
-The native frame is +Y up and +Z pointing away from the sensor, and X follows the mirrored image. *Point Cloud Flip X/Y/Z* negate an axis; turn on *Point Cloud Flip Z* to get a TouchDesigner-style cloud in front of a camera that looks down -Z.
+### Colored point cloud (Kinect v2)
+* **Format = Registered** – the point cloud [2] is pixel-aligned with RGB [0]: use the pixel position to color each point.
+* **Format = Raw** – the point cloud stays in the depth camera; Registered color [4] colors each point directly, or UV [5] samples full-resolution RGB with a Remap TOP.
 
-### Colored point cloud as a POP (TouchDesigner 2025+)
-A TOP to POP turns the streams into renderable points with color in two nodes:
+The two spaces are about 5 cm apart (the distance between the cameras), so don't mix them in one render.
 
-1. **TOP to POP** – *First RGBA Contains* = `Position and Active`, TOP = the point cloud (stream 2). Only pixels with A = 1 become points.
-2. Add a second TOP block: TOP = the registered color (stream 4) when *Format* is `Raw`, or the RGB output (stream 0) when it is `Registered`; Channel Scope `r g b a`, Attribute Scope `Color`, Filter `Nearest Pixel`.
-3. Render it from a Geometry COMP with a Constant MAT that has *Apply Point Color* on. A camera at the origin rotated 180° around Y looks down +Z like the Kinect.
-
-`toe_examples/FreenectTOP_Example_Dean_claude.toe` contains this network (`colorSrc`, `pcGeo/kinect_pointcloud`, `pcMat`, `pcCam`, `pcRender`); `colorSrc` is a Switch TOP that follows the *Format* parameter automatically.
-
-### Examples
-Example .toe project files are provided in this repository, under the `toe_examples` directory.
-
-## Standalone Kinect V1 depth tester
-
-This repository also includes a standalone CLI tester for Kinect V1 depth debugging, useful when you want to isolate `libfreenect` and the current FreenectTD depth processing path without running TouchDesigner.
-
-Build it with:
-
-`./scripts/build_fn1_depth_tester.sh`
-
-Run it with:
-
-`./build/fn1_depth_tester --mode plugin-path --format raw --duration 20 --toggle-every 5`
-
-Useful modes:
-
-* `--mode plugin-path` mirrors the current `getDepthFrame()` path used by the plugin.
-* `--mode raw-callback` reads raw depth callbacks directly and helps determine whether the capture itself is failing before conversion.
+To render it as a POP: a **TOP to POP** with *First RGBA Contains* = `Position and Active` on stream 2, plus a second TOP block reading the color (stream 4 for Raw, stream 0 for Registered) into `Color` with *Filter* = `Nearest Pixel`. Render it with a Constant MAT with *Apply Point Color* on. `toe_examples/FreenectTOP_PointCloud_Example.toe` contains this network.
 
 ### Known limitations
-
-* Like every TOP, FreenectTOP only cooks when something uses its output. If your Render Select TOPs stop updating while you are in another network or in perform mode, end the chain in a Null TOP with its display flag on (or display the result somewhere).
-* Only one FreenectTOP can be active per TouchDesigner process. A second active node shows an error and stays idle until *Active* is turned off on the first one.
-
-* Only one Kinect device per machine is supported.
+* Like every TOP, FreenectTOP only cooks when something uses its output. If Render Selects stop updating in perform mode or another network, end the chain in a Null TOP with its display flag on.
+* Only one Kinect per machine is supported.
 * Skeleton tracking is currently impossible to implement.
 
 ## Uninstalling
