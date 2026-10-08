@@ -355,9 +355,11 @@ bool FreenectTOP::fn1_initDevice() {
     // Crucial: Device init start
     LOG("[FreenectTOP] fn1_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
-    if (freenect_init(&fn1_ctx, nullptr) < 0) {
-        LOG("[FreenectTOP] fn1_initDevice: freenect_init failed");
-        initError = "Couldn't initialize libfreenect";
+    // freenect_init only calls libusb_init and returns its error code
+    int res = freenect_init(&fn1_ctx, nullptr);
+    if (res < 0) {
+        initError = "Couldn't initialize libfreenect (" + std::string(libusb_error_name(res)) + ")";
+        LOG("[FreenectTOP] fn1_initDevice: " + initError);
         return false;
     }
     
