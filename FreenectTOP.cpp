@@ -449,6 +449,7 @@ void FreenectTOP::fn1_cleanupDevice() {
     fn1_lastDepthTime = {};
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] fn1_cleanupDevice: start");
+        fn1_initSuccess = false; // an init job queued before this one may have set it back to true
         fn1_runEvents = false;
         if (fn1_eventThread.joinable()) {
             fn1_eventThread.join();
@@ -643,6 +644,7 @@ void FreenectTOP::fn2_cleanupDevice() {
     fn2_lastPointCloudSeq = NO_POINT_CLOUD; // a new device starts counting depth frames from 0 again
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] fn2_cleanupDevice: start");
+        fn2_initSuccess = false; // an init job queued before this one may have set it back to true
         fn2_stopEnumThread();
         std::lock_guard<std::mutex> lock(freenectMutex);
         if (fn2_device) {
