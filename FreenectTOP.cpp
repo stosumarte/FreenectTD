@@ -295,22 +295,22 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     // Do not initialize device here, will be done in execute
 }
 
-// Process-wide sensor ownership: only one FreenectTOP instance may open the Kinect
-std::mutex   FreenectTOP::sensorOwnerMutex;
-FreenectTOP* FreenectTOP::sensorOwner = nullptr;
+// Process-wide device ownership: only one FreenectTOP instance may open the Kinect
+std::mutex   FreenectTOP::deviceOwnerMutex;
+FreenectTOP* FreenectTOP::deviceOwner = nullptr;
 
-bool FreenectTOP::claimSensor() {
-    std::lock_guard<std::mutex> lock(sensorOwnerMutex);
-    if (sensorOwner == nullptr) sensorOwner = this;
-    return sensorOwner == this;
+bool FreenectTOP::claimDevice() {
+    std::lock_guard<std::mutex> lock(deviceOwnerMutex);
+    if (deviceOwner == nullptr) deviceOwner = this;
+    return deviceOwner == this;
 }
 
-void FreenectTOP::releaseSensor() {
+void FreenectTOP::releaseDevice() {
     bool wasOwner = false;
     {
-        std::lock_guard<std::mutex> lock(sensorOwnerMutex);
-        if (sensorOwner == this) {
-            sensorOwner = nullptr;
+        std::lock_guard<std::mutex> lock(deviceOwnerMutex);
+        if (deviceOwner == this) {
+            deviceOwner = nullptr;
             wasOwner = true;
         }
     }
@@ -327,7 +327,7 @@ FreenectTOP::~FreenectTOP() {
     LOG("[FreenectTOP] Destructor called, cleaning up devices");
     fn2_cleanupDevice();
     fn1_cleanupDevice();
-    releaseSensor();
+    releaseDevice();
     //fallbackBuffer.release(); // Release fallback buffer
 }
 
@@ -954,15 +954,15 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         warningString = "FreenectTOP is inactive";
         uploadFallbackBuffer();
         errorString.clear();
-        releaseSensor(); // let another FreenectTOP take the sensor
+        releaseDevice(); // let another FreenectTOP take the device
         return;
     } else {
         warningString.clear();
     }
 
-    // Only one FreenectTOP per process may talk to the sensor. A second active node would
+    // Only one FreenectTOP per process may talk to the device. A second active node would
     // fight the first for the USB device and both would stall, so it stays idle with an error.
-    if (!claimSensor()) {
+    if (!claimDevice()) {
         errorString = "Another FreenectTOP is already active. Only one can run at a time; turn Active off on the other node first.";
         uploadFallbackBuffer();
         return;

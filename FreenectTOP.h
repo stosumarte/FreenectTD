@@ -97,11 +97,11 @@ private:
     void uploadFallbackBuffer(int targetIndex = -1);
     void uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height);
     
-    // One active FreenectTOP per process (see claimSensor in FreenectTOP.cpp)
-    static std::mutex   sensorOwnerMutex;
-    static FreenectTOP* sensorOwner;
-    bool claimSensor();
-    void releaseSensor();
+    // One active FreenectTOP per process (see claimDevice in FreenectTOP.cpp)
+    static std::mutex   deviceOwnerMutex;
+    static FreenectTOP* deviceOwner;
+    bool claimDevice();
+    void releaseDevice();
     
     // Error/warning string handling
     std::string errorString;
