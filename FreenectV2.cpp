@@ -423,7 +423,6 @@ bool MyFreenect2Device::getDepthFrame(std::vector<float>& out, depthFormatEnum t
     out.resize(pixelCount);
     resampleNearest(srcData, srcWidth, srcHeight, 1, out.data(), dstWidth, dstHeight, /*flipX=*/true);
 
-    #pragma omp parallel for if(pixelCount > 100000)
     for (size_t i = 0; i < pixelCount; ++i) {
         if (!isDepthInRange(out[i], depthThreshMin, depthThreshMax)) {
             out[i] = 0.0f;
@@ -632,7 +631,6 @@ bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out) {
         out.resize(pixelCount);
     }
 
-    #pragma omp parallel for if(pixelCount > 100000)
     for (size_t i = 0; i < pixelCount; ++i) {
         float d = srcData[i];
         if (!std::isfinite(d) || d <= 0.f) d = 0.f;

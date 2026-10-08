@@ -1142,7 +1142,6 @@ void FreenectTOP::uploadDepthFrame(TD::TOP_Output* output, const std::vector<flo
         // Legacy behaviour: 0..1 across the threshold window, 0 = invalid
         uint16_t* dst = static_cast<uint16_t*>(buf->data);
         const float denom = std::max(depthThreshMax - depthThreshMin, 1.0f);
-        #pragma omp parallel for if(pixelCount > 100000)
         for (size_t i = 0; i < pixelCount; ++i) {
             const float d = depthMM[i];
             if (d <= 0.0f) {
@@ -1155,7 +1154,6 @@ void FreenectTOP::uploadDepthFrame(TD::TOP_Output* output, const std::vector<flo
     } else {
         float* dst = static_cast<float*>(buf->data);
         const float scale = (depthOutput == depthOutputEnum::Meters) ? 0.001f : 1.0f;
-        #pragma omp parallel for if(pixelCount > 100000)
         for (size_t i = 0; i < pixelCount; ++i) {
             dst[i] = (depthMM[i] > 0.0f) ? depthMM[i] * scale : unknownDepth;
         }
