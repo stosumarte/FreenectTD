@@ -279,6 +279,11 @@ int main(int argc, char** argv) {
                     std::cerr << "freenect_process_events_timeout failed with code " << err << '\n';
                     break;
                 }
+                // Like the plugin's event thread: getDepthFrame() only requests a format, this applies it.
+                // Raw-callback mode sets the format directly, and this would switch it back.
+                if (options.mode == TestMode::PluginPath) {
+                    device->applyStreamModes();
+                }
             }
         });
 
