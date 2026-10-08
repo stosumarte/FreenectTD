@@ -20,7 +20,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 | RGB streaming                                 | ✅         | ✅         |
 | Depth map streaming                           | ✅         | ✅         |
 | Point cloud map streaming                     | ❌         | ✅         |
-| IR streaming                                  | TBA       | ✅         |
+| IR streaming                                  | ✅         | ✅         |
 | Tilt control                                  | ✅         | ❌         |
 | Depth undistortion (Depth Format menu)        | ❌         | ✅         |
 | Depth registration (align depth map to color) | ✅         | ✅         |
@@ -31,6 +31,8 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 
 ### Known issues
 Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). This is due to a mix of different factors in libfreenect and Kinect official firmware.
+
+The V1 IR image is covered in bright dots. This is expected: it is the pattern the V1's laser projector casts to measure depth, and it can't be turned off without losing depth. A Blur TOP after the IR output smooths most of it away.
 
 ## [RECOMMENDED] Installing using installer
 
@@ -69,7 +71,7 @@ By default, FreenectTOP outputs RGB data. To get other streams, you must use Ren
 | 0 | RGB | RGBA8 | |
 | 1 | Depth | Mono16 or Mono32F | See *Depth Output* below |
 | 2 | Point cloud (v2) | RGBA32F | XYZ in meters, A = 1 for valid points, 0 for invalid |
-| 3 | IR (v2) | Mono16 | |
+| 3 | IR | Mono16 | v1: 640x480, replaces RGB (index 0 goes blank) while on, since both share one stream |
 | 4 | Registered color (v2) | RGBA8, 512x424 | RGB image resampled onto the depth grid, A = 0 where no color pixel exists |
 | 5 | Depth→color UV map (v2) | RGBA32F, 512x424 | (u, v, 0, valid) in TouchDesigner UV space, pointing into the RGB output. Lets you sample full-resolution RGB per depth pixel (Remap TOP / GLSL) instead of the 512x424 pre-sampled stream 4 |
 

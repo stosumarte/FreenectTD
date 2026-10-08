@@ -142,9 +142,10 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
 
     // --- Streams ---
     toggle("Enabledepth",      "Depth [1]",              1.0, page0,
-           "Number in brackets = Render Select TOP image index. RGB is always on, at index 0.", true);
+           "Number in brackets = Render Select TOP image index. RGB is always on, at index 0 (blank on Kinect v1 while IR is on).", true);
     toggle("Enablepointcloud", "Point Cloud [2]",        0.0, page0);
-    toggle("Enableir",         "IR [3]",                 0.0, page0);
+    toggle("Enableir",         "IR [3]",                 0.0, page0,
+           "On Kinect v1, RGB and IR share one stream: turning IR on blanks RGB [0].");
     toggle("Enableregcolor",   "Registered Color [4]",   0.0, page0);
     toggle("Enableuv",         "Depth-to-Color UV [5]",  0.0, page0);
 
@@ -351,7 +352,7 @@ FreenectTOP::~FreenectTOP() {
 }
 
 // Init for Kinect v1 (libfreenect)
-bool FreenectTOP::fn1_initDevice() {
+bool FreenectTOP::fn1_initDevice(bool ir) {
     // Crucial: Device init start
     LOG("[FreenectTOP] fn1_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
@@ -386,9 +387,8 @@ bool FreenectTOP::fn1_initDevice() {
     try {
         fn1_rgbReady = false;
         fn1_depthReady = false;
-        fn1_device = new MyFreenectDevice(fn1_ctx, 0, fn1_rgbReady, fn1_depthReady);
-        fn1_device->startVideo();
-        fn1_device->startDepth();
+        fn1_device = new MyFreenectDevice(fn1_ctx, 0, fn1_rgbReady, fn1_depthReady, ir);
+        fn1_device->start();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         fn1_runEvents = true;
         fn1_eventThread = std::thread([this]() {
@@ -401,6 +401,7 @@ bool FreenectTOP::fn1_initDevice() {
                     LOG("[FreenectTOP] Error in freenect_process_events");
                     break;
                 }
+                fn1_device->applyStreamModes();
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
             LOG("[FreenectTOP] fn1_eventThread: exiting");
@@ -426,6 +427,7 @@ bool FreenectTOP::fn1_initDevice() {
 void FreenectTOP::fn1_cleanupDevice() {
     fn1_initSuccess = false;
     fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
+    fn1_lastDepthTime = {};
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] fn1_cleanupDevice: start");
         fn1_runEvents = false;
@@ -603,8 +605,9 @@ bool FreenectTOP::fn2_initDevice() {
 
 // Threaded initialization for Kinect v1
 void FreenectTOP::fn1_startInitThread() {
-    runOnDeviceThread([this]() {
-        fn1_initSuccess = fn1_initDevice();
+    const bool ir = streamEnabledIR; // open in the requested video mode
+    runOnDeviceThread([this, ir]() {
+        fn1_initSuccess = fn1_initDevice(ir);
     });
 }
 
@@ -652,6 +655,18 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         return;
     }
     
+    // An unplugged v1 just stops sending frames, so treat 2 s without depth as a disconnect.
+    // The depth stream always runs, even when its output is off.
+    const auto now = std::chrono::steady_clock::now();
+    if (fn1_depthReady.exchange(false) || fn1_lastDepthTime == std::chrono::steady_clock::time_point{}) {
+        fn1_lastDepthTime = now;
+    } else if (now - fn1_lastDepthTime > std::chrono::seconds(2)) {
+        LOG("[FreenectTOP] executeV1: no depth frames for 2 s, closing the device");
+        fn1_cleanupDevice();
+        uploadFallbackBuffer();
+        return;
+    }
+    
     fn1_device->setResolutions(fn1_colorW, fn1_colorH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
     
     // Only touch the motor when the value actually changes: setting tilt every
@@ -670,12 +685,17 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     // Set color type based on parameter (not implemented yet, default to RGB)
     fn1_colorType colorType = fn1_colorType::RGB; // Default to RGB
     
+    // RGB and IR share the v1 video stream, so RGB is blank while IR is on
+    fn1_device->setIR(streamEnabledIR);
+    
     // Create output buffers
-    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext && !streamEnabledIR ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
-    if (colorFrameBuffer && fn1_device->getColorFrame(colorFrame, colorType)) {
+    if (streamEnabledIR) {
+        uploadFallbackBuffer(0);
+    } else if (colorFrameBuffer && fn1_device->getColorFrame(colorFrame, colorType)) {
         errorString.clear();
         std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn1_colorW * fn1_colorH * 4);
         TD::TOP_UploadInfo info;
@@ -701,6 +721,27 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         uploadFallbackBuffer(1);
     }
     
+    // --- IR frame ---
+    if (streamEnabledIR) {
+        std::vector<uint16_t> irFrame;
+        if (fntdContext && fn1_device->getIRFrame(irFrame)) {
+            TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext->createOutputBuffer(irFrame.size() * sizeof(uint16_t), TD::TOP_BufferFlags::None, nullptr);
+            if (irFrameBuffer) {
+                errorString.clear();
+                std::memcpy(irFrameBuffer->data, irFrame.data(), irFrame.size() * sizeof(uint16_t));
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = MyFreenectDevice::WIDTH;
+                info.textureDesc.height = MyFreenectDevice::HEIGHT;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex = 3;
+                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&irFrameBuffer, info, nullptr);
+            }
+        }
+    } else {
+        uploadFallbackBuffer(3);
+    }
 }
     
 // Execute method for Kinect v2 (libfreenect2)
@@ -928,7 +969,6 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     // Device-specific parameters
     dynamicParameterEnable("Tilt", true, false);
-    dynamicParameterEnable("Enableir", false, true);
     dynamicParameterEnable("Enablepointcloud", false, true);
     dynamicParameterEnable("V1rgbres", true, false);
     dynamicParameterEnable("V2rgbres", false, true);
@@ -980,6 +1020,10 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         errorString.clear();
         releaseDevice(); // let another FreenectTOP take the device
         return;
+    } else if (const char* format = inputs->getParString("Depthformat");
+               devType == "Kinect v1" && format && std::string(format) == "Rawundistorted") {
+        // A single menu entry can't be disabled, so say what happens instead
+        warningString = "Raw undistorted is Kinect v2 only; Kinect v1 uses Raw";
     } else {
         warningString.clear();
     }
