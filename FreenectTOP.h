@@ -71,15 +71,16 @@ private:
     
     std::atomic<bool>                       fn2_deviceAvailable{false};
     std::atomic<bool>                       fn2_slowUSB{false};
-    std::thread                             fn2_enumThread;
-    std::atomic<bool>                       fn2_enumThreadRunning;
 
     // V2 background init members
     std::atomic<bool>                       fn2_initSuccess{false};
     
-    // Add declarations for v2 enumeration thread helpers
-    void fn2_startEnumThread();
-    void fn2_stopEnumThread();
+    // Background USB scan: whether each Kinect version is plugged in, without opening it
+    std::atomic<bool>                       fn1_deviceAvailable{false};
+    std::thread                             usbScanThread;
+    std::atomic<bool>                       usbScanRunning{false};
+    void startUSBScanThread();
+    void stopUSBScanThread();
 
     // Device init/cleanup methods
     bool fn1_initDevice(bool ir);
@@ -129,6 +130,7 @@ private:
     static std::mutex deviceIOMutex;
     void runOnDeviceThread(std::function<void()> job);
     std::string initError; // written by init jobs, read by the cook thread only while the device thread is idle
+    std::string lastInitError; // cook thread's copy of initError from the last finished init attempt
     
     // Parameters variables
     float fn1_tilt = 0.0f;
