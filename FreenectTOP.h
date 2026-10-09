@@ -97,10 +97,10 @@ private:
     void uploadFallbackBuffer(int targetIndex = -1);
     void uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height);
     
-    // One active FreenectTOP per process (see claimDevice in FreenectTOP.cpp)
+    // One active FreenectTOP per Kinect version (see claimDevice in FreenectTOP.cpp); index 0 = v1, 1 = v2
     static std::mutex   deviceOwnerMutex;
-    static FreenectTOP* deviceOwner;
-    bool claimDevice();
+    static FreenectTOP* deviceOwner[2];
+    bool claimDevice(bool v2);
     void releaseDevice();
     
     // Error/warning string handling

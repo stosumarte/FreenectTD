@@ -318,7 +318,7 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
 
 // Process-wide device ownership: only one FreenectTOP instance may open the Kinect
 std::mutex   FreenectTOP::deviceOwnerMutex;
-FreenectTOP* FreenectTOP::deviceOwner = nullptr;
+FreenectTOP* FreenectTOP::deviceOwner[2] = {};
 
 std::mutex FreenectTOP::deviceIOMutex;
 
@@ -338,19 +338,21 @@ void FreenectTOP::runOnDeviceThread(std::function<void()> job) {
     });
 }
 
-bool FreenectTOP::claimDevice() {
+bool FreenectTOP::claimDevice(bool v2) {
     std::lock_guard<std::mutex> lock(deviceOwnerMutex);
-    if (deviceOwner == nullptr) deviceOwner = this;
-    return deviceOwner == this;
+    if (deviceOwner[v2] == nullptr) deviceOwner[v2] = this;
+    return deviceOwner[v2] == this;
 }
 
 void FreenectTOP::releaseDevice() {
     bool wasOwner = false;
     {
         std::lock_guard<std::mutex> lock(deviceOwnerMutex);
-        if (deviceOwner == this) {
-            deviceOwner = nullptr;
-            wasOwner = true;
+        for (FreenectTOP*& owner : deviceOwner) {
+            if (owner == this) {
+                owner = nullptr;
+                wasOwner = true;
+            }
         }
     }
     if (wasOwner) {
@@ -1036,19 +1038,19 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         warningString.clear();
     }
 
-    // Only one FreenectTOP per process may talk to the device. A second active node would
+    // Only one FreenectTOP per Kinect version may talk to that device. A second active node would
     // fight the first for the USB device and both would stall, so it stays idle with an error.
-    if (!claimDevice()) {
-        errorString = "Another FreenectTOP is already active. Only one can run at a time; turn Active off on the other node first.";
+    // A v1 node and a v2 node can run together: they use different libraries and USB devices.
+    // On a Hardware Version change, give up (and close) the old version first, so it is free
+    // for another node even if this one can't claim the new version.
+    if (devType != lastDeviceType) {
+        releaseDevice();
+        lastDeviceType = devType;
+    }
+    if (!claimDevice(devType == "Kinect v2")) {
+        errorString = "Another FreenectTOP is already using the " + devType + ". Only one node per Kinect version can be active; turn Active off on the other node first.";
         uploadFallbackBuffer();
         return;
-    }
-    
-    // Check if device type changed - only clean up and log if it actually changed
-    if (devType != lastDeviceType) {
-        fn1_cleanupDevice();
-        fn2_cleanupDevice();
-        lastDeviceType = devType;
     }
     
     // Execute based on current device type string
