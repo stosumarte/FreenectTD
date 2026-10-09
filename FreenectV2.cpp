@@ -603,20 +603,3 @@ bool MyFreenect2Device::getIRFrame(std::vector<uint16_t>& out) {
     LOG("[FreenectV2.cpp] getIRFrame(): success");
     return true;
 }
-
-// Set RGB buffer and mark as ready
-void MyFreenect2Device::setRGBBuffer(const std::vector<uint8_t>& buffer, bool markReady) {
-    std::lock_guard<std::mutex> lock(mutex);
-    rgbBuffer = buffer;
-    hasNewRGB = markReady;
-    if (markReady) rgbReady = true;
-}
-
-// Set depth buffer and mark as ready
-void MyFreenect2Device::setDepthBuffer(const std::vector<float>& buffer, bool markReady) {
-    std::lock_guard<std::mutex> lock(mutex);
-    depthBuffer = buffer;
-    ++depthSeq;
-    hasNewDepth = markReady;
-    if (markReady) depthReady = true;
-}
