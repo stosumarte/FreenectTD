@@ -7,8 +7,10 @@
 
 #include "FreenectTOP.h"
 #include "USBScan.h"
+#include "UpdateCheck.h"
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include "ofxKinectExtras.h"
 #include "logger.h"
 #include <atomic>
@@ -231,17 +233,28 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // ABOUT PAGE
     // ----------
     const char* page1 = "About";
-    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " - by @stosumarte";
+    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " by @stosumarte";
     header("Version", versionLabel.c_str(), page1);
-    header("Hdrcontrib", "Point cloud registration, float depth, POP workflow (v1.1): Dean Cheesman", page1);
-    header("Updateheader", "Visit the following URL to check for updates:", page1, /*section=*/true);
-    {
-        OP_StringParameter updateUrlParam;
-        updateUrlParam.name = "Updateurl";
-        updateUrlParam.label = "Copy this -> ";
-        updateUrlParam.page = page1;
-        updateUrlParam.defaultValue = "github.com/stosumarte/FreenectTD/releases/latest";
-        manager->appendString(updateUrlParam);
+    header("Contrib1", "@dcheesman: point cloud registration, float depth, POP workflow", page1, /*section=*/true);
+    header("Contrib2", "@gcarizza: Kinect v1 depth stream fix (#21)", page1);
+    header("Contrib3", "@fedevoxlive: Kinect v1 IR streaming (#22)", page1);
+    auto pulse = [&](const char* name, const char* label, const char* help, bool section = false) {
+        OP_NumericParameter pulseParam;
+        pulseParam.name = name;
+        pulseParam.label = label;
+        pulseParam.page = page1;
+        layout(pulseParam, help, section);
+        manager->appendPulse(pulseParam);
+    };
+    pulse("Checkupdates", "Check for Updates", "Ask GitHub for the latest release and show the result in a dialog.", true);
+    pulse("Openreleases", "Open Releases Page", "Open the FreenectTD releases page in the browser.");
+}
+
+void FreenectTOP::pulsePressed(const char* name, void*) {
+    if (std::strcmp(name, "Checkupdates") == 0) {
+        checkForUpdates(FREENECTTOP_VERSION);
+    } else if (std::strcmp(name, "Openreleases") == 0) {
+        openReleasesPage();
     }
 }
 
