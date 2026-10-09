@@ -10,6 +10,7 @@
 #include "logger.h"
 
 #include <libfreenect/libfreenect.hpp>
+#include <chrono>
 
 #include "FreenectCommon.h"
 
@@ -54,4 +55,7 @@ private:
     std::atomic<bool>     wantIR{false};
     std::atomic<freenect_depth_format> wantDepthFormat{FREENECT_DEPTH_MM};
     bool                  streamingIR = false; // event thread only
+    // Video stream watchdog, event thread only (callbacks run inside freenect_process_events)
+    std::chrono::steady_clock::time_point videoStartedAt;
+    bool                  videoFrameSinceStart = false;
 };

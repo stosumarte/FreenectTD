@@ -20,7 +20,7 @@ xcrun clang++ \
   -DFNTD_PROFILE=0 \
   -I"${ROOT_DIR}" \
   -I"${ROOT_DIR}/include/headers" \
-  "${ROOT_DIR}/tools/fn1_depth_tester.cpp" \
+  "${ROOT_DIR}/utils/fn1_depth_tester.cpp" \
   "${ROOT_DIR}/FreenectV1.cpp" \
   "${ROOT_DIR}/ofxKinectExtras/ofxKinectExtras.cpp" \
   "${ROOT_DIR}/include/libs/libfreenect_0.7.5.a" \

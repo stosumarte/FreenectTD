@@ -32,6 +32,7 @@ MyFreenectDevice::MyFreenectDevice
     // Open straight in the requested mode: switching right after the stream starts can leave it dead
     setVideoFormat(ir ? FREENECT_VIDEO_IR_10BIT : FREENECT_VIDEO_RGB);
     setDepthFormat(FREENECT_DEPTH_MM);
+    videoStartedAt = std::chrono::steady_clock::now(); // for callers that start the streams themselves
 }
 
 // MyFreenectDevice class destructor
@@ -43,6 +44,7 @@ MyFreenectDevice::~MyFreenectDevice() {
 void MyFreenectDevice::VideoCallback(void* video, uint32_t) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!video) return;
+    videoFrameSinceStart = true;
     if (streamingIR) {
         // IR_10BIT frames are 640x488 with values in 0..1023; keep the first 480 rows to match RGB and depth
         auto ptr = static_cast<uint16_t*>(video);
@@ -71,6 +73,8 @@ void MyFreenectDevice::DepthCallback(void* depth, uint32_t) {
 bool MyFreenectDevice::start() {
     startDepth();
     startVideo();
+    videoStartedAt = std::chrono::steady_clock::now();
+    videoFrameSinceStart = false;
     return true;
 }
 
@@ -101,8 +105,17 @@ void MyFreenectDevice::applyStreamModes() {
         }
     }
     const bool ir = wantIR.load();
+    // NOTE: the first IR -> RGB switch after opening in IR often starts a stream that never sends a
+    // frame, with no error from libfreenect. Starting it again fixes it, so restart a silent video stream.
+    const auto now = std::chrono::steady_clock::now();
+    const bool videoStalled = !videoFrameSinceStart && now - videoStartedAt > std::chrono::seconds(1);
     // Restarting depth resets the IR camera, so an IR video stream has to be restarted after it
-    if (ir == streamingIR && !(ir && depthRestarted)) return;
+    if (ir == streamingIR && !(ir && depthRestarted) && !videoStalled) return;
+    if (videoStalled) {
+        LOG("[FreenectV1.cpp] applyStreamModes: no video frames for 1 s, restarting the video stream");
+    }
+    videoStartedAt = now;
+    videoFrameSinceStart = false;
     {
         std::lock_guard<std::mutex> lock(mutex);
         streamingIR = ir;

@@ -18,6 +18,7 @@
 		813994B12E7468D80073667B /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994B02E7468D80073667B /* OpenCL.framework */; };
 		81E200842E7428F300CCB6AE /* ofxKinectExtras.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */; };
 		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
+		AA296371F01EB92E7494C0C0 /* USBScan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6296D98E00C4EA4410C92459 /* USBScan.cpp */; };
 		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
 /* End PBXBuildFile section */
 
@@ -56,6 +57,8 @@
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
 		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
+		6296D98E00C4EA4410C92459 /* USBScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = USBScan.cpp; sourceTree = "<group>"; };
+		3D1EE710F3B9F6B26C0D7682 /* USBScan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = USBScan.h; sourceTree = "<group>"; };
 		81FD1DEB2E36519700900396 /* FreenectV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV2.h; sourceTree = "<group>"; };
 		81FF21B52E99655C00DF4A33 /* notes.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = notes.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -131,6 +134,8 @@
 				81FD1DE52E3630A700900396 /* FreenectV1.cpp */,
 				81FD1DEB2E36519700900396 /* FreenectV2.h */,
 				81FD1DE72E3630A700900396 /* FreenectV2.cpp */,
+				3D1EE710F3B9F6B26C0D7682 /* USBScan.h */,
+				6296D98E00C4EA4410C92459 /* USBScan.cpp */,
 				8120BA1B2E61E88100126067 /* logger.h */,
 				81E200832E7428F300CCB6AE /* ofxKinectExtras */,
 				81483C022E70206B006EE51D /* include */,
@@ -231,6 +236,7 @@
 				81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */,
 				81E200842E7428F300CCB6AE /* ofxKinectExtras.cpp in Sources */,
 				81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */,
+				AA296371F01EB92E7494C0C0 /* USBScan.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

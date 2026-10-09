@@ -71,15 +71,16 @@ private:
     
     std::atomic<bool>                       fn2_deviceAvailable{false};
     std::atomic<bool>                       fn2_slowUSB{false};
-    std::thread                             fn2_enumThread;
-    std::atomic<bool>                       fn2_enumThreadRunning;
 
     // V2 background init members
     std::atomic<bool>                       fn2_initSuccess{false};
     
-    // Add declarations for v2 enumeration thread helpers
-    void fn2_startEnumThread();
-    void fn2_stopEnumThread();
+    // Background USB scan: whether each Kinect version is plugged in, without opening it
+    std::atomic<bool>                       fn1_deviceAvailable{false};
+    std::thread                             usbScanThread;
+    std::atomic<bool>                       usbScanRunning{false};
+    void startUSBScanThread();
+    void stopUSBScanThread();
 
     // Device init/cleanup methods
     bool fn1_initDevice(bool ir);
@@ -96,10 +97,10 @@ private:
     void uploadFallbackBuffer(int targetIndex = -1);
     void uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height);
     
-    // One active FreenectTOP per process (see claimDevice in FreenectTOP.cpp)
+    // One active FreenectTOP per Kinect version (see claimDevice in FreenectTOP.cpp); index 0 = v1, 1 = v2
     static std::mutex   deviceOwnerMutex;
-    static FreenectTOP* deviceOwner;
-    bool claimDevice();
+    static FreenectTOP* deviceOwner[2];
+    bool claimDevice(bool v2);
     void releaseDevice();
     
     // Error/warning string handling
@@ -122,12 +123,14 @@ private:
     void fn1_startInitThread();
 
     // Device init and cleanup run as jobs on a background thread so opening or closing the device
-    // never stalls the cook. Jobs run one after another; the thread is shared by all instances
-    // because only one of them owns the device at a time and a close must finish before the next open.
-    static std::thread      deviceThread;
-    static std::atomic<int> deviceJobsPending; // queued or running jobs; 0 = idle
-    static void runOnDeviceThread(std::function<void()> job);
+    // never stalls the cook. Each instance has its own thread, so deleting a node only waits for its
+    // own jobs. deviceIOMutex makes jobs from all instances take turns, so a close finishes before the next open.
+    std::thread      deviceThread;
+    std::atomic<int> deviceJobsPending{0}; // queued or running jobs; 0 = idle
+    static std::mutex deviceIOMutex;
+    void runOnDeviceThread(std::function<void()> job);
     std::string initError; // written by init jobs, read by the cook thread only while the device thread is idle
+    std::string lastInitError; // cook thread's copy of initError from the last finished init attempt
     
     // Parameters variables
     float fn1_tilt = 0.0f;

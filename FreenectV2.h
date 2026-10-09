@@ -42,7 +42,6 @@ public:
     ~MyFreenect2Device();
     bool start();
     void stop();
-    void close();
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<float>& out);
     bool getIR(std::vector<float>& out);
@@ -62,9 +61,6 @@ public:
     void setDepthRange(float minMM, float maxMM);
     // RGB mapped onto the depth grid (512x424 RGBA8) + depth->color UV map (512x424 RGBA32F)
     bool getRegisteredColorFrame(std::vector<uint8_t>& color, std::vector<float>& uv);
-    // Setters for buffer injection
-    void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
-    void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
     // Size of the RGB output, and of the Registered depth and color-space point cloud that are pixel-aligned with it:
     // 1920x1080 natively, 1280x720 on Non-Commercial TouchDesigner. Everything else is always native.
     void setColorSize(int width, int height);
