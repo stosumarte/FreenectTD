@@ -600,11 +600,9 @@ bool FreenectTOP::fn2_initDevice() {
         initError = "Failed to start Kinect v2 device";
         delete fn2_device;
         LOG("[FreenectTOP] fn2_initDevice: fn2_device deleted");
-        if (fn2_pipeline) {
-            delete fn2_pipeline;
-            fn2_pipeline = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_pipeline deleted and set to nullptr");
-        }
+        // The opened libfreenect2 device owns the pipeline and deletes it when fn2_ctx is deleted below;
+        // deleting it here too is a double free
+        fn2_pipeline = nullptr;
         if (fn2_ctx) {
             delete fn2_ctx;
             fn2_ctx = nullptr;
