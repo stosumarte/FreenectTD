@@ -566,64 +566,38 @@ bool FreenectTOP::fn2_initDevice() {
         LOG("[FreenectTOP] fn2_initDevice: (end) already initialized");
         return true;
     }
-    fn2_ctx = new libfreenect2::Freenect2();
-    LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_ctx after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_ctx)));
-    if (fn2_ctx->enumerateDevices() == 0) {
-        initError = "No Kinect v2 devices found";
+    // Undoes a partial init. The pipeline is never deleted here: openDevice deletes it when it fails,
+    // and once opened the libfreenect2 device owns it and deletes it with fn2_ctx.
+    auto fail = [this](const std::string& error) {
+        initError = error;
+        LOG("[FreenectTOP] fn2_initDevice: (end) " + error);
+        delete fn2_device;
+        fn2_device = nullptr;
+        fn2_pipeline = nullptr;
         delete fn2_ctx;
         fn2_ctx = nullptr;
-        LOG("[FreenectTOP] fn2_initDevice: (end) no devices - fn2_ctx deleted and set to nullptr");
         return false;
+    };
+    fn2_ctx = new libfreenect2::Freenect2();
+    if (fn2_ctx->enumerateDevices() == 0) {
+        return fail("No Kinect v2 devices found");
     }
     fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
     try {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
     } catch (...) {
-        initError = "Couldn't create CPU pipeline for Kinect v2";
-        LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_pipeline after fail = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_pipeline)));
+        return fail("Couldn't create CPU pipeline for Kinect v2");
     }
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
-    LOG(std::string("[FreenectTOP] fn2_initDevice: openDevice returned dev = ") + std::to_string(reinterpret_cast<uintptr_t>(dev)));
     if (!dev) {
-        initError = "Failed to open Kinect v2 device, is it on a USB 3 port?";
-        delete fn2_device;
-        // openDevice owns the pipeline and already deleted it on failure; deleting it again crashes TD
-        fn2_pipeline = nullptr;
-        if (fn2_ctx) {
-            delete fn2_ctx;
-            fn2_ctx = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_ctx deleted and set to nullptr");
-        }
-        fn2_device = nullptr;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device set to nullptr");
-        LOG("[FreenectTOP] fn2_initDevice: end (openDevice fail)");
-        return false;
+        return fail("Failed to open Kinect v2 device, is it on a USB 3 port?");
     }
-    if (!fn2_device) {
-        fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady, fn2_irReady);
-        LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_device after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_device)));
-    }
+    fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady, fn2_irReady);
     if (!fn2_device->start()) {
-        initError = "Failed to start Kinect v2 device";
-        delete fn2_device;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device deleted");
-        // The opened libfreenect2 device owns the pipeline and deletes it when fn2_ctx is deleted below;
-        // deleting it here too is a double free
-        fn2_pipeline = nullptr;
-        if (fn2_ctx) {
-            delete fn2_ctx;
-            fn2_ctx = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_ctx deleted and set to nullptr");
-        }
-        fn2_device = nullptr;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device set to nullptr");
-        LOG("[FreenectTOP] fn2_initDevice: end (start fail)");
-        return false;
+        return fail("Failed to start Kinect v2 device");
     }
     
-    // Stop enumeration thread after successful device start
-    // The enum thread keeps running: fn2_execute uses it to notice an unplugged device
-    LOG("[FreenectTOP] fn2_initDevice: device started");
+    // The USB scan keeps running: fn2_execute uses it to notice an unplugged device
     LOG("[FreenectTOP] fn2_initDevice: end (success)");
     return true;
 }
