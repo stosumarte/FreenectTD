@@ -470,16 +470,20 @@ void FreenectTOP::fn1_cleanupDevice() {
     });
 }
 
-// True if a Kinect v2 is attached at less than USB 3 speed; libfreenect2 crashes the process opening it there.
-// ponytail: checks every Kinect v2, not just the one libfreenect2 picks; match by serial if multi-Kinect setups matter
-static bool fn2_onSlowUSB() {
+// Looks for a Kinect v2 in the USB device list without opening it, so a streaming device isn't disturbed.
+// slow = attached at less than USB 3 speed; libfreenect2 crashes the process opening it there.
+// NOTE: looks at every Kinect v2, not just the one libfreenect2 picks; one shared scan listing devices
+// by bus+port when multi-Kinect setups matter
+struct fn2_USBScan { bool ok = false, found = false, slow = false; };
+static fn2_USBScan fn2_scanUSB() {
+    fn2_USBScan scan;
     libusb_context* usb = nullptr;
     if (libusb_init(&usb) != 0) {
-        return false;
+        return scan;
     }
     libusb_device** list = nullptr;
     ssize_t count = libusb_get_device_list(usb, &list);
-    bool slow = false;
+    scan.ok = count >= 0;
     for (ssize_t i = 0; i < count; ++i) {
         libusb_device_descriptor desc;
         if (libusb_get_device_descriptor(list[i], &desc) != 0) {
@@ -487,17 +491,21 @@ static bool fn2_onSlowUSB() {
         }
         // Same IDs libfreenect2 enumerates: Kinect for Windows v2 and Xbox One Kinect
         bool isKinect2 = desc.idVendor == 0x045E && (desc.idProduct == 0x02C4 || desc.idProduct == 0x02D8);
+        if (!isKinect2) {
+            continue;
+        }
+        scan.found = true;
         int speed = libusb_get_device_speed(list[i]);
         // LIBUSB_SPEED_UNKNOWN is let through so an unreported speed doesn't block a working setup
-        if (isKinect2 && speed != LIBUSB_SPEED_UNKNOWN && speed < LIBUSB_SPEED_SUPER) {
-            slow = true;
+        if (speed != LIBUSB_SPEED_UNKNOWN && speed < LIBUSB_SPEED_SUPER) {
+            scan.slow = true;
         }
     }
     if (count >= 0) {
         libusb_free_device_list(list, 1);
     }
     libusb_exit(usb);
-    return slow;
+    return scan;
 }
 
 // Start the background enumeration thread for Kinect v2
@@ -511,12 +519,11 @@ void FreenectTOP::fn2_startEnumThread() {
     LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThreadRunning after = " + std::to_string(fn2_enumThreadRunning.load()));
     fn2_enumThread = std::thread([this]() {
         while (fn2_enumThreadRunning.load()) {
-            // libfreenect2 enumeration opens the device, which makes it flicker out of other scans,
-            // so it is skipped while the device sits on USB 2 and can't be used anyway
-            fn2_slowUSB = fn2_onSlowUSB();
-            if (!fn2_slowUSB.load()) {
-                libfreenect2::Freenect2 ctx;
-                fn2_deviceAvailable = (ctx.enumerateDevices() > 0);
+            // Not libfreenect2's enumerateDevices(): it opens the Kinect, even while it's streaming
+            const fn2_USBScan scan = fn2_scanUSB();
+            if (scan.ok) { // keep the last result if libusb fails
+                fn2_slowUSB = scan.slow;
+                fn2_deviceAvailable = scan.found;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -615,8 +622,8 @@ bool FreenectTOP::fn2_initDevice() {
     }
     
     // Stop enumeration thread after successful device start
-    //fn2_stopEnumThread();
-    LOG("[FreenectTOP] fn2_initDevice: device started and enum thread stopped");
+    // The enum thread keeps running: fn2_execute uses it to notice an unplugged device
+    LOG("[FreenectTOP] fn2_initDevice: device started");
     LOG("[FreenectTOP] fn2_initDevice: end (success)");
     return true;
 }
