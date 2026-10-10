@@ -12,28 +12,27 @@
 #include <chrono>
 #include <Accelerate/Accelerate.h>
 
-// depthFormatEnum enum definition (shared between v1 and v2)
-enum class depthFormatEnum {
-    Raw,
-    RawUndistorted,
-    Registered
-};
-
 // MyFreenectDevice class constructor
 MyFreenectDevice::MyFreenectDevice
     (freenect_context* ctx, int index,
      std::atomic<bool>& rgbFlag,
-     std::atomic<bool>& depthFlag) :
+     std::atomic<bool>& depthFlag,
+     bool ir) :
       FreenectDevice(ctx, index),
       rgbReady(rgbFlag),
       depthReady(depthFlag),
       rgbBuffer(WIDTH * HEIGHT * 3),
       depthBuffer(WIDTH * HEIGHT),
+      irBuffer(WIDTH * HEIGHT),
       hasNewRGB(false),
-      hasNewDepth(false)
+      hasNewDepth(false),
+      wantIR(ir),
+      streamingIR(ir)
 {
-    setVideoFormat(FREENECT_VIDEO_RGB);
+    // Open straight in the requested mode: switching right after the stream starts can leave it dead
+    setVideoFormat(ir ? FREENECT_VIDEO_IR_10BIT : FREENECT_VIDEO_RGB);
     setDepthFormat(FREENECT_DEPTH_MM);
+    videoStartedAt = std::chrono::steady_clock::now(); // for callers that start the streams themselves
 }
 
 // MyFreenectDevice class destructor
@@ -41,11 +40,19 @@ MyFreenectDevice::~MyFreenectDevice() {
     stop();
 }
 
-// VideoCallback method to handle RGB data
-void MyFreenectDevice::VideoCallback(void* rgb, uint32_t) {
+// VideoCallback method to handle RGB or IR data, depending on the current video mode
+void MyFreenectDevice::VideoCallback(void* video, uint32_t) {
     std::lock_guard<std::mutex> lock(mutex);
-    if (!rgb) return;
-    auto ptr = static_cast<uint8_t*>(rgb);
+    if (!video) return;
+    videoFrameSinceStart = true;
+    if (streamingIR) {
+        // IR_10BIT frames are 640x488 with values in 0..1023; keep the first 480 rows to match RGB and depth
+        auto ptr = static_cast<uint16_t*>(video);
+        std::copy(ptr, ptr + irBuffer.size(), irBuffer.begin());
+        hasNewIR = true;
+        return;
+    }
+    auto ptr = static_cast<uint8_t*>(video);
     std::copy(ptr, ptr + rgbBuffer.size(), rgbBuffer.begin());
     hasNewRGB = true;
     rgbReady = true;
@@ -61,27 +68,68 @@ void MyFreenectDevice::DepthCallback(void* depth, uint32_t) {
     depthReady = true;
 }
 
-// Start video and depth streams (using libfreenect.hpp API)
+// Start depth and video streams (using libfreenect.hpp API)
+// Depth goes first: starting it resets the IR camera, which would kill an IR video stream.
 bool MyFreenectDevice::start() {
-    startVideo();
     startDepth();
+    startVideo();
+    videoStartedAt = std::chrono::steady_clock::now();
+    videoFrameSinceStart = false;
     return true;
 }
 
 // Stop video and depth streams (using libfreenect.hpp API)
+// Runs from the destructor, so it must not throw: stopping fails when a stream is already
+// stopped, e.g. after the Kinect was unplugged.
 void MyFreenectDevice::stop() {
-    stopVideo();
-    stopDepth();
+    try { stopVideo(); } catch (const std::exception&) {}
+    try { stopDepth(); } catch (const std::exception&) {}
 }
 
-// Set RGB, depth and IR resolutions
-void MyFreenectDevice::setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int irWidth, int irHeight) {
-    rgbWidth_ = rgbWidth;
-    rgbHeight_ = rgbHeight;
-    depthWidth_ = depthWidth;
-    depthHeight_ = depthHeight;
-    irWidth_ = irWidth;
-    irHeight_ = irHeight;
+// Request RGB or IR on the video stream
+void MyFreenectDevice::setIR(bool ir) {
+    wantIR = ir;
+}
+
+// Apply the requested depth format and RGB/IR video mode.
+// Must run on the event thread between freenect_process_events calls: callbacks only fire inside
+// process_events, so none can see a frame in the old format after the switch.
+void MyFreenectDevice::applyStreamModes() {
+    const freenect_depth_format depthFormat = wantDepthFormat.load();
+    const bool depthRestarted = depthFormat != getDepthFormat();
+    if (depthRestarted) {
+        try {
+            setDepthFormat(depthFormat);
+        } catch (const std::exception& e) {
+            LOG(std::string("[FreenectV1.cpp] applyStreamModes: ") + e.what());
+        }
+    }
+    const bool ir = wantIR.load();
+    // NOTE: the first IR -> RGB switch after opening in IR often starts a stream that never sends a
+    // frame, with no error from libfreenect. Starting it again fixes it, so restart a silent video stream.
+    const auto now = std::chrono::steady_clock::now();
+    const bool videoStalled = !videoFrameSinceStart && now - videoStartedAt > std::chrono::seconds(1);
+    // Restarting depth resets the IR camera, so an IR video stream has to be restarted after it
+    if (ir == streamingIR && !(ir && depthRestarted) && !videoStalled) return;
+    if (videoStalled) {
+        LOG("[FreenectV1.cpp] applyStreamModes: no video frames for 1 s, restarting the video stream");
+    }
+    videoStartedAt = now;
+    videoFrameSinceStart = false;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        streamingIR = ir;
+        hasNewRGB = false;
+        hasNewIR = false;
+    }
+    try {
+        // setVideoFormat only restarts a stream it managed to stop, so stop and start it explicitly
+        try { stopVideo(); } catch (const std::exception&) {} // already stopped
+        setVideoFormat(ir ? FREENECT_VIDEO_IR_10BIT : FREENECT_VIDEO_RGB);
+        startVideo();
+    } catch (const std::exception& e) {
+        LOG(std::string("[FreenectV1.cpp] applyStreamModes: ") + e.what());
+    }
 }
 
 // Get RGB data
@@ -102,66 +150,26 @@ bool MyFreenectDevice::getDepth(std::vector<uint16_t>& out) {
     return true;
 }
 
-// Get color frame
+// Get color frame (RGBA, 640x480)
 bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType type) {
-    const int srcWidth = WIDTH, srcHeight = HEIGHT;
-    const int dstWidth = rgbWidth_, dstHeight = rgbHeight_;
-    
-    /*switch (type) {
-        case fn1_colorType::RGB:
-            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_RGB);
-            break;
-        case fn1_colorType::IR:
-            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_IR_10BIT);
-            break;
-        default:
-            MyFreenectDevice::setVideoFormat(FREENECT_VIDEO_RGB);
-            break;
-    }*/
-
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewRGB) return false;
 
-    const size_t dstPixelCount = static_cast<size_t>(dstWidth) * dstHeight;
-    out.resize(dstPixelCount * 4);
-
-    // Source buffer (RGB888)
+    out.resize(static_cast<size_t>(WIDTH) * HEIGHT * 4);
     vImage_Buffer src = {
         .data = rgbBuffer.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * 3)
+        .height = (vImagePixelCount)HEIGHT,
+        .width = (vImagePixelCount)WIDTH,
+        .rowBytes = static_cast<size_t>(WIDTH * 3)
     };
-
-    // Temporary ARGB buffer (same size as source)
-    std::vector<uint8_t> tmpARGB(srcWidth * srcHeight * 4);
-    vImage_Buffer tmpARGBbuf = {
-        .data = tmpARGB.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * 4)
-    };
-
-    // Destination RGBA buffer (scaled)
     vImage_Buffer dst = {
         .data = out.data(),
-        .height = (vImagePixelCount)dstHeight,
-        .width = (vImagePixelCount)dstWidth,
-        .rowBytes = static_cast<size_t>(dstWidth * 4)
+        .height = (vImagePixelCount)HEIGHT,
+        .width = (vImagePixelCount)WIDTH,
+        .rowBytes = static_cast<size_t>(WIDTH * 4)
     };
-
-    // Convert RGB → ARGB
-    vImageConvert_RGB888toARGB8888(&src, nullptr, 255, &tmpARGBbuf, false, kvImageNoFlags);
-
-    // Scale ARGB
-    if (dstWidth != srcWidth || dstHeight != srcHeight) {
-        vImageScale_ARGB8888(&tmpARGBbuf, &dst, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
-    } else {
-        // Same size, copy directly
-        std::memcpy(out.data(), tmpARGB.data(), tmpARGB.size());
-    }
-
-    // Convert ARGB → RGBA in place (safe, same 4 bytes per pixel)
+    // RGB -> ARGB, then ARGB -> RGBA in place
+    vImageConvert_RGB888toARGB8888(&src, nullptr, 255, &dst, false, kvImageNoFlags);
     vImagePermuteChannels_ARGB8888(&dst, &dst, (uint8_t[]){1, 2, 3, 0}, kvImageNoFlags);
 
     hasNewRGB = false;
@@ -169,61 +177,33 @@ bool MyFreenectDevice::getColorFrame(std::vector<uint8_t>& out, fn1_colorType ty
 }
 
 // Get depth frame
-bool MyFreenectDevice::getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
-    const int srcWidth = WIDTH, srcHeight = HEIGHT;
-    const int dstWidth = depthWidth_, dstHeight = depthHeight_;
-
-    if (type == depthFormatEnum::Registered) {
-        MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_REGISTERED);
-    } else {
-        // Both Raw and RawUndistorted use FREENECT_DEPTH_MM for v1
-        MyFreenectDevice::setDepthFormat(FREENECT_DEPTH_MM);
-    }
+bool MyFreenectDevice::getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax) {
+    // Both Raw and RawUndistorted use FREENECT_DEPTH_MM for v1
+    wantDepthFormat = (type == depthFormatEnum::Registered) ? FREENECT_DEPTH_REGISTERED : FREENECT_DEPTH_MM;
 
     std::lock_guard<std::mutex> lock(mutex);
     if (!hasNewDepth) return false;
 
-    const size_t srcPixelCount = static_cast<size_t>(srcWidth) * srcHeight;
-    const size_t dstPixelCount = static_cast<size_t>(dstWidth) * dstHeight;
-    out.resize(dstPixelCount);
-
-    // Step 1. Normalize depth data into 16-bit linear buffer
-    std::vector<uint16_t> tmp(srcPixelCount);
-    #pragma omp parallel for if(srcPixelCount > 100000)
-    for (size_t i = 0; i < srcPixelCount; ++i) {
-        uint16_t val = depthBuffer[i];
-            const float min_mm = depthThreshMin;
-            const float max_mm = depthThreshMax;
-            if (val >= min_mm && val <= max_mm) {
-                tmp[i] = static_cast<uint16_t>(
-                    (static_cast<float>(val) - min_mm) / (max_mm - min_mm) * 65535.0f
-                );
-            } else {
-                tmp[i] = 0;
-            }
-    }
-
-    // Step 2. Use vImage to scale depth map (single channel 16-bit)
-    vImage_Buffer srcBuf = {
-        .data = tmp.data(),
-        .height = (vImagePixelCount)srcHeight,
-        .width = (vImagePixelCount)srcWidth,
-        .rowBytes = static_cast<size_t>(srcWidth * sizeof(uint16_t))
-    };
-
-    vImage_Buffer dstBuf = {
-        .data = out.data(),
-        .height = (vImagePixelCount)dstHeight,
-        .width = (vImagePixelCount)dstWidth,
-        .rowBytes = static_cast<size_t>(dstWidth * sizeof(uint16_t))
-    };
-
-    if (dstWidth != srcWidth || dstHeight != srcHeight) {
-        vImageScale_Planar16U(&srcBuf, &dstBuf, nullptr, kvImageHighQualityResampling | kvImageDoNotTile);
-    } else {
-        std::memcpy(out.data(), tmp.data(), tmp.size() * sizeof(uint16_t));
+    // 16-bit mm to float, then mask the depth range
+    out.assign(depthBuffer.begin(), depthBuffer.end());
+    for (float& depth : out) {
+        if (!isDepthInRange(depth, depthThreshMin, depthThreshMax)) {
+            depth = 0.0f;
+        }
     }
 
     hasNewDepth = false;
+    return true;
+}
+
+// Get IR frame
+bool MyFreenectDevice::getIRFrame(std::vector<uint16_t>& out) {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (!hasNewIR) return false;
+    out.resize(irBuffer.size());
+    std::transform(irBuffer.begin(), irBuffer.end(), out.begin(), [](uint16_t value) {
+        return static_cast<uint16_t>(value << 6);
+    });
+    hasNewIR = false;
     return true;
 }

@@ -14,12 +14,11 @@
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 
+#include "FreenectCommon.h"
+
 #include <thread>
 #include <mutex>
 #include <atomic>
-
-// Forward declaration - depthFormatEnum is defined in FreenectTOP.h
-enum class depthFormatEnum;
 
 class MyFreenect2Device {
 public:
@@ -43,26 +42,34 @@ public:
     ~MyFreenect2Device();
     bool start();
     void stop();
-    void close();
     bool getRGB(std::vector<uint8_t>& out);
     bool getDepth(std::vector<float>& out);
     bool getIR(std::vector<float>& out);
     void processFrames();
     // Unified processed frame methods for v2
     bool getColorFrame(std::vector<uint8_t>& out);
-    bool getDepthFrame(std::vector<uint16_t>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax);
+    // Depth in millimetres (float), 0 = invalid / outside threshold
+    bool getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax);
     bool getIRFrame(std::vector<uint16_t>& out);
-    bool getPointCloudFrame(std::vector<float>& out);
-    // Setters for buffer injection
-    void setRGBBuffer(const std::vector<uint8_t>& buf, bool hasNew = true);
-    void setDepthBuffer(const std::vector<float>& buf, bool hasNew = true);
-    // Set resolutions
-    void setResolutions(int rgbWidth, int rgbHeight, int depthWidth, int depthHeight, int pcWidth, int pcHeight, int irWidth, int irHeight);
+    // XYZ (m) + validity in A; space selects depth-camera (512x424) or color-camera (1920x1080) frame
+    // flipX/flipY/flipZ negate the corresponding axis (e.g. flipZ makes +Z point toward the viewer, TouchDesigner style)
+    // unknownXYZ (3 floats) is written to XYZ of invalid points; their alpha is always 0
+    bool getPointCloudFrame(std::vector<float>& out, pcSpaceEnum space, float depthThreshMin, float depthThreshMax,
+                            bool flipX, bool flipY, bool flipZ, const float* unknownXYZ);
+    uint64_t getDepthSeq();
+    // Range libfreenect2 itself clips depth to (its default is 500-4500 mm). Only touches the device on a change.
+    void setDepthRange(float minMM, float maxMM);
+    // RGB mapped onto the depth grid (512x424 RGBA8) + depth->color UV map (512x424 RGBA32F)
+    bool getRegisteredColorFrame(std::vector<uint8_t>& color, std::vector<float>& uv);
+    // Size of the RGB output, and of the Registered depth and color-space point cloud that are pixel-aligned with it:
+    // 1920x1080 natively, 1280x720 on Non-Commercial TouchDesigner. Everything else is always native.
+    void setColorSize(int width, int height);
     
     libfreenect2::Freenect2Device* getDevice() { return device; }
     
 private:
     libfreenect2::Freenect2Device* device;
+    float depthRangeMin = 0.0f, depthRangeMax = 0.0f; // last range sent to libfreenect2, 0 = none yet
     libfreenect2::SyncMultiFrameListener* listener;
     libfreenect2::Frame depthFrame;
     libfreenect2::Frame rgbFrame;
@@ -76,26 +83,19 @@ private:
     std::vector<uint8_t>    rgbBuffer;
     std::vector<float>      depthBuffer;
     std::vector<float>      irBuffer;
-    std::vector<float>      downscaledDepthBuffer;
-    std::vector<float>      bigdepthBufferCropped;
-    std::vector<float>      flipDstBuffer;
-    std::vector<float>      registeredCroppedBuffer;
-    bool                    lastRegisteredDepthValid = false;
+    std::vector<float>      pcScratch;
+    std::vector<int>        colorDepthMap;
+    uint64_t                depthSeq = 0;   // incremented for every new depth frame
+    uint64_t                regSeq = 0;     // depthSeq the cached registration was computed for
+    bool                    regHasBigdepth = false;
+    libfreenect2::Freenect2Device::ColorCameraParams colorCameraParams{};
     std::mutex              mutex;
     bool                    hasNewRGB;
     bool                    hasNewDepth;
     bool                    hasNewIR;
-    int rgbWidth_ = RGB_WIDTH,
-        rgbHeight_ = RGB_HEIGHT,
-        depthWidth_ = DEPTH_WIDTH,
-        depthHeight_ = DEPTH_HEIGHT,
-        pcWidth_ = DEPTH_WIDTH,
-        pcHeight_ = DEPTH_HEIGHT,
-        irWidth_ = IR_WIDTH,
-        irHeight_ = IR_HEIGHT,
-        bigdepthWidth_ = BIGDEPTH_WIDTH,
-        bigdepthHeight_ = BIGDEPTH_HEIGHT - 2; // Crop to 1080 from 1082
+    int rgbWidth_ = RGB_WIDTH, rgbHeight_ = RGB_HEIGHT;
     std::thread             workerThread;
     std::atomic<bool>       stopWorker{true};
     void runWorker();
+    bool ensureRegistration(bool needBigdepth);
 };

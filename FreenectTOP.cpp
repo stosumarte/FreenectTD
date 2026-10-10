@@ -6,6 +6,11 @@
 //
 
 #include "FreenectTOP.h"
+#include "USBScan.h"
+#include "UpdateCheck.h"
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
 #include "ofxKinectExtras.h"
 #include "logger.h"
 #include <atomic>
@@ -13,6 +18,10 @@
 #include <iostream>
 #include <future>
 #include <array>
+#include <dlfcn.h>
+#include <optional>
+#include <cmath>
+#include <libusb.h>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
@@ -42,7 +51,7 @@ extern "C" {
         info->customOPInfo.minInputs = 0;
         info->customOPInfo.maxInputs = 0;
         info->customOPInfo.majorVersion = 1;
-        info->customOPInfo.minorVersion = 0;
+        info->customOPInfo.minorVersion = 1;
         #if TD_VERSION == 2025
             info->customOPInfo.opHelpURL->setString("https://github.com/stosumarte/FreenectTD");
         #endif
@@ -60,307 +69,200 @@ extern "C" {
 
 // Touchdesigner Parameters
 void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
-    
     using namespace TD;
-    
+
+    // Separator line above the parameter and Alt+hover help text (TouchDesigner 2025 API only)
+    auto layout = [](auto& param, const char* help, bool section) {
+#if TD_VERSION == 2025
+        param.help = help;
+        param.section = section;
+#else
+        (void)param; (void)help; (void)section;
+#endif
+    };
+
+    // Small helpers so every parameter is declared the same way
+    auto header = [&](const char* name, const char* label, const char* page, bool section = false) {
+        OP_StringParameter headerParam;
+        headerParam.name = name;
+        headerParam.label = label;
+        headerParam.page = page;
+        layout(headerParam, nullptr, section);
+        manager->appendHeader(headerParam);
+    };
+    auto toggle = [&](const char* name, const char* label, double defaultValue, const char* page,
+                      const char* help = nullptr, bool section = false) {
+        OP_NumericParameter toggleParam;
+        toggleParam.name = name;
+        toggleParam.label = label;
+        toggleParam.page = page;
+        toggleParam.defaultValues[0] = defaultValue;
+        toggleParam.minValues[0] = 0.0;
+        toggleParam.maxValues[0] = 1.0;
+        toggleParam.minSliders[0] = 0.0;
+        toggleParam.maxSliders[0] = 1.0;
+        toggleParam.clampMins[0] = true;
+        toggleParam.clampMaxes[0] = true;
+        layout(toggleParam, help, section);
+        manager->appendToggle(toggleParam);
+    };
+    auto menu = [&](const char* name, const char* label, const char* defaultValue, int count,
+                    const char** names, const char** labels, const char* page,
+                    const char* help = nullptr, bool section = false) {
+        OP_StringParameter menuParam;
+        menuParam.name = name;
+        menuParam.label = label;
+        menuParam.page = page;
+        menuParam.defaultValue = defaultValue;
+        layout(menuParam, help, section);
+        manager->appendMenu(menuParam, count, names, labels);
+    };
+
     // -------------
     // FREENECT PAGE
     // -------------
-    
-    // Active toggle
-    OP_NumericParameter activeParam;
-    activeParam.name = "Active";
-    activeParam.label = "Active";
-    activeParam.page = "Freenect";
-    activeParam.defaultValues[0] = 1.0; // Default to enabled
-    activeParam.minValues[0] = 0.0;
-    activeParam.maxValues[0] = 1.0;
-    activeParam.minSliders[0] = 0.0;
-    activeParam.maxSliders[0] = 1.0;
-    activeParam.clampMins[0] = true;
-    activeParam.clampMaxes[0] = true;
-    manager->appendToggle(activeParam);
-    
-    // Hardware version dropdown
-    OP_StringParameter deviceTypeParam;
-    deviceTypeParam.name = "Hardwareversion";
-    deviceTypeParam.label = "Hardware Version";
-    deviceTypeParam.page = "Freenect";
-    deviceTypeParam.defaultValue = "Kinect v1";
-    const char* deviceTypeNames[] = {"Kinect v1", "Kinect v2"};
-    const char* deviceTypeLabels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
-    manager->appendMenu(deviceTypeParam, 2, deviceTypeNames, deviceTypeLabels);
-    
-    // Tilt angle parameter
-    OP_NumericParameter tiltAngleParam;
-    tiltAngleParam.name = "Tilt";
-    tiltAngleParam.label = "Tilt Angle";
-    tiltAngleParam.page = "Freenect";
-    tiltAngleParam.defaultValues[0] = 0.0;
-    tiltAngleParam.minValues[0] = -30.0;
-    tiltAngleParam.maxValues[0] = 30.0;
-    tiltAngleParam.minSliders[0] = -30.0;
-    tiltAngleParam.maxSliders[0] = 30.0;
-    manager->appendFloat(tiltAngleParam);
-    
-    // Enable Depth toggle
-    OP_NumericParameter enableDepthParam;
-    enableDepthParam.name = "Enabledepth";
-    enableDepthParam.label = "Enable Depth";
-    enableDepthParam.page = "Freenect";
-    enableDepthParam.defaultValues[0] = 1.0; // Default to enabled
-    enableDepthParam.minValues[0] = enableDepthParam.minSliders[0] = 0.0;
-    enableDepthParam.maxValues[0] = enableDepthParam.maxSliders[0] = 1.0;
-    enableDepthParam.clampMins[0] = enableDepthParam.clampMaxes[0] = true;
-    manager->appendToggle(enableDepthParam);
-    
-    // Enable PointCloud toggle
-    OP_NumericParameter enablePCParam;
-    enablePCParam.name = "Enablepointcloud";
-    enablePCParam.label = "Enable Point Cloud";
-    enablePCParam.page = "Freenect";
-    enablePCParam.defaultValues[0] = 0.0; // Default to disabled
-    enablePCParam.minValues[0] = enablePCParam.minSliders[0] = 0.0;
-    enablePCParam.maxValues[0] = enablePCParam.maxSliders[0] = 1.0;
-    enablePCParam.clampMins[0] = enablePCParam.clampMaxes[0] = true;
-    manager->appendToggle(enablePCParam);
-    
-    // Enable IR toggle
-    OP_NumericParameter enableIRParam;
-    enableIRParam.name = "Enableir";
-    enableIRParam.label = "Enable IR";
-    enableIRParam.page = "Freenect";
-    enableIRParam.defaultValues[0] = 0.0; // Default to disabled
-    enableIRParam.minValues[0] = enableIRParam.minSliders[0] = 0.0;
-    enableIRParam.maxValues[0] = enableIRParam.maxSliders[0] = 1.0;
-    enableIRParam.clampMins[0] = enableIRParam.clampMaxes[0] = true;
-    manager->appendToggle(enableIRParam);
-    
-    // Depth format dropdown
-    OP_StringParameter depthFormatParam;
-    depthFormatParam.name = "Depthformat";
-    depthFormatParam.label = "Depth Format";
-    depthFormatParam.page = "Freenect";
-    depthFormatParam.defaultValue = "Raw";
-    const char* depthFormatNames[] = {"Raw", "Registered"};
-    const char* depthFormatLabels[] = {"Raw", "Registered"};
-    manager->appendMenu(depthFormatParam, 2, depthFormatNames, depthFormatLabels);
-    
-    // Undistort toggle
-    OP_NumericParameter depthUndistortParam;
-    depthUndistortParam.name = "Depthundistort";
-    depthUndistortParam.label = "Depth Undistortion";
-    depthUndistortParam.page = "Freenect";
-    depthUndistortParam.defaultValues[0] = 0.0; // Default to disabled
-    depthUndistortParam.minValues[0] = 0.0;
-    depthUndistortParam.maxValues[0] = 1.0;
-    depthUndistortParam.minSliders[0] = 0.0;
-    depthUndistortParam.maxSliders[0] = 1.0;
-    depthUndistortParam.clampMins[0] = true;
-    depthUndistortParam.clampMaxes[0] = true;
-    manager->appendToggle(depthUndistortParam);
-    
-    // Enable manual depth threshold toggle
-    OP_NumericParameter manualDepthThreshParam;
-    manualDepthThreshParam.name = "Manualdepththresh";
-    manualDepthThreshParam.label = "Manual Depth Threshold";
-    manualDepthThreshParam.page = "Freenect";
-    manualDepthThreshParam.defaultValues[0] = 0.0; // Default to disabled
-    manualDepthThreshParam.minValues[0] = 0.0;
-    manualDepthThreshParam.maxValues[0] = 1.0;
-    manualDepthThreshParam.minSliders[0] = 0.0;
-    manualDepthThreshParam.maxSliders[0] = 1.0;
-    manualDepthThreshParam.clampMins[0] = true;
-    manualDepthThreshParam.clampMaxes[0] = true;
-    manager->appendToggle(manualDepthThreshParam);
-    
-    // Depth threshold min parameter
-    OP_NumericParameter depthThreshMinParam;
-    depthThreshMinParam.name = "Depththreshmin";
-    depthThreshMinParam.label = "Depth Threshold Min";
-    depthThreshMinParam.page = "Freenect";
-    depthThreshMinParam.defaultValues[0] = 0.0;
-    depthThreshMinParam.minValues[0] = 0.0;
-    depthThreshMinParam.maxValues[0] = 5000.0;
-    depthThreshMinParam.minSliders[0] = 0.0;
-    depthThreshMinParam.maxSliders[0] = 5000.0;
-    manager->appendFloat(depthThreshMinParam);
-    
-    // Depth threshold max parameter
-    OP_NumericParameter depthThreshMaxParam;
-    depthThreshMaxParam.name = "Depththreshmax";
-    depthThreshMaxParam.label = "Depth Threshold Max";
-    depthThreshMaxParam.page = "Freenect";
-    depthThreshMaxParam.defaultValues[0] = 5000.0;
-    depthThreshMaxParam.minValues[0] = 0.0;
-    depthThreshMaxParam.maxValues[0] = 5000.0;
-    depthThreshMaxParam.minSliders[0] = 0.0;
-    depthThreshMaxParam.maxSliders[0] = 5000.0;
-    manager->appendFloat(depthThreshMaxParam);
-    
-    // ---------------
-    // RESOLUTION PAGE
-    // ---------------
-    
-    // V1 header
-    OP_StringParameter fn1_resHeader;
-    fn1_resHeader.name = "Kinectv1resolution";
-    fn1_resHeader.page = "Resolution";
-    fn1_resHeader.label = "Kinect V1";
-    manager->appendHeader(fn1_resHeader);
-    
-    // V1 RGB resolution
-    OP_NumericParameter fn1_rgbResParam;
-    fn1_rgbResParam.name = "V1rgbresolution";
-    fn1_rgbResParam.label = "RGB Resolution";
-    fn1_rgbResParam.page = "Resolution";
-    fn1_rgbResParam.defaultValues[0] = MyFreenectDevice::WIDTH;
-    fn1_rgbResParam.defaultValues[1] = MyFreenectDevice::HEIGHT;
-    fn1_rgbResParam.minValues[0] = fn1_rgbResParam.minSliders[0] = 1.0;
-    fn1_rgbResParam.maxValues[0] = fn1_rgbResParam.maxSliders[0] = MyFreenectDevice::WIDTH;
-    fn1_rgbResParam.clampMins[0] = fn1_rgbResParam.clampMaxes[0] = true;
-    fn1_rgbResParam.minValues[1] = fn1_rgbResParam.minSliders[1] = 1.0;
-    fn1_rgbResParam.maxValues[1] = fn1_rgbResParam.maxSliders[1] = MyFreenectDevice::HEIGHT;
-    fn1_rgbResParam.clampMins[1] = fn1_rgbResParam.clampMaxes[1] = true;
-    manager->appendXY(fn1_rgbResParam);
-    
-    // V1 depth resolution
-    OP_NumericParameter fn1_depthResParam;
-    fn1_depthResParam.name = "V1depthresolution";
-    fn1_depthResParam.label = "Depth Resolution";
-    fn1_depthResParam.page = "Resolution";
-    fn1_depthResParam.defaultValues[0] = MyFreenectDevice::WIDTH;
-    fn1_depthResParam.defaultValues[1] = MyFreenectDevice::HEIGHT;
-    fn1_depthResParam.minValues[0] = fn1_depthResParam.minSliders[0] = 1.0;
-    fn1_depthResParam.maxValues[0] = fn1_depthResParam.maxSliders[0] = MyFreenectDevice::WIDTH;
-    fn1_depthResParam.clampMins[0] = fn1_depthResParam.clampMaxes[0] = true;
-    fn1_depthResParam.minValues[1] = fn1_depthResParam.minSliders[1] = 1.0;
-    fn1_depthResParam.maxValues[1] = fn1_depthResParam.maxSliders[1] = MyFreenectDevice::HEIGHT;
-    fn1_depthResParam.clampMins[1] = fn1_depthResParam.clampMaxes[1] = true;
-    manager->appendXY(fn1_depthResParam);
-    
-    // V1 IR resolution
-    /*OP_NumericParameter fn1_irResParam;
-    fn1_irResParam.name = "V1irresolution";
-    fn1_irResParam.label = "IR Resolution";
-    fn1_irResParam.page = "Resolution";
-    fn1_irResParam.defaultValues[0] = MyFreenectDevice::WIDTH;
-    fn1_irResParam.defaultValues[1] = MyFreenectDevice::HEIGHT;
-    fn1_irResParam.minValues[0] = fn1_irResParam.minSliders[0] = 1.0;
-    fn1_irResParam.maxValues[0] = fn1_irResParam.maxSliders[0] = MyFreenectDevice::WIDTH;
-    fn1_irResParam.clampMins[0] = fn1_irResParam.clampMaxes[0] = true;
-    fn1_irResParam.minValues[1] = fn1_irResParam.minSliders[1] = 1.0;
-    fn1_irResParam.maxValues[1] = fn1_irResParam.maxSliders[1] = MyFreenectDevice::HEIGHT;
-    fn1_irResParam.clampMins[1] = fn1_irResParam.clampMaxes[1] = true;
-    manager->appendXY(fn1_irResParam);*/
-    
-    // V2 header
-    OP_StringParameter fn2_resHeader;
-    fn2_resHeader.name = "Kinectv2resolution";
-    fn2_resHeader.page = "Resolution";
-    fn2_resHeader.label = "Kinect V2";
-    manager->appendHeader(fn2_resHeader);
-    
-    // V2 RGB resolution
-    OP_NumericParameter fn2_rgbResParam;
-    fn2_rgbResParam.name = "V2rgbresolution";
-    fn2_rgbResParam.label = "RGB Resolution";
-    fn2_rgbResParam.page = "Resolution";
-    fn2_rgbResParam.defaultValues[0] = 1280.0;
-    fn2_rgbResParam.defaultValues[1] = 720.0;
-    fn2_rgbResParam.minValues[0] = fn2_rgbResParam.minSliders[0] = 1.0;
-    fn2_rgbResParam.maxValues[0] = fn2_rgbResParam.maxSliders[0] = MyFreenect2Device::RGB_WIDTH;
-    fn2_rgbResParam.clampMins[0] = fn2_rgbResParam.clampMaxes[0] = true;
-    fn2_rgbResParam.minValues[1] = fn2_rgbResParam.minSliders[1] = 1.0;
-    fn2_rgbResParam.maxValues[1] = fn2_rgbResParam.maxSliders[1] = MyFreenect2Device::RGB_HEIGHT;
-    fn2_rgbResParam.clampMins[1] = fn2_rgbResParam.clampMaxes[1] = true;
-    manager->appendXY(fn2_rgbResParam);
-    
-    // V2 Depth resolution
-    OP_NumericParameter fn2_depthResParam;
-    fn2_depthResParam.name = "V2depthresolution";
-    fn2_depthResParam.label = "Depth Resolution";
-    fn2_depthResParam.page = "Resolution";
-    fn2_depthResParam.defaultValues[0] = MyFreenect2Device::DEPTH_WIDTH;
-    fn2_depthResParam.defaultValues[1] = MyFreenect2Device::DEPTH_HEIGHT;
-    fn2_depthResParam.minValues[0] = fn2_depthResParam.minSliders[0] = 1.0;
-    fn2_depthResParam.maxValues[0] = fn2_depthResParam.maxSliders[0] = MyFreenect2Device::DEPTH_WIDTH;
-    fn2_depthResParam.clampMins[0] = fn2_depthResParam.clampMaxes[0] = true;
-    fn2_depthResParam.minValues[1] = fn2_depthResParam.minSliders[1] = 1.0;
-    fn2_depthResParam.maxValues[1] = fn2_depthResParam.maxSliders[1] = MyFreenect2Device::DEPTH_HEIGHT;
-    fn2_depthResParam.clampMins[1] = fn2_depthResParam.clampMaxes[1] = true;
-    manager->appendXY(fn2_depthResParam);
-    
-    // V2 Point Cloud resolution
-    OP_NumericParameter fn2_pcResParam;
-    fn2_pcResParam.name = "V2pcresolution";
-    fn2_pcResParam.label = "Point Cloud Resolution";
-    fn2_pcResParam.page = "Resolution";
-    fn2_pcResParam.defaultValues[0] = MyFreenect2Device::DEPTH_WIDTH;
-    fn2_pcResParam.defaultValues[1] = MyFreenect2Device::DEPTH_HEIGHT;
-    fn2_pcResParam.minValues[0] = fn2_pcResParam.minSliders[0] = 1.0;
-    fn2_pcResParam.maxValues[0] = fn2_pcResParam.maxSliders[0] = MyFreenect2Device::DEPTH_WIDTH;
-    fn2_pcResParam.clampMins[0] = fn2_pcResParam.clampMaxes[0] = true;
-    fn2_pcResParam.minValues[1] = fn2_pcResParam.minSliders[1] = 1.0;
-    fn2_pcResParam.maxValues[1] = fn2_pcResParam.maxSliders[1] = MyFreenect2Device::DEPTH_HEIGHT;
-    fn2_pcResParam.clampMins[1] = fn2_pcResParam.clampMaxes[1] = true;
-    manager->appendXY(fn2_pcResParam);
-    
-    // V2 IR resolution
-    OP_NumericParameter fn2_irResParam;
-    fn2_irResParam.name = "V2irresolution";
-    fn2_irResParam.label = "IR Resolution";
-    fn2_irResParam.page = "Resolution";
-    fn2_irResParam.defaultValues[0] = MyFreenect2Device::IR_WIDTH;
-    fn2_irResParam.defaultValues[1] = MyFreenect2Device::IR_HEIGHT;
-    fn2_irResParam.minValues[0] = fn2_irResParam.minSliders[0] = 1.0;
-    fn2_irResParam.maxValues[0] = fn2_irResParam.maxSliders[0] = MyFreenect2Device::IR_WIDTH;
-    fn2_irResParam.clampMins[0] = fn2_irResParam.clampMaxes[0] = true;
-    fn2_irResParam.minValues[1] = fn2_irResParam.minSliders[1] = 1.0;
-    fn2_irResParam.maxValues[1] = fn2_irResParam.maxSliders[1] = MyFreenect2Device::IR_HEIGHT;
-    fn2_irResParam.clampMins[1] = fn2_irResParam.clampMaxes[1] = true;
-    manager->appendXY(fn2_irResParam);
-    
+    const char* page0 = "Freenect";
+
+    // --- Device ---
+    toggle("Active", "Active", 1.0, page0);
+    {
+        const char* names[]  = {"Kinect v1", "Kinect v2"};
+        const char* labels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
+        menu("Hardwareversion", "Hardware Version", "Kinect v1", 2, names, labels, page0);
+    }
+    {
+        OP_NumericParameter tiltAngleParam;
+        tiltAngleParam.name = "Tilt";
+        tiltAngleParam.label = "Tilt Angle";
+        tiltAngleParam.page = page0;
+        tiltAngleParam.defaultValues[0] = 0.0;
+        tiltAngleParam.minValues[0] = -30.0;
+        tiltAngleParam.maxValues[0] = 30.0;
+        tiltAngleParam.minSliders[0] = -30.0;
+        tiltAngleParam.maxSliders[0] = 30.0;
+        tiltAngleParam.clampMins[0] = true;
+        tiltAngleParam.clampMaxes[0] = true;
+        manager->appendFloat(tiltAngleParam);
+    }
+
+    // --- Streams ---
+    toggle("Enabledepth",      "Depth [1]",              1.0, page0,
+           "Number in brackets = Render Select TOP image index. RGB is always on, at index 0 (blank on Kinect v1 while IR is on).", true);
+    toggle("Enablepointcloud", "Point Cloud [2]",        0.0, page0);
+    toggle("Enableir",         "IR [3]",                 0.0, page0,
+           "On Kinect v1, RGB and IR share one stream: turning IR on blanks RGB [0].");
+    toggle("Enableregcolor",   "Registered Color [4]",   0.0, page0);
+    toggle("Enableuv",         "Depth-to-Color UV [5]",  0.0, page0);
+
+    // --- Depth & point cloud ---
+    // One Format menu drives both: Registered puts depth AND the point cloud in the
+    // color camera (aligned to RGB); Raw keeps them in the depth camera.
+    {
+        const char* names[]  = {"Raw", "Rawundistorted", "Registered"};
+        const char* labels[] = {"Raw", "Raw undistorted", "Registered (aligned to RGB)"};
+        menu("Depthformat", "Format", "Raw", 3, names, labels, page0,
+             "Registered aligns depth and point cloud to the RGB image; Raw keeps them in the depth camera.", true);
+    }
+    {
+        const char* names[]  = {"Normalized", "Millimeters", "Meters"};
+        const char* labels[] = {"Normalized 16-bit (0-1 across depth range)", "Millimeters (32-bit float)", "Meters (32-bit float)"};
+        menu("Depthoutput", "Depth Output", "Normalized", 3, names, labels, page0,
+             "Normalized = 16-bit 0-1 across the depth range. Millimeters / Meters = 32-bit float.");
+    }
+    toggle("Manualdepththresh", "Manual Depth Range", 0.0, page0);
+    {
+        OP_NumericParameter depthThreshMinParam;
+        depthThreshMinParam.name = "Depththreshmin";
+        depthThreshMinParam.label = "Depth Range Min (mm)";
+        depthThreshMinParam.page = page0;
+        depthThreshMinParam.defaultValues[0] = 0.0;
+        depthThreshMinParam.minValues[0] = 0.0;
+        depthThreshMinParam.maxValues[0] = 8000.0;
+        depthThreshMinParam.minSliders[0] = 0.0;
+        depthThreshMinParam.maxSliders[0] = 8000.0;
+        depthThreshMinParam.clampMins[0] = true;
+        manager->appendFloat(depthThreshMinParam);
+    }
+    {
+        OP_NumericParameter depthThreshMaxParam;
+        depthThreshMaxParam.name = "Depththreshmax";
+        depthThreshMaxParam.label = "Depth Range Max (mm)";
+        depthThreshMaxParam.page = page0;
+        depthThreshMaxParam.defaultValues[0] = 5000.0;
+        depthThreshMaxParam.minValues[0] = 0.0;
+        depthThreshMaxParam.maxValues[0] = 8000.0;
+        depthThreshMaxParam.minSliders[0] = 0.0;
+        depthThreshMaxParam.maxSliders[0] = 8000.0;
+        depthThreshMaxParam.clampMins[0] = true;
+        manager->appendFloat(depthThreshMaxParam);
+    }
+    // Sentinels for invalid data. Alpha (point cloud) / 0-masking is still the authoritative validity
+    // signal; these only decide what value lands in the dead pixels for pipelines that cannot read alpha.
+    {
+        OP_NumericParameter unknownDepthParam;
+        unknownDepthParam.name = "Unknowndepth";
+        unknownDepthParam.label = "Unknown Depth Value";
+        unknownDepthParam.page = page0;
+        unknownDepthParam.defaultValues[0] = 0.0;
+        unknownDepthParam.minSliders[0] = -1.0;
+        unknownDepthParam.maxSliders[0] = 10000.0;
+        layout(unknownDepthParam, "Written to depth pixels with no reading or outside the depth range.", false);
+        manager->appendFloat(unknownDepthParam);
+    }
+
+    // --- Point cloud ---
+    toggle("Pcflipx", "Point Cloud Flip X", 0.0, page0,
+           "Native frame: +Y up, +Z away from the sensor, X follows the mirrored image.", true);
+    toggle("Pcflipy", "Point Cloud Flip Y", 0.0, page0);
+    toggle("Pcflipz", "Point Cloud Flip Z", 0.0, page0);
+    {
+        OP_NumericParameter unknownPointParam;
+        unknownPointParam.name = "Unknownpoint";
+        unknownPointParam.label = "Unknown Point Value";
+        unknownPointParam.page = page0;
+        for (int i = 0; i < 3; ++i) {
+            unknownPointParam.defaultValues[i] = 0.0;
+            unknownPointParam.minSliders[i] = -10.0;
+            unknownPointParam.maxSliders[i] = 100.0;
+        }
+        layout(unknownPointParam, "XYZ written to invalid points; their alpha is always 0.", false);
+        manager->appendXYZ(unknownPointParam);
+    }
+
     // ----------
     // ABOUT PAGE
     // ----------
-    
-    // Show version in header
-    OP_StringParameter versionHeader;
-    versionHeader.name = "Version";
-    versionHeader.page = "About";
-    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " – by @stosumarte";
-    versionHeader.label = versionLabel.c_str();
-    manager->appendHeader(versionHeader);
-    
-    // Empty spacer header
-    OP_StringParameter emptyHeader1;
-    emptyHeader1.name = "Emptyheader1";
-    emptyHeader1.page = "About";
-    std::string emptyLabel1 = std::string(" ");
-    emptyHeader1.label = emptyLabel1.c_str();
-    manager->appendHeader(emptyHeader1);
-    
-    // Check for updates header
-    OP_StringParameter updateHeader;
-    updateHeader.name = "Updateheader";
-    updateHeader.page = "About";
-    std::string updateLabel = std::string("Visit the following URL to check for updates:");
-    updateHeader.label = updateLabel.c_str();
-    manager->appendHeader(updateHeader);
-    
-    // Update URL (needs to be copied manually)
-    OP_StringParameter updateURLParam;
-    updateURLParam.name = "Updateurl";
-    updateURLParam.label = "Copy this → ";
-    updateURLParam.page = "About";
-    updateURLParam.defaultValue = "github.com/stosumarte/FreenectTD/releases/latest";
-    manager->appendString(updateURLParam);
+    const char* page1 = "About";
+    std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " by @stosumarte";
+    header("Version", versionLabel.c_str(), page1);
+    header("Contrib1", "@dcheesman: point cloud registration, float depth, POP workflow", page1, /*section=*/true);
+    header("Contrib2", "@gcarizza: Kinect v1 depth stream fix (#21)", page1);
+    header("Contrib3", "@fedevoxlive: Kinect v1 IR streaming (#22)", page1);
+    auto pulse = [&](const char* name, const char* label, const char* help, bool section = false) {
+        OP_NumericParameter pulseParam;
+        pulseParam.name = name;
+        pulseParam.label = label;
+        pulseParam.page = page1;
+        layout(pulseParam, help, section);
+        manager->appendPulse(pulseParam);
+    };
+    pulse("Checkupdates", "Check for Updates", "Ask GitHub for the latest release and show the result in a dialog.", true);
+    pulse("Openreleases", "Open Releases Page", "Open the FreenectTD releases page in the browser.");
+}
 
+void FreenectTOP::pulsePressed(const char* name, void*) {
+    if (std::strcmp(name, "Checkupdates") == 0) {
+        checkForUpdates(FREENECTTOP_VERSION);
+    } else if (std::strcmp(name, "Openreleases") == 0) {
+        openReleasesPage();
+    }
 }
 
 // TD - Cook every frame
 void FreenectTOP::getGeneralInfo(TD::TOP_GeneralInfo* ginfo, const TD::OP_Inputs* inputs, void*) {
+    // Cook every frame, but only while something downstream uses the output (a viewer, a Render
+    // Select feeding a displayed chain, a Null TOP with its display flag on). Cooking unconditionally
+    // was tried and made whole networks sluggish, so leave the pull model in charge.
     ginfo->cookEveryFrameIfAsked = true;
 }
 
@@ -376,6 +278,50 @@ void FreenectTOP::getWarningString(TD::OP_String* warning, void* reserved1) {
         warning->setString(warningString.c_str());
 }
 
+// Reads td.licenses.isNonCommercial from TouchDesigner's own Python. The C++ SDK has no license query,
+// so the CPython functions are looked up at runtime in the TD process: nothing is linked at build time,
+// and a TD that ships a different Python version still works. Returns nullopt if anything is missing.
+// Must run on TD's main thread (execute does): Python can't be entered from the device threads.
+static std::optional<bool> readIsNonCommercial() {
+    using Fn_IsInit  = int (*)();
+    using Fn_Ensure  = int (*)();
+    using Fn_Release = void (*)(int);
+    using Fn_Import  = void* (*)(const char*);
+    using Fn_GetAttr = void* (*)(void*, const char*);
+    using Fn_IsTrue  = int (*)(void*);
+    using Fn_DecRef  = void (*)(void*);
+    using Fn_ErrClr  = void (*)();
+    auto isInit  = reinterpret_cast<Fn_IsInit>(dlsym(RTLD_DEFAULT, "Py_IsInitialized"));
+    auto ensure  = reinterpret_cast<Fn_Ensure>(dlsym(RTLD_DEFAULT, "PyGILState_Ensure"));
+    auto release = reinterpret_cast<Fn_Release>(dlsym(RTLD_DEFAULT, "PyGILState_Release"));
+    auto import  = reinterpret_cast<Fn_Import>(dlsym(RTLD_DEFAULT, "PyImport_ImportModule"));
+    auto getAttr = reinterpret_cast<Fn_GetAttr>(dlsym(RTLD_DEFAULT, "PyObject_GetAttrString"));
+    auto isTrue  = reinterpret_cast<Fn_IsTrue>(dlsym(RTLD_DEFAULT, "PyObject_IsTrue"));
+    auto decRef  = reinterpret_cast<Fn_DecRef>(dlsym(RTLD_DEFAULT, "Py_DecRef"));
+    auto errClr  = reinterpret_cast<Fn_ErrClr>(dlsym(RTLD_DEFAULT, "PyErr_Clear"));
+    if (!isInit || !ensure || !release || !import || !getAttr || !isTrue || !decRef || !errClr || !isInit()) {
+        return std::nullopt;
+    }
+
+    std::optional<bool> result;
+    const int gil = ensure();
+    void* td = import("td");
+    void* licenses = td ? getAttr(td, "licenses") : nullptr;
+    void* nonCommercial = licenses ? getAttr(licenses, "isNonCommercial") : nullptr;
+    if (nonCommercial) {
+        const int value = isTrue(nonCommercial); // -1 on error
+        if (value >= 0) {
+            result = (value == 1);
+        }
+    }
+    errClr();
+    if (nonCommercial) decRef(nonCommercial);
+    if (licenses) decRef(licenses);
+    if (td) decRef(td);
+    release(gil);
+    return result;
+}
+
 // Constructor for FreenectTOP
 FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     : fntdNodeInfo(info),
@@ -384,21 +330,78 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     // Do not initialize device here, will be done in execute
 }
 
+// Process-wide device ownership: only one FreenectTOP instance may open the Kinect
+std::mutex   FreenectTOP::deviceOwnerMutex;
+FreenectTOP* FreenectTOP::deviceOwner[2] = {};
+
+std::mutex FreenectTOP::deviceIOMutex;
+
+// Queue a job behind whatever this instance's device thread is doing; each job's thread joins the previous one first.
+// Only called from the cook thread and the destructor (TD's main thread), so `deviceThread` itself needs no lock.
+void FreenectTOP::runOnDeviceThread(std::function<void()> job) {
+    ++deviceJobsPending;
+    deviceThread = std::thread([this, prev = std::move(deviceThread), job = std::move(job)]() mutable {
+        if (prev.joinable()) {
+            prev.join();
+        }
+        {
+            std::lock_guard<std::mutex> lock(deviceIOMutex);
+            job();
+        }
+        --deviceJobsPending;
+    });
+}
+
+bool FreenectTOP::claimDevice(bool v2) {
+    std::lock_guard<std::mutex> lock(deviceOwnerMutex);
+    if (deviceOwner[v2] == nullptr) deviceOwner[v2] = this;
+    return deviceOwner[v2] == this;
+}
+
+void FreenectTOP::releaseDevice() {
+    bool wasOwner = false;
+    {
+        std::lock_guard<std::mutex> lock(deviceOwnerMutex);
+        for (FreenectTOP*& owner : deviceOwner) {
+            if (owner == this) {
+                owner = nullptr;
+                wasOwner = true;
+            }
+        }
+    }
+    if (wasOwner) {
+        // Close the device so the next node that becomes active can open it.
+        fn2_cleanupDevice();
+        fn1_cleanupDevice();
+        lastDeviceType.clear();
+    }
+}
+
 // Destructor for FreenectTOP
 FreenectTOP::~FreenectTOP() {
     LOG("[FreenectTOP] Destructor called, cleaning up devices");
-    fn2_cleanupDevice();
-    fn1_cleanupDevice();
-    //fallbackBuffer.release(); // Release fallback buffer
+    releaseDevice(); // closes the device if this instance owns it
+    if (deviceThread.joinable()) {
+        deviceThread.join();
+    }
 }
 
 // Init for Kinect v1 (libfreenect)
-bool FreenectTOP::fn1_initDevice() {
+bool FreenectTOP::fn1_initDevice(bool ir) {
     // Crucial: Device init start
     LOG("[FreenectTOP] fn1_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
-    if (freenect_init(&fn1_ctx, nullptr) < 0) {
-        LOG("[FreenectTOP] fn1_initDevice: freenect_init failed");
+    initError.clear(); // fn1_execute reports a missing device itself, from the USB scan
+    startUSBScanThread();
+    if (!fn1_deviceAvailable.load()) {
+        LOG("[FreenectTOP] fn1_initDevice: no device available");
+        return false;
+    }
+    // freenect_init only calls libusb_init and returns its error code
+    int res = freenect_init(&fn1_ctx, nullptr);
+    if (res < 0) {
+        initError = "Couldn't initialize libfreenect (" + std::string(libusb_error_name(res)) + ")";
+        LOG("[FreenectTOP] fn1_initDevice: " + initError);
         return false;
     }
     
@@ -416,8 +419,7 @@ bool FreenectTOP::fn1_initDevice() {
     int numDevices = freenect_num_devices(fn1_ctx);
     
     if (numDevices <= 0) {
-        errorString.clear();
-        errorString = "No Kinect v1 devices found";
+        initError = "No Kinect v1 devices found";
         freenect_shutdown(fn1_ctx);
         fn1_ctx = nullptr;
         return false;
@@ -426,9 +428,8 @@ bool FreenectTOP::fn1_initDevice() {
     try {
         fn1_rgbReady = false;
         fn1_depthReady = false;
-        fn1_device = new MyFreenectDevice(fn1_ctx, 0, fn1_rgbReady, fn1_depthReady);
-        fn1_device->startVideo();
-        fn1_device->startDepth();
+        fn1_device = new MyFreenectDevice(fn1_ctx, 0, fn1_rgbReady, fn1_depthReady, ir);
+        fn1_device->start();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         fn1_runEvents = true;
         fn1_eventThread = std::thread([this]() {
@@ -441,14 +442,21 @@ bool FreenectTOP::fn1_initDevice() {
                     LOG("[FreenectTOP] Error in freenect_process_events");
                     break;
                 }
+                fn1_device->applyStreamModes();
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
             LOG("[FreenectTOP] fn1_eventThread: exiting");
         });
     } catch (...) {
-        errorString.clear();
-        errorString = "Failed to start Kinect v1 device";
-        fn1_cleanupDevice();
+        initError = "Failed to start Kinect v1 device";
+        fn1_runEvents = false;
+        if (fn1_eventThread.joinable()) {
+            fn1_eventThread.join();
+        }
+        delete fn1_device;
+        fn1_device = nullptr;
+        freenect_shutdown(fn1_ctx);
+        fn1_ctx = nullptr;
         return false;
     }
     LOG("[FreenectTOP] fn1_initDevice: success");
@@ -456,71 +464,74 @@ bool FreenectTOP::fn1_initDevice() {
 }
 
 // Cleanup for Kinect v1 (libfreenect)
+// Called on the cook thread: execute stops using the device right away, the close runs on the device thread.
 void FreenectTOP::fn1_cleanupDevice() {
-    LOG("[FreenectTOP] fn1_cleanupDevice: start");
-    fn1_runEvents = false;
-    if (fn1_eventThread.joinable()) {
-        fn1_eventThread.join();
-    }
-    if (fn1_InitThread.joinable()) {
-        fn1_InitThread.join();
-    }
-    std::lock_guard<std::mutex> lock(freenectMutex);
-    if (fn1_device) {
-        delete fn1_device;
-        fn1_device = nullptr;
-        LOG("[FreenectTOP] device deleted (v1)");
-    }
-    if (fn1_ctx) {
-        freenect_shutdown(fn1_ctx);
-        fn1_ctx = nullptr;
-        LOG("[FreenectTOP] fn1_ctx shutdown (v1)");
-    }
-    fn1InitInProgress = false;
-    fn1InitSuccess = false;
-    LOG("[FreenectTOP] fn1_cleanupDevice: end");
+    fn1_initSuccess = false;
+    fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
+    fn1_lastDepthTime = {};
+    runOnDeviceThread([this]() {
+        LOG("[FreenectTOP] fn1_cleanupDevice: start");
+        fn1_initSuccess = false; // an init job queued before this one may have set it back to true
+        stopUSBScanThread();
+        fn1_runEvents = false;
+        if (fn1_eventThread.joinable()) {
+            fn1_eventThread.join();
+        }
+        std::lock_guard<std::mutex> lock(freenectMutex);
+        if (fn1_device) {
+            delete fn1_device;
+            fn1_device = nullptr;
+            LOG("[FreenectTOP] device deleted (v1)");
+        }
+        if (fn1_ctx) {
+            freenect_shutdown(fn1_ctx);
+            fn1_ctx = nullptr;
+            LOG("[FreenectTOP] fn1_ctx shutdown (v1)");
+        }
+        initError.clear();
+        LOG("[FreenectTOP] fn1_cleanupDevice: end");
+    });
 }
 
-// Start the background enumeration thread for Kinect v2
-void FreenectTOP::fn2_startEnumThread() {
-    LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThreadRunning before = " + std::to_string(fn2_enumThreadRunning.load()));
-    if (fn2_enumThreadRunning.load()) {
-        LOG("[FreenectTOP] fn2_startEnumThread: end, already running");
+// Background USB scan for both Kinect versions. Started by init and stopped by cleanup, on the device thread.
+void FreenectTOP::startUSBScanThread() {
+    if (usbScanRunning.load()) {
         return;
     }
-    fn2_enumThreadRunning = true;
-    LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThreadRunning after = " + std::to_string(fn2_enumThreadRunning.load()));
-    fn2_enumThread = std::thread([this]() {
-        while (fn2_enumThreadRunning.load()) {
-            libfreenect2::Freenect2 ctx;
-            fn2_deviceAvailable = (ctx.enumerateDevices() > 0);
+    LOG("[FreenectTOP] startUSBScanThread");
+    usbScanRunning = true;
+    usbScanThread = std::thread([this]() {
+        while (usbScanRunning.load()) {
+            // Not libfreenect2's enumerateDevices(): it opens the Kinect, even while it's streaming
+            const USBScan scan = scanUSB();
+            if (scan.ok) { // keep the last result if libusb fails
+                fn1_deviceAvailable = scan.kinect1;
+                fn2_deviceAvailable = scan.kinect2;
+                fn2_slowUSB = scan.kinect2Slow;
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     });
-    LOG("[FreenectTOP] fn2_startEnumThread: fn2_enumThread joinable after = " + std::to_string(fn2_enumThread.joinable()));
 }
 
-// Stop the background enumeration thread for Kinect v2
-void FreenectTOP::fn2_stopEnumThread() {
-    LOG("[FreenectTOP] fn2_stopEnumThread: start");
-    LOG("[FreenectTOP] fn2_stopEnumThread: fn2_enumThreadRunning before = " + std::to_string(fn2_enumThreadRunning.load()));
-    fn2_enumThreadRunning = false;
-    LOG("[FreenectTOP] fn2_stopEnumThread: fn2_enumThreadRunning after = " + std::to_string(fn2_enumThreadRunning.load()));
-    LOG("[FreenectTOP] fn2_stopEnumThread: fn2_enumThread joinable = " + std::to_string(fn2_enumThread.joinable()));
-    
-    if (fn2_enumThread.joinable()) {
-        LOG("[FreenectTOP] fn2_stopEnumThread: attempting to join fn2_enumThread");
-        fn2_enumThread.join();
-        LOG("[FreenectTOP] fn2_enumThread joined successfully");
+void FreenectTOP::stopUSBScanThread() {
+    LOG("[FreenectTOP] stopUSBScanThread");
+    usbScanRunning = false;
+    if (usbScanThread.joinable()) {
+        usbScanThread.join();
     }
-    LOG("[FreenectTOP] fn2_stopEnumThread: end");
 }
 
 // Init for Kinect v2 (libfreenect2)
 bool FreenectTOP::fn2_initDevice() {
     LOG("[FreenectTOP] fn2_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
-    fn2_startEnumThread();
+    initError.clear(); // fn2_execute reports a missing or USB 2 device itself, from the USB scan
+    startUSBScanThread();
+    if (fn2_slowUSB.load()) {
+        LOG("[FreenectTOP] fn2_initDevice: (end) device on USB 2");
+        return false;
+    }
     if (!fn2_deviceAvailable.load()) {
         LOG("[FreenectTOP] fn2_initDevice: no device available");
         return false;
@@ -529,188 +540,155 @@ bool FreenectTOP::fn2_initDevice() {
         LOG("[FreenectTOP] fn2_initDevice: (end) already initialized");
         return true;
     }
-    fn2_ctx = new libfreenect2::Freenect2();
-    LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_ctx after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_ctx)));
-    if (fn2_ctx->enumerateDevices() == 0) {
-        errorString.clear();
-        errorString = "No Kinect v2 devices found";
+    // Undoes a partial init. The pipeline is never deleted here: openDevice deletes it when it fails,
+    // and once opened the libfreenect2 device owns it and deletes it with fn2_ctx.
+    auto fail = [this](const std::string& error) {
+        initError = error;
+        LOG("[FreenectTOP] fn2_initDevice: (end) " + error);
+        delete fn2_device;
+        fn2_device = nullptr;
+        fn2_pipeline = nullptr;
         delete fn2_ctx;
         fn2_ctx = nullptr;
-        LOG("[FreenectTOP] fn2_initDevice: (end) no devices - fn2_ctx deleted and set to nullptr");
         return false;
+    };
+    fn2_ctx = new libfreenect2::Freenect2();
+    if (fn2_ctx->enumerateDevices() == 0) {
+        return fail("No Kinect v2 devices found");
     }
     fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
     try {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
     } catch (...) {
-        errorString.clear();
-        errorString = "Couldn't create CPU pipeline for Kinect v2";
-        LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_pipeline after fail = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_pipeline)));
+        return fail("Couldn't create CPU pipeline for Kinect v2");
     }
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
-    LOG(std::string("[FreenectTOP] fn2_initDevice: openDevice returned dev = ") + std::to_string(reinterpret_cast<uintptr_t>(dev)));
     if (!dev) {
-        errorString.clear();
-        errorString = "Failed to open Kinect v2 device";
-        delete fn2_device;
-        if (fn2_pipeline) {
-            delete fn2_pipeline;
-            fn2_pipeline = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_pipeline deleted and set to nullptr");
-        }
-        if (fn2_ctx) {
-            delete fn2_ctx;
-            fn2_ctx = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_ctx deleted and set to nullptr");
-        }
-        fn2_device = nullptr;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device set to nullptr");
-        LOG("[FreenectTOP] fn2_initDevice: end (openDevice fail)");
-        return false;
+        return fail("Failed to open Kinect v2 device, is it on a USB 3 port?");
     }
-    if (!fn2_device) {
-        fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady, fn2_irReady);
-        LOG(std::string("[FreenectTOP] fn2_initDevice: fn2_device after = ") + std::to_string(reinterpret_cast<uintptr_t>(fn2_device)));
-    }
+    fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady, fn2_irReady);
     if (!fn2_device->start()) {
-        errorString.clear();
-        errorString = "Failed to start Kinect v2 device";
-        delete fn2_device;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device deleted");
-        if (fn2_pipeline) {
-            delete fn2_pipeline;
-            fn2_pipeline = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_pipeline deleted and set to nullptr");
-        }
-        if (fn2_ctx) {
-            delete fn2_ctx;
-            fn2_ctx = nullptr;
-            LOG("[FreenectTOP] fn2_initDevice: fn2_ctx deleted and set to nullptr");
-        }
-        fn2_device = nullptr;
-        LOG("[FreenectTOP] fn2_initDevice: fn2_device set to nullptr");
-        LOG("[FreenectTOP] fn2_initDevice: end (start fail)");
-        return false;
+        return fail("Failed to start Kinect v2 device");
     }
     
-    // Stop enumeration thread after successful device start
-    //fn2_stopEnumThread();
-    LOG("[FreenectTOP] fn2_initDevice: device started and enum thread stopped");
+    // The USB scan keeps running: fn2_execute uses it to notice an unplugged device
     LOG("[FreenectTOP] fn2_initDevice: end (success)");
     return true;
 }
 
 // Threaded initialization for Kinect v1
 void FreenectTOP::fn1_startInitThread() {
-    if (fn1InitInProgress.load()) return; // Already running
-    fn1InitInProgress = true;
-    fn1_InitThread = std::thread([this]() {
-        bool result = this->fn1_initDevice();
-        fn1InitSuccess = result;
-        fn1InitInProgress = false;
+    const bool ir = streamEnabledIR; // open in the requested video mode
+    runOnDeviceThread([this, ir]() {
+        fn1_initSuccess = fn1_initDevice(ir);
     });
-    if (fn1_InitThread.joinable()) {
-        fn1_InitThread.join();
-    } else {
-        LOG("[FreenectTOP] fn1_startInitThread: fn1_InitThread not joinable after creation");
-    }
 }
 
 // Threaded initialization for Kinect v2
 void FreenectTOP::fn2_startInitThread() {
-    if (fn2_InitInProgress.load()) return; // Already running
-    fn2_InitInProgress = true;
-    fn2_InitThread = std::thread([this]() {
-        bool result = this->fn2_initDevice();
-        fn2_InitSuccess = result;
-        fn2_InitInProgress = false;
+    runOnDeviceThread([this]() {
+        fn2_initSuccess = fn2_initDevice();
     });
-    if (fn2_InitThread.joinable()) {
-        fn2_InitThread.join();
-    } else {
-        LOG("[FreenectTOP] fn2_startInitThread: fn2_InitThread not joinable after creation");
-    }
 }
 
 // Cleanup for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_cleanupDevice() {
-    LOG("[FreenectTOP] fn2_cleanupDevice: start");
-
-    if (fn2_InitThread.joinable()) {
-        fn2_InitThread.join();
-    } else {
-        LOG("[FreenectTOP] fn2_cleanupDevice: couldn't join fn2_InitThread");
-    }
-
-    fn2_stopEnumThread();
-
-    std::lock_guard<std::mutex> lock(freenectMutex);
-    if (fn2_device) {
-        delete fn2_device;
-        fn2_device = nullptr;
-        LOG("[FreenectTOP] fn2_device deleted");
-    }
-    if (fn2_pipeline) {
-        fn2_pipeline = nullptr;
-    }
-    if (fn2_ctx) {
-        delete fn2_ctx;
-        fn2_ctx = nullptr;
-        LOG("[FreenectTOP] fn2_ctx deleted");
-    }
-    fn2_InitInProgress = false;
-    fn2_InitSuccess = false;
-    LOG("[FreenectTOP] fn2_cleanupDevice: end");
+    fn2_initSuccess = false;
+    fn2_lastPointCloudSeq = NO_POINT_CLOUD; // a new device starts counting depth frames from 0 again
+    runOnDeviceThread([this]() {
+        LOG("[FreenectTOP] fn2_cleanupDevice: start");
+        fn2_initSuccess = false; // an init job queued before this one may have set it back to true
+        stopUSBScanThread();
+        std::lock_guard<std::mutex> lock(freenectMutex);
+        if (fn2_device) {
+            delete fn2_device;
+            fn2_device = nullptr;
+            LOG("[FreenectTOP] fn2_device deleted");
+        }
+        fn2_pipeline = nullptr; // owned by the libfreenect2 device
+        if (fn2_ctx) {
+            delete fn2_ctx;
+            fn2_ctx = nullptr;
+            LOG("[FreenectTOP] fn2_ctx deleted");
+        }
+        initError.clear();
+        LOG("[FreenectTOP] fn2_cleanupDevice: end");
+    });
 }
 
 // Execute method for Kinect v1 (libfreenect)
 void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
-    if (!fn1_device) {
-        LOG("[FreenectTOP] executeV1: device is null, initializing device in thread");
-        fn1_startInitThread();
-        if (!fn1InitSuccess.load()) {
-            errorString.clear();
-            errorString = "No Kinect v1 devices found";
-            uploadFallbackBuffer();
-            return;
+    // fn1_device belongs to the device thread until an init succeeds
+    if (!fn1_initSuccess.load()) {
+        if (deviceJobsPending.load() == 0) {
+            lastInitError = initError; // result of the last attempt, empty before the first
+            LOG("[FreenectTOP] executeV1: device not ready, queueing init");
+            fn1_startInitThread();
         }
+        // The USB scan says right away whether a Kinect is there; init results can lag behind a close
+        if (!fn1_deviceAvailable.load()) {
+            errorString = "No Kinect v1 devices found";
+        } else if (!lastInitError.empty()) {
+            errorString = lastInitError;
+        } else {
+            errorString.clear();
+            warningString = "Initializing Kinect v1";
+        }
+        uploadFallbackBuffer();
+        return;
     }
-    
-    if (!fn1_device) {
-        errorString = "Device is null after initialization";
+
+    if (!fn1_deviceAvailable.load()) {
+        LOG("[FreenectTOP] executeV1: device unplugged, closing it");
+        fn1_cleanupDevice();
         uploadFallbackBuffer();
         return;
     }
     
-    if(fn1_device) {
-        fn1_device->setResolutions(fn1_colorW, fn1_colorH, fn1_depthW, fn1_depthH, fn1_irW, fn1_irH);
+    // A stalled v1 just stops sending frames, so treat 2 s without depth as a disconnect.
+    // The depth stream always runs, even when its output is off.
+    const auto now = std::chrono::steady_clock::now();
+    if (fn1_depthReady.exchange(false) || fn1_lastDepthTime == std::chrono::steady_clock::time_point{}) {
+        fn1_lastDepthTime = now;
+    } else if (now - fn1_lastDepthTime > std::chrono::seconds(2)) {
+        LOG("[FreenectTOP] executeV1: no depth frames for 2 s, closing the device");
+        fn1_cleanupDevice();
+        uploadFallbackBuffer();
+        return;
     }
     
-    // Set tilt angle
-    try {
-        fn1_device->setTiltDegrees(fn1_tilt);
-    } catch (const std::exception& e) {
-        errorString = "Failed to set tilt angle: " + std::string(e.what());
-        fn1_cleanupDevice();
-        fn1_device = nullptr;
-        return;
+    // Only touch the motor when the value actually changes: setting tilt every
+    // cook stalls the v1 depth stream (see #21).
+    if (std::isnan(fn1_lastAppliedTilt) || std::fabs(fn1_tilt - fn1_lastAppliedTilt) > 0.01f) {
+        try {
+            fn1_device->setTiltDegrees(fn1_tilt);
+            fn1_lastAppliedTilt = fn1_tilt;
+        } catch (const std::exception& e) {
+            errorString = "Failed to set tilt angle: " + std::string(e.what());
+            fn1_cleanupDevice();
+            return;
+        }
     }
     
     // Set color type based on parameter (not implemented yet, default to RGB)
     fn1_colorType colorType = fn1_colorType::RGB; // Default to RGB
     
+    // RGB and IR share the v1 video stream, so RGB is blank while IR is on
+    fn1_device->setIR(streamEnabledIR);
+    
     // Create output buffers
-    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_colorW * fn1_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn1_depthW * fn1_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+    TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext && !streamEnabledIR ? fntdContext->createOutputBuffer(MyFreenectDevice::WIDTH * MyFreenectDevice::HEIGHT * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
     
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
-    if (colorFrameBuffer && fn1_device->getColorFrame(colorFrame, colorType)) {
+    if (streamEnabledIR) {
+        uploadFallbackBuffer(0);
+    } else if (colorFrameBuffer && fn1_device->getColorFrame(colorFrame, colorType)) {
         errorString.clear();
-        std::memcpy(colorFrameBuffer->data, colorFrame.data(), fn1_colorW * fn1_colorH * 4);
+        std::memcpy(colorFrameBuffer->data, colorFrame.data(), MyFreenectDevice::WIDTH * MyFreenectDevice::HEIGHT * 4);
         TD::TOP_UploadInfo info;
-        info.textureDesc.width = fn1_colorW;
-        info.textureDesc.height = fn1_colorH;
+        info.textureDesc.width = MyFreenectDevice::WIDTH;
+        info.textureDesc.height = MyFreenectDevice::HEIGHT;
         info.textureDesc.texDim = TD::OP_TexDim::e2D;
         info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
         info.colorBufferIndex = 0;
@@ -721,57 +699,77 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     }
     
     // --- Depth frame ---
-    std::vector<uint16_t> depthFrame;
     if (streamEnabledDepth) {
-        if (depthFrameBuffer && fn1_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
+        std::vector<float> depthFrame; // millimetres, 0 = invalid
+        if (fn1_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
             errorString.clear();
-            std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn1_depthW * fn1_depthH * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn1_depthW;
-            info.textureDesc.height = fn1_depthH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 1;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&depthFrameBuffer, info, nullptr);
-        } else {
-            LOG("[FreenectTOP] executeV1: failed to create depth output buffer");
+            uploadDepthFrame(output, depthFrame, MyFreenectDevice::WIDTH, MyFreenectDevice::HEIGHT);
         }
     } else {
         uploadFallbackBuffer(1);
     }
     
+    // --- IR frame ---
+    if (streamEnabledIR) {
+        std::vector<uint16_t> irFrame;
+        if (fntdContext && fn1_device->getIRFrame(irFrame)) {
+            TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext->createOutputBuffer(irFrame.size() * sizeof(uint16_t), TD::TOP_BufferFlags::None, nullptr);
+            if (irFrameBuffer) {
+                errorString.clear();
+                std::memcpy(irFrameBuffer->data, irFrame.data(), irFrame.size() * sizeof(uint16_t));
+                TD::TOP_UploadInfo info;
+                info.textureDesc.width = MyFreenectDevice::WIDTH;
+                info.textureDesc.height = MyFreenectDevice::HEIGHT;
+                info.textureDesc.texDim = TD::OP_TexDim::e2D;
+                info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
+                info.colorBufferIndex = 3;
+                info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+                output->uploadBuffer(&irFrameBuffer, info, nullptr);
+            }
+        }
+    } else {
+        uploadFallbackBuffer(3);
+    }
 }
     
 // Execute method for Kinect v2 (libfreenect2)
 void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs) {
+    // fn2_device belongs to the device thread until an init succeeds
+    if (!fn2_initSuccess.load()) {
+        if (deviceJobsPending.load() == 0) {
+            lastInitError = initError; // result of the last attempt, empty before the first
+            LOG("[FreenectTOP] executeV2: device not ready, queueing init");
+            fn2_startInitThread();
+        }
+        // The USB scan says right away whether a Kinect is there; init results can lag behind a close (~4 s on macOS)
+        if (fn2_slowUSB.load()) {
+            errorString = "Kinect v2 is on a USB 2 port, connect it to USB 3";
+        } else if (!fn2_deviceAvailable.load()) {
+            errorString = "No Kinect v2 devices found";
+        } else if (!lastInitError.empty()) {
+            errorString = lastInitError;
+        } else {
+            errorString.clear();
+            warningString = "Initializing Kinect v2";
+        }
+        uploadFallbackBuffer();
+        return;
+    }
+
     // Check if device was disconnected
-    if (!fn2_deviceAvailable.load() && fn2_device) {
+    if (!fn2_deviceAvailable.load()) {
         fn2_cleanupDevice();
         uploadFallbackBuffer();
         return;
     }
 
-    // Always attempt initialization if device is null
-    if (!fn2_device) {
-        LOG("[FreenectTOP] executeV2: fn2_device is null, attempting initialization");
-        fn2_startInitThread();
-        if (!fn2_InitSuccess.load()) {
-            errorString = "No Kinect v2 devices found";
-            uploadFallbackBuffer();
-            return;
-        }
-    }
-
-    if (fn2_device) {
-        fn2_device->setResolutions(fn2_colorW, fn2_colorH, fn2_depthW, fn2_depthH, fn2_pcW, fn2_pcH, fn2_irW, fn2_irH);
-    }
+    fn2_device->setColorSize(fn2_colorW, fn2_colorH);
+    // libfreenect2 clips depth to 4.5 m by default; use the TOP's depth range instead so v2 can see up to ~8 m
+    fn2_device->setDepthRange(depthThreshMin, depthThreshMax);
 
     // Create output buffers
     TD::OP_SmartRef<TD::TOP_Buffer> colorFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_colorW * fn2_colorH * 4, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> depthFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_depthW * fn2_depthH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> pointCloudFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_pcW * fn2_pcH * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
-    TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_irW * fn2_irH * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
+    TD::OP_SmartRef<TD::TOP_Buffer> irFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(MyFreenect2Device::IR_WIDTH * MyFreenect2Device::IR_HEIGHT * 2, TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
 
     // --- Color frame ---
     std::vector<uint8_t> colorFrame;
@@ -790,28 +788,25 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     
     // --- Depth frame ---
     if (streamEnabledDepth) {
-        std::vector<uint16_t> depthFrame;
-        if (depthFrameBuffer && fn2_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
+        std::vector<float> depthFrame; // millimetres, 0 = invalid
+        if (fn2_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
             errorString.clear();
-            std::memcpy(depthFrameBuffer->data, depthFrame.data(), fn2_depthW * fn2_depthH * 2);
-            TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn2_depthW;
-            info.textureDesc.height = fn2_depthH;
-            info.textureDesc.texDim = TD::OP_TexDim::e2D;
-            info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
-            info.colorBufferIndex = 1;
-            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
-            output->uploadBuffer(&depthFrameBuffer, info, nullptr);
+            uploadDepthFrame(output, depthFrame, fn2_depthW, fn2_depthH);
         }
     } else {
         uploadFallbackBuffer(1);
     }
     
     // --- Point Cloud frame ---
-    if (streamEnabledPC) {
+    // Only rebuilt and uploaded when a new depth frame has arrived: TD cooks faster than the
+    // Kinect delivers depth, and an output that isn't uploaded keeps its previous texture.
+    const uint64_t depthSeq = fn2_device->getDepthSeq();
+    if (streamEnabledPC && depthSeq != fn2_lastPointCloudSeq) {
+        TD::OP_SmartRef<TD::TOP_Buffer> pointCloudFrameBuffer = fntdContext ? fntdContext->createOutputBuffer(fn2_pcW * fn2_pcH * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr) : TD::OP_SmartRef<TD::TOP_Buffer>();
         std::vector<float> pointCloudFrame;
-        if (pointCloudFrameBuffer && fn2_device->getPointCloudFrame(pointCloudFrame)) {
+        if (pointCloudFrameBuffer && fn2_device->getPointCloudFrame(pointCloudFrame, pcSpace, depthThreshMin, depthThreshMax, pcFlipX, pcFlipY, pcFlipZ, unknownPoint)) {
             errorString.clear();
+            fn2_lastPointCloudSeq = depthSeq;
             std::memcpy(pointCloudFrameBuffer->data, pointCloudFrame.data(), fn2_pcW * fn2_pcH * 4 * sizeof(float));
             TD::TOP_UploadInfo info;
             info.textureDesc.width = fn2_pcW;
@@ -821,20 +816,58 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             info.colorBufferIndex = 2;
             info.firstPixel = TD::TOP_FirstPixel::TopLeft;
             output->uploadBuffer(&pointCloudFrameBuffer, info, nullptr);
-        } else {errorString = "Failed to get point cloud frame from Kinect v2";}
-    } else {
+        } else {
+            errorString = "Failed to get point cloud frame from Kinect v2";
+        }
+    } else if (!streamEnabledPC) {
         uploadFallbackBuffer(2);
+        fn2_lastPointCloudSeq = NO_POINT_CLOUD; // re-enabling uploads straight away instead of waiting for the next frame
     }
+
+    // --- Registered color (index 4) and depth-to-color UV map (index 5) ---
+    if (streamEnabledRegColor || streamEnabledUV) {
+        const int regWidth = MyFreenect2Device::DEPTH_WIDTH;
+        const int regHeight = MyFreenect2Device::DEPTH_HEIGHT;
+        std::vector<uint8_t> regColor;
+        std::vector<float> regUV;
+        if (fntdContext && fn2_device->getRegisteredColorFrame(regColor, regUV)) {
+            TD::TOP_UploadInfo info;
+            info.textureDesc.width = regWidth;
+            info.textureDesc.height = regHeight;
+            info.textureDesc.texDim = TD::OP_TexDim::e2D;
+            info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+            if (streamEnabledRegColor) {
+                TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext->createOutputBuffer(regWidth * regHeight * 4, TD::TOP_BufferFlags::None, nullptr);
+                if (buf) {
+                    std::memcpy(buf->data, regColor.data(), regWidth * regHeight * 4);
+                    info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
+                    info.colorBufferIndex = 4;
+                    output->uploadBuffer(&buf, info, nullptr);
+                }
+            }
+            if (streamEnabledUV) {
+                TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext->createOutputBuffer(regWidth * regHeight * 4 * sizeof(float), TD::TOP_BufferFlags::None, nullptr);
+                if (buf) {
+                    std::memcpy(buf->data, regUV.data(), regWidth * regHeight * 4 * sizeof(float));
+                    info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA32Float;
+                    info.colorBufferIndex = 5;
+                    output->uploadBuffer(&buf, info, nullptr);
+                }
+            }
+        }
+    }
+    if (!streamEnabledRegColor) uploadFallbackBuffer(4);
+    if (!streamEnabledUV) uploadFallbackBuffer(5);
 
     // --- IR frame ---
     if (streamEnabledIR) {
         std::vector<uint16_t> irFrame;
         if (irFrameBuffer && fn2_device->getIRFrame(irFrame)) {
             errorString.clear();
-            std::memcpy(irFrameBuffer->data, irFrame.data(), fn2_irW * fn2_irH * 2);
+            std::memcpy(irFrameBuffer->data, irFrame.data(), MyFreenect2Device::IR_WIDTH * MyFreenect2Device::IR_HEIGHT * 2);
             TD::TOP_UploadInfo info;
-            info.textureDesc.width = fn2_irW;
-            info.textureDesc.height = fn2_irH;
+            info.textureDesc.width = MyFreenect2Device::IR_WIDTH;
+            info.textureDesc.height = MyFreenect2Device::IR_HEIGHT;
             info.textureDesc.texDim = TD::OP_TexDim::e2D;
             info.textureDesc.pixelFormat = TD::OP_PixelFormat::Mono16Fixed;
             info.colorBufferIndex = 3;
@@ -866,50 +899,62 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
     const char* devTypeCStr = inputs->getParString("Hardwareversion");
     std::string devType = devTypeCStr ? devTypeCStr : "Kinect v1";
-    static std::string lastDeviceType = "Kinect v1";
+
+    // Read the license whenever the TOP becomes active (including the first cook), so a key installed
+    // while TD runs takes effect by toggling Active. If it can't be read, assume Non-Commercial:
+    // a too-large output corrupts there, while limiting a commercial license only costs resolution.
+    if (isActive && !wasActive) {
+        const std::optional<bool> isNonCommercial = readIsNonCommercial();
+        licenseKnown = isNonCommercial.has_value();
+        nonCommercial = isNonCommercial.value_or(true);
+        LOG(std::string("[FreenectTOP] license: ") + (licenseKnown ? (nonCommercial ? "Non-Commercial" : "Commercial or Pro") : "unknown"));
+    }
+    wasActive = isActive;
     
     // Set depthFormat from parameters
-    std::string depthFormatStr = inputs->getParString("Depthformat");
-    bool depthUndistort = (inputs->getParInt("Depthundistort") != 0);
-    if (depthFormatStr == "Raw" && depthUndistort) {
-        depthFormat = depthFormatEnum::RawUndistorted;
-    } else if (depthFormatStr == "Registered") {
-        depthFormat = depthFormatEnum::Registered;
-    } else if (depthFormatStr == "Raw" || (!depthUndistort && devType == "Kinect v1")) {
-        depthFormat = depthFormatEnum::Raw;
+    {
+        const char* c = inputs->getParString("Depthformat");
+        std::string depthFormatStr = c ? c : "";
+        if (depthFormatStr == "Registered") depthFormat = depthFormatEnum::Registered;
+        else if (depthFormatStr == "Rawundistorted" && devType == "Kinect v2") depthFormat = depthFormatEnum::RawUndistorted;
+        else depthFormat = depthFormatEnum::Raw;
     }
     
     manualDepthThresh = (inputs->getParInt("Manualdepththresh") != 0);
     depthThreshMin = static_cast<float>(inputs->getParDouble("Depththreshmin"));
     depthThreshMax = static_cast<float>(inputs->getParDouble("Depththreshmax"));
+    unknownDepth = static_cast<float>(inputs->getParDouble("Unknowndepth"));
+    for (int i = 0; i < 3; ++i) unknownPoint[i] = static_cast<float>(inputs->getParDouble("Unknownpoint", i));
     
     streamEnabledIR = (inputs->getParInt("Enableir") != 0);
     streamEnabledDepth = (inputs->getParInt("Enabledepth") != 0);
     streamEnabledPC = (inputs->getParInt("Enablepointcloud") != 0);
+    streamEnabledRegColor = (inputs->getParInt("Enableregcolor") != 0);
+    streamEnabledUV = (inputs->getParInt("Enableuv") != 0);
+    {
+        const char* c = inputs->getParString("Depthoutput");
+        std::string depthOutputStr = c ? c : "";
+        depthOutput = (depthOutputStr == "Millimeters") ? depthOutputEnum::Millimeters
+                    : (depthOutputStr == "Meters")      ? depthOutputEnum::Meters
+                                                        : depthOutputEnum::Normalized;
+        pcSpace = (depthFormat == depthFormatEnum::Registered) ? pcSpaceEnum::ColorCamera : pcSpaceEnum::DepthCamera;
+        pcFlipX = (inputs->getParInt("Pcflipx") != 0);
+        pcFlipY = (inputs->getParInt("Pcflipy") != 0);
+        pcFlipZ = (inputs->getParInt("Pcflipz") != 0);
+    }
     
     fn1_tilt = static_cast<float>(inputs->getParDouble("Tilt"));
     
-    // V1 resolution values
-    fn1_colorW  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 0));
-    fn1_colorH  = static_cast<int>(inputs->getParDouble("V1rgbresolution", 1));
-    fn1_depthW  = static_cast<int>(inputs->getParDouble("V1depthresolution", 0));
-    fn1_depthH  = static_cast<int>(inputs->getParDouble("V1depthresolution", 1));
-    //fn1_irW     = static_cast<int>(inputs->getParDouble("V1irresolution", 0));
-    //fn1_irH     = static_cast<int>(inputs->getParDouble("V1irresolution", 1));
-    
-    // V2 resolution values
-    fn2_colorW  = static_cast<int>(inputs->getParDouble("V2rgbresolution", 0));
-    fn2_colorH  = static_cast<int>(inputs->getParDouble("V2rgbresolution", 1));
-    fn2_depthW  = static_cast<int>(inputs->getParDouble("V2depthresolution", 0));
-    fn2_depthH  = static_cast<int>(inputs->getParDouble("V2depthresolution", 1));
-    fn2_pcW     = static_cast<int>(inputs->getParDouble("V2pcresolution", 0));
-    fn2_pcH     = static_cast<int>(inputs->getParDouble("V2pcresolution", 1));
-    fn2_irW     = static_cast<int>(inputs->getParDouble("V2irresolution", 0));
-    fn2_irH     = static_cast<int>(inputs->getParDouble("V2irresolution", 1));
-    if (devType == "Kinect v2" && depthFormat == depthFormatEnum::Registered) {
-        fn2_depthW = fn2_colorW;
-        fn2_depthH = fn2_colorH;
-    }
+    // Kinect v2 RGB is native 1920x1080, except on Non-Commercial TouchDesigner: it's limited to 1280x1280
+    // and doesn't scale a C++ TOP's larger outputs itself, so RGB is 1280x720 there. Registered depth and
+    // the color-space point cloud are pixel-aligned with RGB and follow it; every other output is native.
+    fn2_colorW = nonCommercial ? MyFreenect2Device::SCALED_WIDTH : MyFreenect2Device::RGB_WIDTH;
+    fn2_colorH = nonCommercial ? MyFreenect2Device::SCALED_HEIGHT : MyFreenect2Device::RGB_HEIGHT;
+    const bool registered = (depthFormat == depthFormatEnum::Registered);
+    fn2_depthW = registered ? fn2_colorW : MyFreenect2Device::DEPTH_WIDTH;
+    fn2_depthH = registered ? fn2_colorH : MyFreenect2Device::DEPTH_HEIGHT;
+    fn2_pcW = (pcSpace == pcSpaceEnum::ColorCamera) ? fn2_colorW : MyFreenect2Device::DEPTH_WIDTH;
+    fn2_pcH = (pcSpace == pcSpaceEnum::ColorCamera) ? fn2_colorH : MyFreenect2Device::DEPTH_HEIGHT;
     
     // Enable/disable parameters based on device type
     auto dynamicParameterEnable = [&](const char* name, bool v1, bool v2, bool other = true) {
@@ -919,29 +964,13 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     // Device-specific parameters
     dynamicParameterEnable("Tilt", true, false);
-    dynamicParameterEnable("Enableir", false, true);
     dynamicParameterEnable("Enablepointcloud", false, true);
-    dynamicParameterEnable("V1rgbresolution", true, false);
-    //dynamicParameterEnable("V1irresolution", true, false);
-    dynamicParameterEnable("V2rgbresolution", false, true);
-    dynamicParameterEnable("V2irresolution", false, true);
-    dynamicParameterEnable("V2pcresolution", false, true);
-    
-    // Enable/disable depthUndistort based on device type and depthFormat
-    if (devType == "Kinect v2" && (depthFormat == depthFormatEnum::Raw || depthFormat == depthFormatEnum::RawUndistorted)) {
-        inputs->enablePar("Depthundistort", true);
-    } else {
-        inputs->enablePar("Depthundistort", false);
-    }
-    
-    // Enable/disable depthResolution based on depthFormat
-    if (depthFormat == depthFormatEnum::Registered) {
-        dynamicParameterEnable("V1depthresolution", false, false);
-        dynamicParameterEnable("V2depthresolution", false, false);
-    } else {
-        dynamicParameterEnable("V1depthresolution", true, false);
-        dynamicParameterEnable("V2depthresolution", false, true);
-    }
+    dynamicParameterEnable("Enableregcolor", false, true);
+    dynamicParameterEnable("Enableuv", false, true);
+    dynamicParameterEnable("Pcflipx", false, true);
+    dynamicParameterEnable("Pcflipy", false, true);
+    dynamicParameterEnable("Pcflipz", false, true);
+    dynamicParameterEnable("Unknownpoint", false, true);
     
     // Enable/disable depthThreshMin/Max based on manualDepthThresh
     if (!manualDepthThresh) {
@@ -967,16 +996,32 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         warningString = "FreenectTOP is inactive";
         uploadFallbackBuffer();
         errorString.clear();
+        releaseDevice(); // let another FreenectTOP take the device
         return;
+    } else if (const char* format = inputs->getParString("Depthformat");
+               devType == "Kinect v1" && format && std::string(format) == "Rawundistorted") {
+        // A single menu entry can't be disabled, so say what happens instead
+        warningString = "Raw undistorted is Kinect v2 only; Kinect v1 uses Raw";
+    } else if (devType == "Kinect v2" && nonCommercial) {
+        warningString = licenseKnown ? "Non-Commercial license: Kinect v2 RGB is limited to 1280x720"
+                                     : "Couldn't detect the TouchDesigner license: Kinect v2 RGB is limited to 1280x720";
     } else {
         warningString.clear();
     }
-    
-    // Check if device type changed - only clean up and log if it actually changed
+
+    // Only one FreenectTOP per Kinect version may talk to that device. A second active node would
+    // fight the first for the USB device and both would stall, so it stays idle with an error.
+    // A v1 node and a v2 node can run together: they use different libraries and USB devices.
+    // On a Hardware Version change, give up (and close) the old version first, so it is free
+    // for another node even if this one can't claim the new version.
     if (devType != lastDeviceType) {
-        fn1_cleanupDevice();
-        fn2_cleanupDevice();
+        releaseDevice();
         lastDeviceType = devType;
+    }
+    if (!claimDevice(devType == "Kinect v2")) {
+        errorString = "Another FreenectTOP is already using the " + devType + ". Only one node per Kinect version can be active; turn Active off on the other node first.";
+        uploadFallbackBuffer();
+        return;
     }
     
     // Execute based on current device type string
@@ -988,6 +1033,54 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
 }
 
 // Upload a fallback black buffer
+// Packs a millimetre depth map into the output texture at index 1 according to the Depthoutput parameter.
+void FreenectTOP::uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height) {
+    if (!output || !fntdContext || width <= 0 || height <= 0) return;
+    const size_t pixelCount = static_cast<size_t>(width) * height;
+    if (depthMM.size() < pixelCount) {
+        LOG("[FreenectTOP] uploadDepthFrame: depth buffer smaller than requested size");
+        return;
+    }
+
+    const bool packed16 = (depthOutput == depthOutputEnum::Normalized);
+    const size_t bytes = pixelCount * (packed16 ? sizeof(uint16_t) : sizeof(float));
+    TD::OP_SmartRef<TD::TOP_Buffer> buf = fntdContext->createOutputBuffer(bytes, TD::TOP_BufferFlags::None, nullptr);
+    if (!buf) {
+        LOG("[FreenectTOP] uploadDepthFrame: failed to create depth output buffer");
+        return;
+    }
+
+    if (packed16) {
+        // Legacy behaviour: 0..1 across the threshold window, 0 = invalid
+        uint16_t* dst = static_cast<uint16_t*>(buf->data);
+        const float denom = std::max(depthThreshMax - depthThreshMin, 1.0f);
+        for (size_t i = 0; i < pixelCount; ++i) {
+            const float d = depthMM[i];
+            if (d <= 0.0f) {
+                dst[i] = static_cast<uint16_t>(std::clamp(unknownDepth, 0.0f, 1.0f) * 65535.0f + 0.5f);
+            } else {
+                const float normalized = std::clamp((d - depthThreshMin) / denom, 0.0f, 1.0f);
+                dst[i] = static_cast<uint16_t>(normalized * 65535.0f + 0.5f);
+            }
+        }
+    } else {
+        float* dst = static_cast<float*>(buf->data);
+        const float scale = (depthOutput == depthOutputEnum::Meters) ? 0.001f : 1.0f;
+        for (size_t i = 0; i < pixelCount; ++i) {
+            dst[i] = (depthMM[i] > 0.0f) ? depthMM[i] * scale : unknownDepth;
+        }
+    }
+
+    TD::TOP_UploadInfo info;
+    info.textureDesc.width = width;
+    info.textureDesc.height = height;
+    info.textureDesc.texDim = TD::OP_TexDim::e2D;
+    info.textureDesc.pixelFormat = packed16 ? TD::OP_PixelFormat::Mono16Fixed : TD::OP_PixelFormat::Mono32Float;
+    info.colorBufferIndex = 1;
+    info.firstPixel = TD::TOP_FirstPixel::TopLeft;
+    output->uploadBuffer(&buf, info, nullptr);
+}
+
 void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
     if (!myCurrentOutput) {
         LOG("[FreenectTOP] uploadFallbackBuffer: myCurrentOutput is null");
@@ -999,7 +1092,7 @@ void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
     std::vector<uint8_t> black(fallbackSize, 0);
 
     // Allocate and initialize each fallback buffer if not already
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < NUM_OUTPUTS; ++i) {
         if (!fallbackBuffers[i]) {
             fallbackBuffers[i] = fntdContext ? fntdContext->createOutputBuffer(
                 fallbackSize,
@@ -1018,11 +1111,11 @@ void FreenectTOP::uploadFallbackBuffer(int targetIndex) {
     info.textureDesc.texDim = TD::OP_TexDim::e2D;
     info.textureDesc.pixelFormat = TD::OP_PixelFormat::RGBA8Fixed;
 
-    if (targetIndex >= 0 && targetIndex < 4) {
+    if (targetIndex >= 0 && targetIndex < NUM_OUTPUTS) {
         info.colorBufferIndex = targetIndex;
         myCurrentOutput->uploadBuffer(&fallbackBuffers[targetIndex], info, nullptr);
     } else {
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < NUM_OUTPUTS; ++i) {
             info.colorBufferIndex = i;
             myCurrentOutput->uploadBuffer(&fallbackBuffers[i], info, nullptr);
         }

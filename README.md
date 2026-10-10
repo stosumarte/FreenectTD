@@ -3,8 +3,8 @@ FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't
 
 It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
 
-> [!IMPORTANT] 
-> FreenectTD is an experimental project. While being thoroughly tested and confirmed to work on multiple platforms, it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility.
+**⚠️ Warning:** 
+FreenectTD is an experimental project. While being thoroughly tested and confirmed to work on multiple platforms, it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility.
 
 ### Requirements
 * Apple Silicon Mac
@@ -29,20 +29,19 @@ Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). 
 
 ## [RECOMMENDED] Installing using installer
 
-1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP_Installer.pkg) 
+1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
 2. Right click on `FreenectTOP_[version]_Installer.pkg` and select "Open"
 
-You should now find FreenectTOP under the "Custom" OPs panel.
+3. If the Installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Run Anyway`
 
-> [!TIP]
-> If the Installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Run Anyway`
+You should now find FreenectTOP under the "Custom" OPs panel.
 
 ## Installing Manually
 
 ### Global Installation
 
-1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP.zip)
+1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
 
 2. Unzip and copy `FreenectTOP.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
 
