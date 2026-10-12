@@ -62,7 +62,6 @@ cat > "$DISTRIBUTION_XML" <<EOF
     <allowed-architectures>
         <architecture>arm64</architecture>
     </allowed-architectures>
-    <readme file="readme.txt"/>
     <choices-outline>
         <line choice="default"/>
     </choices-outline>
