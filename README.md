@@ -35,24 +35,6 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 
 \* On Kinect V1, IR turns RGB off: the V1 doesn't have the bandwidth to stream both at once.
 
-## Installing
-
-1. [Download the latest installer](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP_Installer.pkg)
-
-2. Right click on `FreenectTOP_Installer.pkg` and select "Open"
-
-You should now find Freenect TOP under the "Custom" OPs panel.
-
-> [!TIP]
-> If the Installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Open Anyway`
-
-Manual installation and uninstalling are on the [download page](https://marte.ee/freenecttd/download).
-
-## Usage
-Freenect TOP outputs RGB. Every other stream (depth, point cloud, IR, registered color, depth→color UV) is reached with a Render Select TOP set to its index. Example projects are in `toe_examples/`.
-
-The [docs](https://marte.ee/freenecttd/docs) cover the outputs, every parameter, the colored point cloud setup and known issues.
-
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
 
