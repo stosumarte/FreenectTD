@@ -3,6 +3,8 @@ FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't
 
 It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
 
+**[Website](https://marte.ee/freenecttd/) · [Docs](https://marte.ee/freenecttd/docs) · [Download](https://marte.ee/freenecttd/download) · [Changes](https://marte.ee/freenecttd/changes)**
+
 ![Freenect TOP outputs feeding Render Select TOPs and a TOP to POP colored point cloud](docs/network_overview.png)
 
 ### Requirements
@@ -28,94 +30,23 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 
 \* On Kinect V1, IR turns RGB off: the V1 doesn't have the bandwidth to stream both at once.
 
-### Known issues
-Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). This is due to a mix of different factors in libfreenect and Kinect official firmware.
+## Installing
 
-The V1 IR image is covered in bright dots. This is expected: it is the pattern the V1's laser projector casts to measure depth.
+1. [Download the latest installer](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP_Installer.pkg)
 
-## [RECOMMENDED] Installing using installer
-
-1. [Download the latest installer build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP_Installer.pkg) 
-
-2. Right click on `FreenectTOP_[version]_Installer.pkg` and select "Open"
+2. Right click on `FreenectTOP_Installer.pkg` and select "Open"
 
 You should now find Freenect TOP under the "Custom" OPs panel.
 
 > [!TIP]
-> If the Installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Run Anyway`
+> If the Installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Open Anyway`
 
-## Installing Manually
-
-### Global Installation
-
-1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP.zip)
-
-2. Unzip and copy `FreenectTOP.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
-
-You should now find Freenect TOP under the "Custom" OPs panel.
-
-### Project-specific Installation
-
-1. [Download the latest zip build from the releases tab](https://github.com/stosumarte/FreenectTD/releases/latest) 
-
-2. Unzip and copy `FreenectTOP.plugin` next to your .toe, in a folder named `Plugins`.
-
-You should now be able to open your .toe and find Freenect TOP under the "Custom" OPs panel.
+Manual installation and uninstalling are on the [download page](https://marte.ee/freenecttd/download).
 
 ## Usage
-Freenect TOP outputs RGB. Every other stream is reached with a Render Select TOP set to its index:
+Freenect TOP outputs RGB. Every other stream (depth, point cloud, IR, registered color, depth→color UV) is reached with a Render Select TOP set to its index. Example projects are in `toe_examples/`.
 
-| Index | Stream | Format |
-| ----- | ------ | ------ |
-| 0 | RGB | RGBA8 |
-| 1 | Depth | Mono16 (Normalized) or Mono32F (mm / m) |
-| 2 | Point cloud (v2) | RGBA32F: XYZ in meters, A = 1 for valid points |
-| 3 | IR | Mono16 |
-| 4 | Registered color (v2) | RGBA8: RGB resampled onto the depth grid, A = 0 where there is no color |
-| 5 | Depth→color UV (v2) | RGBA32F: (u, v, 0, valid) into the RGB output, for a Remap TOP |
-
-Streams come out at native resolution: 640x480 on v1; on v2 1920x1080 RGB and 512x424 for everything else, except Registered depth and point cloud, which match RGB. With a Non-Commercial license, v2 RGB (and those two) is 1280x720. To scale further, use a Resolution TOP (*Input Smoothness* = *Nearest Pixel* for depth and point cloud).
-
-Example projects are in `toe_examples/`.
-
-### Parameters
-
-**Device**
-* *Active* – only one Freenect TOP can be active per TouchDesigner process; turn it off to hand the Kinect to another one.
-* *Hardware Version* – Kinect v1 (Xbox 360) or Kinect v2 (Xbox One).
-* *Tilt Angle* – v1 motor tilt.
-
-**Streams** – toggles for streams 1–5. On v1, RGB and IR share one stream, so RGB [0] is blank while *IR* is on.
-
-**Depth**
-* *Format* – *Raw* keeps depth and the point cloud in the depth camera; *Raw undistorted* also removes lens distortion (v2 only); *Registered* re-projects both into the color camera, pixel-aligned with RGB.
-* *Depth Output* – *Normalized 16-bit* (0–1 across the depth range), *Millimeters* or *Meters* (32-bit float).
-* *Manual Depth Range*, *Depth Range Min/Max* – the valid depth window in mm, up to 8000 (the v2 is rated to 4.5 m and gets noisier beyond). When off: 400–4500 mm on v1, 500–4500 mm on v2.
-* *Unknown Depth Value* – written to pixels with no reading or outside the range (clamped to 0–1 in Normalized).
-
-**Point Cloud** (v2)
-* *Point Cloud Flip X/Y/Z* – the native frame is +Y up, +Z away from the sensor; *Flip Z* gives a TouchDesigner-style cloud in front of a camera looking down -Z.
-* *Unknown Point Value* – XYZ written to invalid points; their alpha is always 0, so alpha stays the reliable validity mask.
-
-Use finite values for the unknown values (e.g. 10000 mm) rather than NaN, which spreads through blurs and averages.
-
-### Colored point cloud (Kinect v2)
-* **Format = Registered** – the point cloud [2] is pixel-aligned with RGB [0]: use the pixel position to color each point.
-* **Format = Raw** – the point cloud stays in the depth camera; Registered color [4] colors each point directly, or UV [5] samples full-resolution RGB with a Remap TOP.
-
-The two spaces are about 5 cm apart (the distance between the cameras), so don't mix them in one render.
-
-To render it as a POP: a **TOP to POP** with *First RGBA Contains* = `Position and Active` on stream 2, plus a second TOP block reading the color (stream 4 for Raw, stream 0 for Registered) into `Color` with *Filter* = `Nearest Pixel`. Render it with a Constant MAT with *Apply Point Color* on. `toe_examples/FreenectTOP_PointCloud_Example.toe` contains this network.
-
-### Known limitations
-* Like every TOP, Freenect TOP only cooks when something uses its output. If Render Selects stop updating in perform mode or another network, end the chain in a Null TOP with its display flag on.
-* Only one Kinect per machine is supported.
-* Skeleton tracking is currently impossible to implement.
-
-## Uninstalling
-
-To uninstall all FreenectTD related files, run the following command in terminal:
-`sudo rm -rf ~/Library/Application\ Support/Derivative/TouchDesigner099/Plugins/Freenect*.plugin`
+The [docs](https://marte.ee/freenecttd/docs) cover the outputs, every parameter, the colored point cloud setup and known issues.
 
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
@@ -129,6 +60,11 @@ If you like FreenectTD, please consider donating to support further development!
 </a>
 
 ## Credits
+
+Thanks to everyone who contributed:
+- [@dcheesman](https://github.com/dcheesman): point cloud registration, float depth, POP workflow ([#25](https://github.com/stosumarte/FreenectTD/pull/25))
+- [@gcarizza](https://github.com/gcarizza): Kinect V1 depth stream fix ([#21](https://github.com/stosumarte/FreenectTD/pull/21))
+- [@fedevoxlive](https://github.com/Fedevoxlive): Kinect V1 IR streaming ([#22](https://github.com/stosumarte/FreenectTD/pull/22))
 
 A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible.
 
