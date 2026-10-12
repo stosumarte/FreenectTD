@@ -19,19 +19,18 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 * Kinect V1 / Kinect V2
 
 ### Supported features
-| Feature                                       | Kinect V1 | Kinect V2 |
-| --------------------------------------------- | --------- | --------- |
-| RGB streaming                                 | ✅         | ✅         |
-| Depth map streaming                           | ✅         | ✅         |
-| Point cloud map streaming                     | ❌         | ✅         |
-| IR streaming                                  | ✅*        | ✅         |
-| Tilt control                                  | ✅         | ❌         |
-| Depth undistortion (Format menu)              | ❌         | ✅         |
-| Depth registration (align depth map to color) | ✅         | ✅         |
-| Manual depth range                            | ✅         | ✅         |
-| Depth output in millimeters / meters (32-bit) | ✅         | ✅         |
-| Color-camera-space point cloud (aligned to RGB) | ❌       | ✅         |
-| Registered color + depth→color UV map         | ❌         | ✅         |
+| Feature                                              | Kinect V1 | Kinect V2 |
+| ---------------------------------------------------- | --------- | --------- |
+| RGB streaming                                        | ✅         | ✅         |
+| Depth map streaming                                  | ✅         | ✅         |
+| Point cloud map streaming                            | ❌         | ✅         |
+| IR streaming                                         | ✅*        | ✅         |
+| Tilt control                                         | ✅         | ❌         |
+| Depth undistortion                                   | ❌         | ✅         |
+| Depth registration (align depth map to color)        | ✅         | ✅         |
+| Manual depth range                                   | ✅         | ✅         |
+| Depth output in millimeters / meters                 | ✅         | ✅         |
+| RGB-aligned point cloud, registered color and UV map | ❌         | ✅         |
 
 \* On Kinect V1, IR turns RGB off: the V1 doesn't have the bandwidth to stream both at once.
 

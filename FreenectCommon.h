@@ -27,7 +27,7 @@ enum class depthOutputEnum {
     // (clamped to 0..1 in Normalized)
 };
 
-// Which camera the v2 point cloud is expressed in; derived from the Format menu
+// Which camera the v2 point cloud is expressed in; derived from the Depth Format menu
 // (Registered -> ColorCamera, Raw / Raw undistorted -> DepthCamera)
 enum class pcSpaceEnum {
     DepthCamera,  // "Raw": 512x424, XYZ (m) relative to the depth/IR camera; aligned with Registered Color / UV outputs

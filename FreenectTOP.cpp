@@ -156,17 +156,17 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     toggle("Enableuv",         "Depth-to-Color UV [5]",  0.0, page0);
 
     // --- Depth & point cloud ---
-    // One Format menu drives both: Registered puts depth AND the point cloud in the
+    // One Depth Format menu drives both: Registered puts depth AND the point cloud in the
     // color camera (aligned to RGB); Raw keeps them in the depth camera.
     {
         const char* names[]  = {"Raw", "Rawundistorted", "Registered"};
         const char* labels[] = {"Raw", "Raw undistorted", "Registered (aligned to RGB)"};
-        menu("Depthformat", "Format", "Raw", 3, names, labels, page0,
+        menu("Depthformat", "Depth Format", "Raw", 3, names, labels, page0,
              "Registered aligns depth and point cloud to the RGB image; Raw keeps them in the depth camera.", true);
     }
     {
         const char* names[]  = {"Normalized", "Millimeters", "Meters"};
-        const char* labels[] = {"Normalized 16-bit", "Millimeters (32-bit float)", "Meters (32-bit float)"};
+        const char* labels[] = {"Normalized (16-bit)", "Millimeters (32-bit float)", "Meters (32-bit float)"};
         menu("Depthoutput", "Depth Output", "Normalized", 3, names, labels, page0,
              "Normalized = 16-bit. Millimeters / Meters = 32-bit float.");
     }
