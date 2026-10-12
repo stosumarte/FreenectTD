@@ -82,12 +82,13 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     };
 
     // Small helpers so every parameter is declared the same way
-    auto header = [&](const char* name, const char* label, const char* page, bool section = false) {
+    auto header = [&](const char* name, const char* label, const char* page, bool section = false,
+                      const char* help = nullptr) {
         OP_StringParameter headerParam;
         headerParam.name = name;
         headerParam.label = label;
         headerParam.page = page;
-        layout(headerParam, nullptr, section);
+        layout(headerParam, help, section);
         manager->appendHeader(headerParam);
     };
     auto toggle = [&](const char* name, const char* label, double defaultValue, const char* page,
@@ -165,9 +166,9 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     }
     {
         const char* names[]  = {"Normalized", "Millimeters", "Meters"};
-        const char* labels[] = {"Normalized 16-bit (0-1 across depth range)", "Millimeters (32-bit float)", "Meters (32-bit float)"};
+        const char* labels[] = {"Normalized 16-bit", "Millimeters (32-bit float)", "Meters (32-bit float)"};
         menu("Depthoutput", "Depth Output", "Normalized", 3, names, labels, page0,
-             "Normalized = 16-bit 0-1 across the depth range. Millimeters / Meters = 32-bit float.");
+             "Normalized = 16-bit. Millimeters / Meters = 32-bit float.");
     }
     toggle("Manualdepththresh", "Manual Depth Range", 0.0, page0);
     {
@@ -235,9 +236,11 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     const char* page1 = "About";
     std::string versionLabel = std::string("FreenectTD v") + FREENECTTOP_VERSION + " by @stosumarte";
     header("Version", versionLabel.c_str(), page1);
-    header("Contrib1", "@dcheesman: point cloud registration, float depth, POP workflow", page1, /*section=*/true);
-    header("Contrib2", "@gcarizza: Kinect v1 depth stream fix (#21)", page1);
-    header("Contrib3", "@fedevoxlive: Kinect v1 IR streaming (#22)", page1);
+    // Short labels: header text sets the width of the parameter name column
+    header("Contributors", "Contributors", page1, /*section=*/true);
+    header("Contrib1", "@dcheesman", page1, false, "Point cloud registration, float depth, POP workflow");
+    header("Contrib2", "@gcarizza", page1, false, "Kinect v1 depth stream fix (#21)");
+    header("Contrib3", "@fedevoxlive", page1, false, "Kinect v1 IR streaming (#22)");
     auto pulse = [&](const char* name, const char* label, const char* help, bool section = false) {
         OP_NumericParameter pulseParam;
         pulseParam.name = name;
