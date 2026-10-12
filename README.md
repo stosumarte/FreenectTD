@@ -3,7 +3,7 @@ FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't
 
 It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
 
-![FreenectTOP outputs feeding Render Select TOPs and a TOP to POP colored point cloud](docs/network_overview.png)
+![Freenect TOP outputs feeding Render Select TOPs and a TOP to POP colored point cloud](docs/network_overview.png)
 
 > [!IMPORTANT] 
 > FreenectTD is an experimental project. While being thoroughly tested and confirmed to work on multiple platforms, it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility.
@@ -40,7 +40,7 @@ The V1 IR image is covered in bright dots. This is expected: it is the pattern t
 
 2. Right click on `FreenectTOP_[version]_Installer.pkg` and select "Open"
 
-You should now find FreenectTOP under the "Custom" OPs panel.
+You should now find Freenect TOP under the "Custom" OPs panel.
 
 > [!TIP]
 > If the Installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Run Anyway`
@@ -53,7 +53,7 @@ You should now find FreenectTOP under the "Custom" OPs panel.
 
 2. Unzip and copy `FreenectTOP.plugin` to TouchDesigner's plugin folder, which is located at `/Users/<username>/Library/Application Support/Derivative/TouchDesigner099/Plugins`. You might need to show hidden files by pressing `⌘⇧.`.
 
-You should now find FreenectTOP under the "Custom" OPs panel.
+You should now find Freenect TOP under the "Custom" OPs panel.
 
 ### Project-specific Installation
 
@@ -61,10 +61,10 @@ You should now find FreenectTOP under the "Custom" OPs panel.
 
 2. Unzip and copy `FreenectTOP.plugin` next to your .toe, in a folder named `Plugins`.
 
-You should now be able to open your .toe and find FreenectTOP under the "Custom" OPs panel.
+You should now be able to open your .toe and find Freenect TOP under the "Custom" OPs panel.
 
 ## Usage
-FreenectTOP outputs RGB. Every other stream is reached with a Render Select TOP set to its index:
+Freenect TOP outputs RGB. Every other stream is reached with a Render Select TOP set to its index:
 
 | Index | Stream | Format |
 | ----- | ------ | ------ |
@@ -82,7 +82,7 @@ Example projects are in `toe_examples/`.
 ### Parameters
 
 **Device**
-* *Active* – only one FreenectTOP can be active per TouchDesigner process; turn it off to hand the Kinect to another one.
+* *Active* – only one Freenect TOP can be active per TouchDesigner process; turn it off to hand the Kinect to another one.
 * *Hardware Version* – Kinect v1 (Xbox 360) or Kinect v2 (Xbox One).
 * *Tilt Angle* – v1 motor tilt.
 
@@ -109,7 +109,7 @@ The two spaces are about 5 cm apart (the distance between the cameras), so don't
 To render it as a POP: a **TOP to POP** with *First RGBA Contains* = `Position and Active` on stream 2, plus a second TOP block reading the color (stream 4 for Raw, stream 0 for Registered) into `Color` with *Filter* = `Nearest Pixel`. Render it with a Constant MAT with *Apply Point Color* on. `toe_examples/FreenectTOP_PointCloud_Example.toe` contains this network.
 
 ### Known limitations
-* Like every TOP, FreenectTOP only cooks when something uses its output. If Render Selects stop updating in perform mode or another network, end the chain in a Null TOP with its display flag on.
+* Like every TOP, Freenect TOP only cooks when something uses its output. If Render Selects stop updating in perform mode or another network, end the chain in a Null TOP with its display flag on.
 * Only one Kinect per machine is supported.
 * Skeleton tracking is currently impossible to implement.
 

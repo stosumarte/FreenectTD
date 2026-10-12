@@ -993,7 +993,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
 
     // Check if the plugin is active
     if (!isActive) {
-        warningString = "FreenectTOP is inactive";
+        warningString = "Freenect TOP is inactive";
         uploadFallbackBuffer();
         errorString.clear();
         releaseDevice(); // let another FreenectTOP take the device
@@ -1019,7 +1019,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         lastDeviceType = devType;
     }
     if (!claimDevice(devType == "Kinect v2")) {
-        errorString = "Another FreenectTOP is already using the " + devType + ". Only one node per Kinect version can be active; turn Active off on the other node first.";
+        errorString = "Another Freenect TOP is already using the " + devType + ". Only one node per Kinect version can be active; turn Active off on the other node first.";
         uploadFallbackBuffer();
         return;
     }
