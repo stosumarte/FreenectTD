@@ -62,6 +62,7 @@ cat > "$DISTRIBUTION_XML" <<EOF
     <allowed-architectures>
         <architecture>arm64</architecture>
     </allowed-architectures>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
     <choices-outline>
         <line choice="default"/>
     </choices-outline>
@@ -76,6 +77,7 @@ EOF
 productbuild \
     --distribution "$DISTRIBUTION_XML" \
     --package-path "$PKG_WORK_DIR" \
+    --resources "$SRCROOT/pkg_resources" \
     "$FINAL_PKG"
 
 # --------------------------------------------------------

@@ -13,3 +13,6 @@ void checkForUpdates(const char* installedVersion);
 
 // Opens the FreenectTD releases page in the default browser
 void openReleasesPage();
+
+// Opens the FreenectTD donation page in the default browser
+void openDonationPage();

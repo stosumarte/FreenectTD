@@ -248,6 +248,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     };
     pulse("Checkupdates", "Check for Updates", "Ask GitHub for the latest release and show the result in a dialog.", true);
     pulse("Openreleases", "Open Releases Page", "Open the FreenectTD releases page in the browser.");
+    pulse("Donate", "Support FreenectTD", "Open the FreenectTD donation page in the browser.", true);
 }
 
 void FreenectTOP::pulsePressed(const char* name, void*) {
@@ -255,6 +256,8 @@ void FreenectTOP::pulsePressed(const char* name, void*) {
         checkForUpdates(FREENECTTOP_VERSION);
     } else if (std::strcmp(name, "Openreleases") == 0) {
         openReleasesPage();
+    } else if (std::strcmp(name, "Donate") == 0) {
+        openDonationPage();
     }
 }
 
