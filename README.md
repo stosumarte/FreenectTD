@@ -1,4 +1,9 @@
 # FreenectTD
+[![Latest release](https://img.shields.io/github/v/release/stosumarte/FreenectTD?style=flat-square)](https://github.com/stosumarte/FreenectTD/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/stosumarte/FreenectTD/total?style=flat-square)](https://github.com/stosumarte/FreenectTD/releases)
+[![Stars](https://img.shields.io/github/stars/stosumarte/FreenectTD?style=flat-square)](https://github.com/stosumarte/FreenectTD/stargazers)
+[![License](https://img.shields.io/github/license/stosumarte/FreenectTD?style=flat-square)](LICENSE)
+
 FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't have a way to use the official Kinect OPs in TouchDesigner.
 
 It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
