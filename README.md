@@ -5,9 +5,6 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 
 ![Freenect TOP outputs feeding Render Select TOPs and a TOP to POP colored point cloud](docs/network_overview.png)
 
-> [!IMPORTANT] 
-> FreenectTD is an experimental project. While being thoroughly tested and confirmed to work on multiple platforms, it may still have some bugs or stability issues. Please be careful if using in a production environment. I don't take any responsibility.
-
 ### Requirements
 * Apple Silicon Mac
 * macOS 12.4+ (Monterey)
@@ -20,7 +17,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 | RGB streaming                                 | ✅         | ✅         |
 | Depth map streaming                           | ✅         | ✅         |
 | Point cloud map streaming                     | ❌         | ✅         |
-| IR streaming                                  | ✅         | ✅         |
+| IR streaming                                  | ✅*        | ✅         |
 | Tilt control                                  | ✅         | ❌         |
 | Depth undistortion (Format menu)              | ❌         | ✅         |
 | Depth registration (align depth map to color) | ✅         | ✅         |
@@ -28,6 +25,8 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 | Depth output in millimeters / meters (32-bit) | ✅         | ✅         |
 | Color-camera-space point cloud (aligned to RGB) | ❌       | ✅         |
 | Registered color + depth→color UV map         | ❌         | ✅         |
+
+\* On Kinect V1, IR turns RGB off: the V1 doesn't have the bandwidth to stream both at once.
 
 ### Known issues
 Tilt control may not work with some V1 models (1473 and Kinect for Windows V1). This is due to a mix of different factors in libfreenect and Kinect official firmware.
