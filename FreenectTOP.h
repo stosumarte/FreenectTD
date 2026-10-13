@@ -71,32 +71,30 @@ private:
     std::atomic<bool>                       fn2_rgbReady{false};
     std::atomic<bool>                       fn2_depthReady{false};
     std::atomic<bool>                       fn2_irReady{false};
-    std::atomic<bool>                       fn2_runEvents{false};
-    std::thread                             fn2_eventThread;
 
-    // V2 background init members
-    std::atomic<bool>                       fn2_initSuccess{false};
-
-    // Device init/cleanup methods
+    // Device open/close, the same for both versions except the library calls in fn1_/fn2_initDevice
+    std::atomic<bool> initSuccess{false}; // fn1_device / fn2_device belong to the device thread until it's true
     bool fn1_initDevice(bool ir, const std::string& id);
-    void fn1_cleanupDevice();
     void fn1_closeContext();
     bool fn2_initDevice(const std::string& id);
-    void fn2_cleanupDevice();
-    void fn2_startInitThread();
+    void startInit(kinectVersionEnum version);
+    void cleanupDevice();
+    bool deviceReady(kinectVersionEnum version);
     std::mutex freenectMutex;
     std::mutex fn1_eventMutex; // Separate mutex for v1 event thread
     
-    // Execution methods for different device versions
-    void fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
-    void fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs);
+    // Frames of each version, once deviceReady says the device is open
+    void fn1_execute(TD::TOP_Output* output);
+    void fn2_execute(TD::TOP_Output* output);
+    void uploadBuffer(TD::TOP_Output* output, TD::OP_SmartRef<TD::TOP_Buffer>& buf, int index, int width, int height, TD::OP_PixelFormat format);
+    bool uploadFrame(TD::TOP_Output* output, int index, const void* data, int width, int height, TD::OP_PixelFormat format, size_t bytesPerPixel);
     void uploadFallbackBuffer(int targetIndex = -1);
     void uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height);
     
     // One active FreenectTOP per Kinect version (see claimDevice in FreenectTOP.cpp); index 0 = v1, 1 = v2
     static std::mutex   deviceOwnerMutex;
     static FreenectTOP* deviceOwner[2];
-    bool claimDevice(bool v2);
+    bool claimDevice(kinectVersionEnum version);
     void releaseDevice();
     
     // Error/warning string handling
@@ -114,10 +112,6 @@ private:
     static constexpr int NUM_OUTPUTS = 6; // 0 RGB, 1 depth, 2 point cloud, 3 IR, 4 registered color, 5 depth->color UV
     std::array<TD::OP_SmartRef<TD::TOP_Buffer>, NUM_OUTPUTS> fallbackBuffers;
 
-    // V1 background init members
-    std::atomic<bool> fn1_initSuccess{false};
-    void fn1_startInitThread();
-
     // Device init and cleanup run as jobs on a background thread so opening or closing the device
     // never stalls the cook. Each instance has its own thread, so deleting a node only waits for its
     // own jobs. deviceIOMutex makes jobs from all instances take turns, so a close finishes before the next open.
@@ -132,7 +126,8 @@ private:
     // Parameters variables
     float fn1_tilt = 0.0f;
     float fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
-    std::chrono::steady_clock::time_point fn1_lastDepthTime; // last cook a depth frame had arrived
+    uint64_t lastDepthSeq = 0;                             // v2 depthSeq seen at lastDepthTime
+    std::chrono::steady_clock::time_point lastDepthTime;   // last cook a new depth frame had arrived (watchdog in deviceReady)
     
     // Output sizes, set each cook (see execute): RGB depends on the license, depth and point cloud on Format
     int fn2_colorW = 0, fn2_colorH = 0;
@@ -140,8 +135,6 @@ private:
     int fn2_pcW = 0, fn2_pcH = 0;
     static constexpr uint64_t NO_POINT_CLOUD = std::numeric_limits<uint64_t>::max();
     uint64_t fn2_lastPointCloudSeq = NO_POINT_CLOUD; // depthSeq of the last uploaded point cloud
-    uint64_t fn2_lastDepthSeq = 0;                          // depthSeq seen at fn2_lastDepthTime
-    std::chrono::steady_clock::time_point fn2_lastDepthTime; // last cook a new depth frame had arrived
     
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;

@@ -11,6 +11,13 @@
 #include <cmath>
 #include <cstddef>
 
+// Which Kinect a device is
+enum class kinectVersionEnum {
+    None, // no Kinect (Auto with nothing plugged in)
+    V1,   // Xbox 360 / Kinect for Windows, opened with libfreenect
+    V2    // Xbox One / Kinect for Windows v2, opened with libfreenect2
+};
+
 // How the depth map is generated
 enum class depthFormatEnum {
     Raw,            // native depth camera image (512x424 on v2, 640x480 on v1)

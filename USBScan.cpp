@@ -111,22 +111,24 @@ bool scan(std::vector<KinectUSB>& kinects, const std::vector<KinectUSB>& known) 
         if (libusb_get_device_descriptor(list[i], &desc) != 0) {
             continue;
         }
-        const bool v2 = isKinect2(desc);
-        if (!v2 && !isKinect1(desc)) {
+        const kinectVersionEnum version = isKinect2(desc) ? kinectVersionEnum::V2
+                                        : isKinect1(desc) ? kinectVersionEnum::V1
+                                                          : kinectVersionEnum::None;
+        if (version == kinectVersionEnum::None) {
             continue;
         }
         KinectUSB kinect;
         kinect.bus = libusb_get_bus_number(list[i]);
         kinect.port = portPath(list[i]);
-        kinect.v2 = v2;
+        kinect.version = version;
         kinect.model = modelName(desc);
         kinect.speed = libusb_get_device_speed(list[i]);
         const auto same = std::find_if(known.begin(), known.end(), [&](const KinectUSB& k) {
-            return k.present && k.bus == kinect.bus && k.port == kinect.port && k.v2 == kinect.v2;
+            return k.present && k.bus == kinect.bus && k.port == kinect.port && k.version == kinect.version;
         });
         if (same != known.end()) {
             kinect.serial = same->serial;
-        } else if (v2 || kinect.model == "1414") {
+        } else if (version == kinectVersionEnum::V2 || kinect.model == "1414") {
             // Kinect v2 and model 1414 have their own serial
             kinect.serial = readSerial(list[i]);
         } else if (libusb_device* audio = findAudio(list, count, list[i])) {
