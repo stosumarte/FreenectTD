@@ -62,6 +62,7 @@ private:
     MyFreenect2Device*                      fn2_device = nullptr;
     libfreenect2::PacketPipeline*           fn2_pipeline = nullptr;
     std::string                             fn2_openedId; // Kinect fn2_device is open on; device thread only
+    std::string                             fn2_depthPipeline; // "Metal" or "CPU"; set by init, read once initSuccess
 
     // Device open/close, the same for both versions except the library calls in fn1_/fn2_initDevice
     std::atomic<bool> initSuccess{false}; // fn1_device / fn2_device belong to the device thread until it's true

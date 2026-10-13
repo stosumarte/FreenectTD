@@ -22,6 +22,7 @@
 #include <optional>
 #include <cmath>
 #include <libusb.h>
+#include <libfreenect2/logger.h>
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __attribute__((visibility("default")))
@@ -333,19 +334,23 @@ void FreenectTOP::getInfoCHOPChan(int32_t index, TD::OP_InfoCHOPChan* chan, void
 // Info DAT rows. id is the Device menu value, so a script can pin the Kinect Auto picked:
 // op('freenect1').par.Device = op('info1')['id', 1]
 bool FreenectTOP::getInfoDATSize(TD::OP_InfoDATSize* infoSize, void*) {
-    infoSize->rows = 3;
+    infoSize->rows = 4;
     infoSize->cols = 2;
     infoSize->byColumn = false;
     return true;
 }
 
 void FreenectTOP::getInfoDATEntries(int32_t index, int32_t nEntries, TD::OP_InfoDATEntries* entries, void*) {
-    const std::string rows[3][2] = {
+    // pipeline: where Kinect v2 depth is decoded (Metal, or CPU if Metal isn't usable); empty for v1,
+    // which decodes depth itself, and until the v2 is open
+    const bool v2Open = initSuccess.load() && versionOf(deviceId) == kinectVersionEnum::V2;
+    const std::string rows[4][2] = {
         {"kinect", deviceId.empty() ? "" : deviceLabel(deviceId)},
         {"id", deviceId},
         {"status", deviceStatus()},
+        {"pipeline", v2Open ? fn2_depthPipeline : ""},
     };
-    if (index < 0 || index >= 3 || nEntries < 2) {
+    if (index < 0 || index >= 4 || nEntries < 2) {
         return;
     }
     entries->values[0]->setString(rows[index][0].c_str());
@@ -616,8 +621,30 @@ bool FreenectTOP::fn1_initDevice(bool ir, const std::string& id) {
     return true;
 }
 
+// libfreenect2's log, sent to ours. It's also the only way to tell whether MetalPacketPipeline fell back
+// to the CPU: the depth processor it picked is an internal class.
+namespace {
+thread_local bool fn2_metalFellBack = false; // set while a pipeline is created on this thread
+
+class Freenect2Logger : public libfreenect2::Logger {
+public:
+    Freenect2Logger() { level_ = Info; }
+    void log(Level, const std::string& message) override {
+        // NOTE: the warning MetalPacketPipeline logs in our libfreenect2 fork (src/packet_pipeline.cpp)
+        if (message.find("using the CPU instead") != std::string::npos) {
+            fn2_metalFellBack = true;
+        }
+        LOG("[libfreenect2] " + message);
+    }
+};
+}
+
 // Init for Kinect v2 (libfreenect2)
 bool FreenectTOP::fn2_initDevice(const std::string& id) {
+    // setGlobalLogger deletes the logger it replaces, so set ours once
+    static std::once_flag loggerSet;
+    std::call_once(loggerSet, [] { libfreenect2::setGlobalLogger(new Freenect2Logger()); });
+
     LOG("[FreenectTOP] fn2_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
     initError.clear(); // deviceReady reports a missing or USB 2 device itself, from the USB scan
@@ -654,7 +681,9 @@ bool FreenectTOP::fn2_initDevice(const std::string& id) {
     }
     try {
         // Depth decoding on the GPU; libfreenect2 falls back to the CPU if Metal isn't usable
+        fn2_metalFellBack = false;
         fn2_pipeline = new libfreenect2::MetalPacketPipeline();
+        fn2_depthPipeline = fn2_metalFellBack ? "CPU" : "Metal";
     } catch (...) {
         return fail("couldn't create the depth pipeline");
     }
