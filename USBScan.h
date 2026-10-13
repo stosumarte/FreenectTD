@@ -18,6 +18,10 @@ struct KinectUSB {
     int speed = 0;    // libusb_speed; libfreenect2 crashes the process opening a Kinect v2 below LIBUSB_SPEED_SUPER
     std::string serial; // read once when the Kinect first shows up; empty if it couldn't be read or isn't unique
     bool operator==(const KinectUSB&) const = default;
+    // Device menu value: version + serial, or bus+port without one, e.g. "v2:504521442542", "v1:usb0-1.1.3"
+    std::string id() const {
+        return (v2 ? "v2:" : "v1:") + (serial.empty() ? "usb" + std::to_string(bus) + "-" + port : serial);
+    }
 };
 
 // One shared background thread lists every Kinect in the USB device list every 100 ms. A Kinect is

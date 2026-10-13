@@ -51,7 +51,7 @@ extern "C" {
         info->customOPInfo.minInputs = 0;
         info->customOPInfo.maxInputs = 0;
         info->customOPInfo.majorVersion = 1;
-        info->customOPInfo.minorVersion = 1;
+        info->customOPInfo.minorVersion = 2;
         #if TD_VERSION == 2025
             info->customOPInfo.opHelpURL->setString("https://github.com/stosumarte/FreenectTD");
         #endif
@@ -127,9 +127,14 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // --- Device ---
     toggle("Active", "Active", 1.0, page0);
     {
-        const char* names[]  = {"Kinect v1", "Kinect v2"};
-        const char* labels[] = {"Kinect v1 (Xbox 360)", "Kinect v2 (Xbox One)"};
-        menu("Hardwareversion", "Hardware Version", "Kinect v1", 2, names, labels, page0);
+        // Entries come from the shared USB scan (see buildDynamicMenu); the Kinect also sets the version
+        OP_StringParameter deviceParam;
+        deviceParam.name = "Device";
+        deviceParam.label = "Device";
+        deviceParam.page = page0;
+        deviceParam.defaultValue = "Auto";
+        layout(deviceParam, "Auto opens the first Kinect plugged in. Pick a Kinect to always use that one.", false);
+        manager->appendDynamicStringMenu(deviceParam);
     }
     {
         OP_NumericParameter tiltAngleParam;
@@ -261,6 +266,31 @@ void FreenectTOP::pulsePressed(const char* name, void*) {
         openReleasesPage();
     } else if (std::strcmp(name, "Donate") == 0) {
         openDonationPage();
+    }
+}
+
+// "v2:504521442542" -> "Kinect v2 504521442542"
+static std::string deviceLabel(const std::string& id) {
+    return id.size() > 3 && id[2] == ':' ? "Kinect " + id.substr(0, 2) + " " + id.substr(3) : id;
+}
+
+// Device menu: Auto, then every Kinect in the shared USB scan (never scans here, TD calls this on the
+// main thread). A picked Kinect that's unplugged stays listed, so the menu still shows what the node uses.
+void FreenectTOP::buildDynamicMenu(const TD::OP_Inputs* inputs, TD::OP_BuildDynamicMenuInfo* info, void*) {
+    if (std::strcmp(info->name, "Device") != 0) {
+        return;
+    }
+    info->addMenuEntry("Auto", "Auto");
+    const char* c = inputs->getParString("Device");
+    const std::string picked = c ? c : "Auto";
+    bool pickedListed = (picked == "Auto");
+    for (const KinectUSB& kinect : usbKinects()) {
+        const std::string id = kinect.id();
+        info->addMenuEntry(id.c_str(), deviceLabel(id).c_str());
+        pickedListed |= (id == picked);
+    }
+    if (!pickedListed) {
+        info->addMenuEntry(picked.c_str(), (deviceLabel(picked) + " (not connected)").c_str());
     }
 }
 
@@ -891,7 +921,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     myCurrentOutput = output;
     
     // If errorString is set, LOG it
-    if ( FNTD_DEBUG == 1 && !errorString.empty() && errorString != "No Kinect v1 devices found" && errorString != "No Kinect v2 devices found") {
+    if ( FNTD_DEBUG == 1 && !errorString.empty() && errorString != "No Kinect found" && errorString != "No Kinect v1 devices found" && errorString != "No Kinect v2 devices found") {
         LOG("[FreenectTOP] ERROR: " + errorString);
     }
     
@@ -903,8 +933,20 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     
     // Get parameters
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
-    const char* devTypeCStr = inputs->getParString("Hardwareversion");
-    std::string devType = devTypeCStr ? devTypeCStr : "Kinect v1";
+
+    // The Kinect this node uses, which also sets the version: the picked one, or for Auto the one it's
+    // already on while that stays plugged in, else the first one plugged in. Empty = none.
+    // TODO: Auto should skip Kinects other nodes use, once ownership is per device
+    const char* deviceCStr = inputs->getParString("Device");
+    std::string device = deviceCStr ? deviceCStr : "Auto";
+    if (device == "Auto") {
+        const std::vector<KinectUSB> kinects = usbKinects();
+        if (std::none_of(kinects.begin(), kinects.end(), [&](const KinectUSB& k) { return k.id() == autoDevice; })) {
+            autoDevice = kinects.empty() ? "" : kinects.front().id();
+        }
+        device = autoDevice;
+    }
+    const std::string devType = device.starts_with("v2:") ? "Kinect v2" : device.starts_with("v1:") ? "Kinect v1" : "";
 
     // Read the license whenever the TOP becomes active (including the first cook), so a key installed
     // while TD runs takes effect by toggling Active. If it can't be read, assume Non-Commercial:
@@ -962,9 +1004,9 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     fn2_pcW = (pcSpace == pcSpaceEnum::ColorCamera) ? fn2_colorW : MyFreenect2Device::DEPTH_WIDTH;
     fn2_pcH = (pcSpace == pcSpaceEnum::ColorCamera) ? fn2_colorH : MyFreenect2Device::DEPTH_HEIGHT;
     
-    // Enable/disable parameters based on device type
-    auto dynamicParameterEnable = [&](const char* name, bool v1, bool v2, bool other = true) {
-        bool enabled = (devType == "Kinect v1") ? v1 : (devType == "Kinect v2") ? v2 : other;
+    // Enable/disable parameters based on device type; greyed out while it's unknown (Auto with no Kinect)
+    auto dynamicParameterEnable = [&](const char* name, bool v1, bool v2) {
+        bool enabled = (devType == "Kinect v1") ? v1 : (devType == "Kinect v2") ? v2 : false;
         inputs->enablePar(name, enabled);
     };
     
@@ -1018,11 +1060,16 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     // Only one FreenectTOP per Kinect version may talk to that device. A second active node would
     // fight the first for the USB device and both would stall, so it stays idle with an error.
     // A v1 node and a v2 node can run together: they use different libraries and USB devices.
-    // On a Hardware Version change, give up (and close) the old version first, so it is free
-    // for another node even if this one can't claim the new version.
+    // When the version changes (another Kinect picked, or none left for Auto), give up (and close) the
+    // old version first, so it is free for another node even if this one can't claim the new version.
     if (devType != lastDeviceType) {
         releaseDevice();
         lastDeviceType = devType;
+    }
+    if (devType.empty()) {
+        errorString = "No Kinect found";
+        uploadFallbackBuffer();
+        return;
     }
     if (!claimDevice(devType == "Kinect v2")) {
         errorString = "Another Freenect TOP is already using the " + devType + ". Only one node per Kinect version can be active; turn Active off on the other node first.";

@@ -46,6 +46,7 @@ public:
     void execute          (TD::TOP_Output* output, const TD::OP_Inputs* inputs, void*) override;
     void setupParameters  (TD::OP_ParameterManager* manager, void*) override;
     void pulsePressed     (const char* name, void*) override;
+    void buildDynamicMenu (const TD::OP_Inputs* inputs, TD::OP_BuildDynamicMenuInfo* info, void*) override;
 
 private:
     const TD::OP_NodeInfo*                  fntdNodeInfo;
@@ -140,7 +141,8 @@ private:
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;
     depthFormatEnum depthFormat = depthFormatEnum::Raw;
-    std::string lastDeviceType = "Kinect v1"; // per instance; used to tear down devices when Hardware Version changes
+    std::string lastDeviceType = "Kinect v1"; // per instance; used to tear down devices when the Kinect version changes
+    std::string autoDevice; // Kinect id Device = Auto is on; kept while that Kinect stays plugged in
     depthOutputEnum depthOutput = depthOutputEnum::Normalized;
     pcSpaceEnum pcSpace = pcSpaceEnum::DepthCamera;
     bool pcFlipX = false, pcFlipY = false, pcFlipZ = false;
