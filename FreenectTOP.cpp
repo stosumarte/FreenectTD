@@ -269,13 +269,17 @@ void FreenectTOP::pulsePressed(const char* name, void*) {
     }
 }
 
-// "v2:504521442542" -> "Kinect v2 504521442542"
+// "v2-One:504521442542" -> "v2 (One) [504521442542]"
 static std::string deviceLabel(const std::string& id) {
-    return id.size() > 3 && id[2] == ':' ? "Kinect " + id.substr(0, 2) + " " + id.substr(3) : id;
+    const size_t colon = id.find(':');
+    return id.find('-') == 2 && colon != std::string::npos
+        ? id.substr(0, 2) + " (" + id.substr(3, colon - 3) + ") [" + id.substr(colon + 1) + "]" : id;
 }
 
 // Device menu: Auto, then every Kinect in the shared USB scan (never scans here, TD calls this on the
 // main thread). A picked Kinect that's unplugged stays listed, so the menu still shows what the node uses.
+// Labels never say whether a Kinect is connected: TD rebuilds entries only when the menu opens, and the
+// closed menu keeps the label from then. The node's error says it instead.
 void FreenectTOP::buildDynamicMenu(const TD::OP_Inputs* inputs, TD::OP_BuildDynamicMenuInfo* info, void*) {
     if (std::strcmp(info->name, "Device") != 0) {
         return;
@@ -290,7 +294,7 @@ void FreenectTOP::buildDynamicMenu(const TD::OP_Inputs* inputs, TD::OP_BuildDyna
         pickedListed |= (id == picked);
     }
     if (!pickedListed) {
-        info->addMenuEntry(picked.c_str(), (deviceLabel(picked) + " (not connected)").c_str());
+        info->addMenuEntry(picked.c_str(), deviceLabel(picked).c_str());
     }
 }
 
@@ -961,7 +965,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         }
         deviceId = autoDevice;
     }
-    const std::string devType = deviceId.starts_with("v2:") ? "Kinect v2" : deviceId.starts_with("v1:") ? "Kinect v1" : "";
+    const std::string devType = deviceId.starts_with("v2-") ? "Kinect v2" : deviceId.starts_with("v1-") ? "Kinect v1" : "";
 
     // Read the license whenever the TOP becomes active (including the first cook), so a key installed
     // while TD runs takes effect by toggling Active. If it can't be read, assume Non-Commercial:

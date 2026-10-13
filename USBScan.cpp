@@ -35,9 +35,23 @@ bool isKinect1(const libusb_device_descriptor& desc) {
     return desc.idVendor == MICROSOFT && (desc.idProduct == 0x02AE || desc.idProduct == 0x02BF);
 }
 
-// Same IDs libfreenect2 enumerates: Kinect for Windows v2 and Xbox One Kinect
+// Same IDs libfreenect2 enumerates: Xbox One and Kinect for Windows v2 (see modelName)
 bool isKinect2(const libusb_device_descriptor& desc) {
     return desc.idVendor == MICROSOFT && (desc.idProduct == 0x02C4 || desc.idProduct == 0x02D8);
+}
+
+// libfreenect tells a 1414 from a 1473 by the camera's bcdDevice (267).
+// NOTE: the Kinect v2 models are a guess from two sensors, an Xbox One one reporting 0x02C4 and a Kinect
+// for Windows one reporting 0x02D8. No source maps these IDs to models: libfreenect2 calls 0x02C4 the
+// preview ID, and Microsoft calls both sensors functionally identical. Other units may report the other ID.
+std::string modelName(const libusb_device_descriptor& desc) {
+    switch (desc.idProduct) {
+        case 0x02AE: return desc.bcdDevice == 0x010B ? "1414" : "1473";
+        case 0x02BF: return "K4W";
+        case 0x02C4: return "One";
+        case 0x02D8: return "K4W";
+        default:     return "Unknown";
+    }
 }
 
 // Port numbers from the bus root, e.g. "1.1.3"
@@ -102,14 +116,15 @@ bool scan(std::vector<KinectUSB>& kinects, const std::vector<KinectUSB>& known) 
         kinect.bus = libusb_get_bus_number(list[i]);
         kinect.port = portPath(list[i]);
         kinect.v2 = v2;
+        kinect.model = modelName(desc);
         kinect.speed = libusb_get_device_speed(list[i]);
         const auto same = std::find_if(known.begin(), known.end(), [&](const KinectUSB& k) {
             return k.bus == kinect.bus && k.port == kinect.port && k.v2 == kinect.v2;
         });
         if (same != known.end()) {
             kinect.serial = same->serial;
-        } else if (v2 || (desc.idProduct == 0x02AE && desc.bcdDevice == 0x010B)) {
-            // Kinect v2 and model 1414 (libfreenect tells it apart by bcdDevice 267) have their own serial
+        } else if (v2 || kinect.model == "1414") {
+            // Kinect v2 and model 1414 have their own serial
             kinect.serial = readSerial(list[i]);
         } else if (libusb_device* audio = findAudio(list, count, list[i])) {
             // Model 1473 and Kinect for Windows cameras report all zeros, so like libfreenect use the audio
@@ -139,7 +154,7 @@ void scanOnce() {
     if (kinects != scanner.kinects) {
         LOG("[USBScan] " + std::to_string(kinects.size()) + " Kinect(s)");
         for ([[maybe_unused]] const KinectUSB& k : kinects) { // LOG is empty in Release
-            LOG(std::string("[USBScan]   ") + (k.v2 ? "v2" : "v1") + " bus " + std::to_string(k.bus)
+            LOG(std::string("[USBScan]   ") + k.id() + " bus " + std::to_string(k.bus)
                 + " port " + k.port + " speed " + std::to_string(k.speed) + " serial " + k.serial);
         }
     }
