@@ -7,9 +7,21 @@
 
 #pragma once
 
-// Looks for Kinects in the USB device list without opening them, so a streaming device isn't disturbed.
-// kinect2Slow = a Kinect v2 attached at less than USB 3 speed; libfreenect2 crashes the process opening it there.
-// NOTE: looks at every Kinect, not just the one the libraries pick; one shared scan listing devices
-// by bus+port when multi-Kinect setups matter
-struct USBScan { bool ok = false, kinect1 = false, kinect2 = false, kinect2Slow = false; };
-USBScan scanUSB();
+#include <string>
+#include <vector>
+
+// One Kinect camera in the USB device list
+struct KinectUSB {
+    int bus = 0;
+    std::string port; // port numbers from the bus root, e.g. "1.3": the same socket gives the same path after a replug
+    bool v2 = false;
+    int speed = 0;    // libusb_speed; libfreenect2 crashes the process opening a Kinect v2 below LIBUSB_SPEED_SUPER
+    bool operator==(const KinectUSB&) const = default;
+};
+
+// One shared background thread lists every Kinect in the USB device list every 100 ms, without opening
+// them, so a streaming device isn't disturbed. It runs while any Freenect TOP exists: each node calls
+// startUSBScan once and stopUSBScan once.
+void startUSBScan();
+void stopUSBScan();
+std::vector<KinectUSB> usbKinects(); // result of the last successful scan

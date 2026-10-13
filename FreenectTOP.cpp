@@ -334,6 +334,24 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
       fntdContext(context)
 {
     // Do not initialize device here, will be done in execute
+    startUSBScan();
+}
+
+// From the shared USB scan, so a missing or unplugged Kinect shows up right away without opening it.
+// NOTE: any Kinect of the version counts, not this node's own device; per device once each node picks one
+static bool kinectPlugged(bool v2) {
+    for (const KinectUSB& kinect : usbKinects()) {
+        if (kinect.v2 == v2) return true;
+    }
+    return false;
+}
+
+// LIBUSB_SPEED_UNKNOWN is let through so an unreported speed doesn't block a working setup
+static bool kinect2OnUSB2() {
+    for (const KinectUSB& kinect : usbKinects()) {
+        if (kinect.v2 && kinect.speed != LIBUSB_SPEED_UNKNOWN && kinect.speed < LIBUSB_SPEED_SUPER) return true;
+    }
+    return false;
 }
 
 // Process-wide device ownership: only one FreenectTOP instance may open the Kinect
@@ -390,6 +408,7 @@ FreenectTOP::~FreenectTOP() {
     if (deviceThread.joinable()) {
         deviceThread.join();
     }
+    stopUSBScan();
 }
 
 // Init for Kinect v1 (libfreenect)
@@ -398,8 +417,7 @@ bool FreenectTOP::fn1_initDevice(bool ir) {
     LOG("[FreenectTOP] fn1_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
     initError.clear(); // fn1_execute reports a missing device itself, from the USB scan
-    startUSBScanThread();
-    if (!fn1_deviceAvailable.load()) {
+    if (!kinectPlugged(false)) {
         LOG("[FreenectTOP] fn1_initDevice: no device available");
         return false;
     }
@@ -478,7 +496,6 @@ void FreenectTOP::fn1_cleanupDevice() {
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] fn1_cleanupDevice: start");
         fn1_initSuccess = false; // an init job queued before this one may have set it back to true
-        stopUSBScanThread();
         fn1_runEvents = false;
         if (fn1_eventThread.joinable()) {
             fn1_eventThread.join();
@@ -499,46 +516,16 @@ void FreenectTOP::fn1_cleanupDevice() {
     });
 }
 
-// Background USB scan for both Kinect versions. Started by init and stopped by cleanup, on the device thread.
-void FreenectTOP::startUSBScanThread() {
-    if (usbScanRunning.load()) {
-        return;
-    }
-    LOG("[FreenectTOP] startUSBScanThread");
-    usbScanRunning = true;
-    usbScanThread = std::thread([this]() {
-        while (usbScanRunning.load()) {
-            // Not libfreenect2's enumerateDevices(): it opens the Kinect, even while it's streaming
-            const USBScan scan = scanUSB();
-            if (scan.ok) { // keep the last result if libusb fails
-                fn1_deviceAvailable = scan.kinect1;
-                fn2_deviceAvailable = scan.kinect2;
-                fn2_slowUSB = scan.kinect2Slow;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-    });
-}
-
-void FreenectTOP::stopUSBScanThread() {
-    LOG("[FreenectTOP] stopUSBScanThread");
-    usbScanRunning = false;
-    if (usbScanThread.joinable()) {
-        usbScanThread.join();
-    }
-}
-
 // Init for Kinect v2 (libfreenect2)
 bool FreenectTOP::fn2_initDevice() {
     LOG("[FreenectTOP] fn2_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
     initError.clear(); // fn2_execute reports a missing or USB 2 device itself, from the USB scan
-    startUSBScanThread();
-    if (fn2_slowUSB.load()) {
+    if (kinect2OnUSB2()) {
         LOG("[FreenectTOP] fn2_initDevice: (end) device on USB 2");
         return false;
     }
-    if (!fn2_deviceAvailable.load()) {
+    if (!kinectPlugged(true)) {
         LOG("[FreenectTOP] fn2_initDevice: no device available");
         return false;
     }
@@ -576,8 +563,7 @@ bool FreenectTOP::fn2_initDevice() {
     if (!fn2_device->start()) {
         return fail("Failed to start Kinect v2 device");
     }
-    
-    // The USB scan keeps running: fn2_execute uses it to notice an unplugged device
+
     LOG("[FreenectTOP] fn2_initDevice: end (success)");
     return true;
 }
@@ -604,7 +590,6 @@ void FreenectTOP::fn2_cleanupDevice() {
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] fn2_cleanupDevice: start");
         fn2_initSuccess = false; // an init job queued before this one may have set it back to true
-        stopUSBScanThread();
         std::lock_guard<std::mutex> lock(freenectMutex);
         if (fn2_device) {
             delete fn2_device;
@@ -632,7 +617,7 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             fn1_startInitThread();
         }
         // The USB scan says right away whether a Kinect is there; init results can lag behind a close
-        if (!fn1_deviceAvailable.load()) {
+        if (!kinectPlugged(false)) {
             errorString = "No Kinect v1 devices found";
         } else if (!lastInitError.empty()) {
             errorString = lastInitError;
@@ -644,7 +629,7 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         return;
     }
 
-    if (!fn1_deviceAvailable.load()) {
+    if (!kinectPlugged(false)) {
         LOG("[FreenectTOP] executeV1: device unplugged, closing it");
         fn1_cleanupDevice();
         uploadFallbackBuffer();
@@ -748,9 +733,9 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             fn2_startInitThread();
         }
         // The USB scan says right away whether a Kinect is there; init results can lag behind a close (~4 s on macOS)
-        if (fn2_slowUSB.load()) {
+        if (kinect2OnUSB2()) {
             errorString = "Kinect v2 is on a USB 2 port, connect it to USB 3";
-        } else if (!fn2_deviceAvailable.load()) {
+        } else if (!kinectPlugged(true)) {
             errorString = "No Kinect v2 devices found";
         } else if (!lastInitError.empty()) {
             errorString = lastInitError;
@@ -763,7 +748,7 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     }
 
     // Check if device was disconnected
-    if (!fn2_deviceAvailable.load()) {
+    if (!kinectPlugged(true)) {
         fn2_cleanupDevice();
         uploadFallbackBuffer();
         return;

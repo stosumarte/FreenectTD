@@ -69,19 +69,9 @@ private:
     std::atomic<bool>                       fn2_irReady{false};
     std::atomic<bool>                       fn2_runEvents{false};
     std::thread                             fn2_eventThread;
-    
-    std::atomic<bool>                       fn2_deviceAvailable{false};
-    std::atomic<bool>                       fn2_slowUSB{false};
 
     // V2 background init members
     std::atomic<bool>                       fn2_initSuccess{false};
-    
-    // Background USB scan: whether each Kinect version is plugged in, without opening it
-    std::atomic<bool>                       fn1_deviceAvailable{false};
-    std::thread                             usbScanThread;
-    std::atomic<bool>                       usbScanRunning{false};
-    void startUSBScanThread();
-    void stopUSBScanThread();
 
     // Device init/cleanup methods
     bool fn1_initDevice(bool ir);
