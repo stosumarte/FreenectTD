@@ -62,9 +62,6 @@ private:
     MyFreenect2Device*                      fn2_device = nullptr;
     libfreenect2::PacketPipeline*           fn2_pipeline = nullptr;
     std::string                             fn2_openedId; // Kinect fn2_device is open on; device thread only
-    std::atomic<bool>                       fn2_rgbReady{false};
-    std::atomic<bool>                       fn2_depthReady{false};
-    std::atomic<bool>                       fn2_irReady{false};
 
     // Device open/close, the same for both versions except the library calls in fn1_/fn2_initDevice
     std::atomic<bool> initSuccess{false}; // fn1_device / fn2_device belong to the device thread until it's true
@@ -136,12 +133,8 @@ private:
     float depthFps = 0.0f;                                 // Info CHOP depth_fps, updated about once a second
     std::chrono::steady_clock::time_point fpsWindowStart;
     
-    // Output sizes, set each cook (see execute): RGB depends on the license, depth and point cloud on Format
+    // Kinect v2 RGB output size, set each cook (see execute): depends on the license
     int fn2_colorW = 0, fn2_colorH = 0;
-    int fn2_depthW = 0, fn2_depthH = 0;
-    int fn2_pcW = 0, fn2_pcH = 0;
-    static constexpr uint64_t NO_POINT_CLOUD = std::numeric_limits<uint64_t>::max();
-    uint64_t fn2_lastPointCloudSeq = NO_POINT_CLOUD; // depthSeq of the last uploaded point cloud
     
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;
@@ -150,7 +143,6 @@ private:
     std::string lastDeviceId; // used to tear down the device when deviceId changes
     std::string autoDevice;   // Kinect id Device = Auto is on; kept while that Kinect stays plugged in
     depthOutputEnum depthOutput = depthOutputEnum::Normalized;
-    pcSpaceEnum pcSpace = pcSpaceEnum::DepthCamera;
     bool pcFlipX = false, pcFlipY = false, pcFlipZ = false;
     float unknownDepth = 0.0f;                 // written to invalid depth pixels, in output units
     float unknownPoint[3] = {0.0f, 0.0f, 0.0f}; // written to XYZ of invalid points

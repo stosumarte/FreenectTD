@@ -14,11 +14,36 @@
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winvalid-offsetof"
+#include <touchdesigner_2025/TOP_CPlusPlusBase.h>
+#pragma clang diagnostic pop
+
 #include "FreenectCommon.h"
 
+#include <array>
 #include <thread>
 #include <mutex>
 #include <atomic>
+
+// What the worker thread makes from each frame set; the cook passes it in with setSettings
+struct V2Settings {
+    int colorW = 1920, colorH = 1080; // RGB output, and Registered depth / color-space point cloud
+    depthFormatEnum depthFormat = depthFormatEnum::Raw;
+    depthOutputEnum depthOutput = depthOutputEnum::Normalized;
+    float threshMin = 100.0f, threshMax = 4500.0f;
+    float unknownDepth = 0.0f;
+    float unknownPoint[3] = {};
+    bool depth = true, pointCloud = false, ir = false, regColor = false, uv = false;
+    bool flipX = false, flipY = false, flipZ = false;
+};
+
+// A finished output, ready for TOP_Output::uploadBuffer; an empty buf means no new image
+struct V2Image {
+    TD::OP_SmartRef<TD::TOP_Buffer> buf;
+    int width = 0, height = 0;
+    TD::OP_PixelFormat format = TD::OP_PixelFormat::RGBA8Fixed;
+};
 
 class MyFreenect2Device {
 public:
@@ -37,65 +62,50 @@ public:
     static constexpr int IR_WIDTH = 512;
     static constexpr int IR_HEIGHT = 424;
     
-    MyFreenect2Device(libfreenect2::Freenect2Device* device,
-                     std::atomic<bool>& rgbFlag, std::atomic<bool>& depthFlag, std::atomic<bool>& irFlag);
+    static constexpr int NUM_OUTPUTS = 6; // 0 RGB, 1 depth, 2 point cloud, 3 IR, 4 registered color, 5 depth->color UV
+    using Images = std::array<V2Image, NUM_OUTPUTS>;
+
+    MyFreenect2Device(libfreenect2::Freenect2Device* device, TD::TOP_Context* context);
     ~MyFreenect2Device();
     bool start();
     void stop();
-    bool getRGB(std::vector<uint8_t>& out);
-    bool getDepth(std::vector<float>& out);
-    bool getIR(std::vector<float>& out);
-    void processFrames();
-    // Unified processed frame methods for v2
-    bool getColorFrame(std::vector<uint8_t>& out);
-    // Depth in millimetres (float), 0 = invalid / outside threshold
-    bool getDepthFrame(std::vector<float>& out, depthFormatEnum type, float depthThreshMin, float depthThreshMax);
-    bool getIRFrame(std::vector<uint16_t>& out);
-    // XYZ (m) + validity in A; space selects depth-camera (512x424) or color-camera (1920x1080) frame
-    // flipX/flipY/flipZ negate the corresponding axis (e.g. flipZ makes +Z point toward the viewer, TouchDesigner style)
-    // unknownXYZ (3 floats) is written to XYZ of invalid points; their alpha is always 0
-    bool getPointCloudFrame(std::vector<float>& out, pcSpaceEnum space, float depthThreshMin, float depthThreshMax,
-                            bool flipX, bool flipY, bool flipZ, const float* unknownXYZ);
+    // Outputs made from frames arriving from now on
+    void setSettings(const V2Settings& settings);
+    // Moves the images finished since the last call into `out`, by output index
+    void takeImages(Images& out);
     uint64_t getDepthSeq();
-    // Range libfreenect2 itself clips depth to (its default is 500-4500 mm). Only touches the device on a change.
-    void setDepthRange(float minMM, float maxMM);
-    // RGB mapped onto the depth grid (512x424 RGBA8) + depth->color UV map (512x424 RGBA32F)
-    bool getRegisteredColorFrame(std::vector<uint8_t>& color, std::vector<float>& uv);
-    // Size of the RGB output, and of the Registered depth and color-space point cloud that are pixel-aligned with it:
-    // 1920x1080 natively, 1280x720 on Non-Commercial TouchDesigner. Everything else is always native.
-    void setColorSize(int width, int height);
     
     libfreenect2::Freenect2Device* getDevice() { return device; }
     
 private:
     libfreenect2::Freenect2Device* device;
-    float depthRangeMin = 0.0f, depthRangeMax = 0.0f; // last range sent to libfreenect2, 0 = none yet
+    TD::TOP_Context* context; // makes the output buffers, from the worker thread
     libfreenect2::SyncMultiFrameListener* listener;
-    libfreenect2::Frame depthFrame;
-    libfreenect2::Frame rgbFrame;
+
+    // Guarded by mutex: shared with the cook thread
+    std::mutex mutex;
+    V2Settings settings;
+    Images     images;
+    uint64_t   depthSeq = 0; // incremented for every new depth frame
+
+    // Worker thread only
     libfreenect2::Frame undistortedFrame;
     libfreenect2::Frame registeredFrame;
     libfreenect2::Frame bigdepthFrame;
     std::unique_ptr<libfreenect2::Registration> reg;
-    std::atomic<bool>&      rgbReady;
-    std::atomic<bool>&      depthReady;
-    std::atomic<bool>&      irReady;
-    std::vector<uint8_t>    rgbBuffer;
-    std::vector<float>      depthBuffer;
-    std::vector<float>      irBuffer;
-    std::vector<float>      pcScratch;
-    std::vector<int>        colorDepthMap;
-    uint64_t                depthSeq = 0;   // incremented for every new depth frame
-    uint64_t                regSeq = 0;     // depthSeq the cached registration was computed for
-    bool                    regHasBigdepth = false;
-    libfreenect2::Freenect2Device::ColorCameraParams colorCameraParams{};
-    std::mutex              mutex;
-    bool                    hasNewRGB;
-    bool                    hasNewDepth;
-    bool                    hasNewIR;
-    int rgbWidth_ = RGB_WIDTH, rgbHeight_ = RGB_HEIGHT;
-    std::thread             workerThread;
-    std::atomic<bool>       stopWorker{true};
+    libfreenect2::Freenect2Device::ColorCameraParams colorCameraParams{}; // captured with reg
+    std::vector<int>     colorDepthMap;
+    std::vector<uint8_t> rgbScratch;
+    std::vector<float>   depthScratch;
+    std::vector<float>   pcScratch;
+    std::thread          workerThread;
+    std::atomic<bool>    stopWorker{true};
     void runWorker();
-    bool ensureRegistration(bool needBigdepth);
+    void processFrames();
+    V2Image newImage(int width, int height, TD::OP_PixelFormat format, size_t bytesPerPixel);
+    V2Image makeColor(const libfreenect2::Frame& rgb, const V2Settings& s);
+    V2Image makeDepth(const libfreenect2::Frame& depth, const V2Settings& s);
+    V2Image makePointCloud(const V2Settings& s);
+    void makeRegisteredColor(const V2Settings& s, V2Image& color, V2Image& uv);
+    V2Image makeIR(const libfreenect2::Frame& ir);
 };

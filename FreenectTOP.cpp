@@ -661,7 +661,7 @@ bool FreenectTOP::fn2_initDevice(const std::string& id) {
     if (!dev) {
         return fail("libfreenect2 can't open it");
     }
-    fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady, fn2_irReady);
+    fn2_device = new MyFreenect2Device(dev, fntdContext);
     fn2_openedId = id;
     if (!fn2_device->start()) {
         return fail("couldn't start its streams");
@@ -683,7 +683,6 @@ void FreenectTOP::startInit(kinectVersionEnum version) {
 void FreenectTOP::cleanupDevice() {
     initSuccess = false;
     fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
-    fn2_lastPointCloudSeq = NO_POINT_CLOUD; // a new device starts counting depth frames from 0 again
     lastDepthTime = {};
     lastDepthSeq = 0; // a new device starts counting depth frames from 0 again
     depthFrames = 0;
@@ -829,59 +828,38 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output) {
 
 // Kinect v2 frames (libfreenect2)
 void FreenectTOP::fn2_execute(TD::TOP_Output* output) {
-    constexpr int DW = MyFreenect2Device::DEPTH_WIDTH, DH = MyFreenect2Device::DEPTH_HEIGHT;
+    // The device's worker thread makes the outputs from each frame set; the cook only uploads them.
+    // An output that isn't uploaded keeps its previous texture.
+    V2Settings settings;
+    settings.colorW = fn2_colorW;
+    settings.colorH = fn2_colorH;
+    settings.depthFormat = depthFormat;
+    settings.depthOutput = depthOutput;
+    settings.threshMin = depthThreshMin;
+    settings.threshMax = depthThreshMax;
+    settings.unknownDepth = unknownDepth;
+    std::copy(std::begin(unknownPoint), std::end(unknownPoint), settings.unknownPoint);
+    settings.depth = streamEnabledDepth;
+    settings.pointCloud = streamEnabledPC;
+    settings.ir = streamEnabledIR;
+    settings.regColor = streamEnabledRegColor;
+    settings.uv = streamEnabledUV;
+    settings.flipX = pcFlipX;
+    settings.flipY = pcFlipY;
+    settings.flipZ = pcFlipZ;
+    fn2_device->setSettings(settings);
 
-    fn2_device->setColorSize(fn2_colorW, fn2_colorH);
-    // libfreenect2 clips depth to 4.5 m by default; use the TOP's depth range instead so v2 can see up to ~8 m
-    fn2_device->setDepthRange(depthThreshMin, depthThreshMax);
-
-    std::vector<uint8_t> colorFrame;
-    if (fn2_device->getColorFrame(colorFrame)) {
-        uploadFrame(output, 0, colorFrame.data(), fn2_colorW, fn2_colorH, TD::OP_PixelFormat::RGBA8Fixed, 4);
-    }
-
-    std::vector<float> depthFrame; // millimetres, 0 = invalid
-    if (!streamEnabledDepth) {
-        uploadFallbackBuffer(1);
-    } else if (fn2_device->getDepthFrame(depthFrame, depthFormat, depthThreshMin, depthThreshMax)) {
-        uploadDepthFrame(output, depthFrame, fn2_depthW, fn2_depthH);
-    }
-
-    // Point cloud: only rebuilt and uploaded when a new depth frame has arrived. TD cooks faster than the
-    // Kinect delivers depth, and an output that isn't uploaded keeps its previous texture.
-    const uint64_t depthSeq = fn2_device->getDepthSeq();
-    std::vector<float> pointCloudFrame;
-    if (!streamEnabledPC) {
-        uploadFallbackBuffer(2);
-        fn2_lastPointCloudSeq = NO_POINT_CLOUD; // re-enabling uploads straight away instead of waiting for the next frame
-    } else if (depthSeq != fn2_lastPointCloudSeq) {
-        if (fn2_device->getPointCloudFrame(pointCloudFrame, pcSpace, depthThreshMin, depthThreshMax, pcFlipX, pcFlipY, pcFlipZ, unknownPoint)
-            && uploadFrame(output, 2, pointCloudFrame.data(), fn2_pcW, fn2_pcH, TD::OP_PixelFormat::RGBA32Float, 4 * sizeof(float))) {
-            fn2_lastPointCloudSeq = depthSeq;
-        } else {
-            errorString = "Couldn't get a point cloud from " + kinectName(deviceId);
+    MyFreenect2Device::Images images;
+    fn2_device->takeImages(images);
+    const bool enabled[MyFreenect2Device::NUM_OUTPUTS] = {
+        true, streamEnabledDepth, streamEnabledPC, streamEnabledIR, streamEnabledRegColor, streamEnabledUV
+    };
+    for (int i = 0; i < MyFreenect2Device::NUM_OUTPUTS; ++i) {
+        if (!enabled[i]) {
+            uploadFallbackBuffer(i); // also drops an image made just before the output was turned off
+        } else if (images[i].buf) {
+            uploadBuffer(output, images[i].buf, i, images[i].width, images[i].height, images[i].format);
         }
-    }
-
-    // Registered color (RGB on the depth grid) and the depth-to-color UV map
-    std::vector<uint8_t> regColor;
-    std::vector<float> regUV;
-    if ((streamEnabledRegColor || streamEnabledUV) && fn2_device->getRegisteredColorFrame(regColor, regUV)) {
-        if (streamEnabledRegColor) {
-            uploadFrame(output, 4, regColor.data(), DW, DH, TD::OP_PixelFormat::RGBA8Fixed, 4);
-        }
-        if (streamEnabledUV) {
-            uploadFrame(output, 5, regUV.data(), DW, DH, TD::OP_PixelFormat::RGBA32Float, 4 * sizeof(float));
-        }
-    }
-    if (!streamEnabledRegColor) uploadFallbackBuffer(4);
-    if (!streamEnabledUV) uploadFallbackBuffer(5);
-
-    std::vector<uint16_t> irFrame;
-    if (!streamEnabledIR) {
-        uploadFallbackBuffer(3);
-    } else if (fn2_device->getIRFrame(irFrame)) {
-        uploadFrame(output, 3, irFrame.data(), MyFreenect2Device::IR_WIDTH, MyFreenect2Device::IR_HEIGHT, TD::OP_PixelFormat::Mono16Fixed, 2);
     }
 }
 
@@ -966,7 +944,6 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         depthOutput = (depthOutputStr == "Millimeters") ? depthOutputEnum::Millimeters
                     : (depthOutputStr == "Meters")      ? depthOutputEnum::Meters
                                                         : depthOutputEnum::Normalized;
-        pcSpace = (depthFormat == depthFormatEnum::Registered) ? pcSpaceEnum::ColorCamera : pcSpaceEnum::DepthCamera;
         pcFlipX = (inputs->getParInt("Pcflipx") != 0);
         pcFlipY = (inputs->getParInt("Pcflipy") != 0);
         pcFlipZ = (inputs->getParInt("Pcflipz") != 0);
@@ -979,11 +956,6 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     // the color-space point cloud are pixel-aligned with RGB and follow it; every other output is native.
     fn2_colorW = nonCommercial ? MyFreenect2Device::SCALED_WIDTH : MyFreenect2Device::RGB_WIDTH;
     fn2_colorH = nonCommercial ? MyFreenect2Device::SCALED_HEIGHT : MyFreenect2Device::RGB_HEIGHT;
-    const bool registered = (depthFormat == depthFormatEnum::Registered);
-    fn2_depthW = registered ? fn2_colorW : MyFreenect2Device::DEPTH_WIDTH;
-    fn2_depthH = registered ? fn2_colorH : MyFreenect2Device::DEPTH_HEIGHT;
-    fn2_pcW = (pcSpace == pcSpaceEnum::ColorCamera) ? fn2_colorW : MyFreenect2Device::DEPTH_WIDTH;
-    fn2_pcH = (pcSpace == pcSpaceEnum::ColorCamera) ? fn2_colorH : MyFreenect2Device::DEPTH_HEIGHT;
     
     // Version-specific parameters; greyed out while the version is unknown (Auto with no Kinect)
     inputs->enablePar("Tilt", version == kinectVersionEnum::V1);
@@ -1096,27 +1068,7 @@ void FreenectTOP::uploadDepthFrame(TD::TOP_Output* output, const std::vector<flo
         return;
     }
 
-    if (packed16) {
-        // Legacy behaviour: 0..1 across the threshold window, 0 = invalid
-        uint16_t* dst = static_cast<uint16_t*>(buf->data);
-        const float denom = std::max(depthThreshMax - depthThreshMin, 1.0f);
-        for (size_t i = 0; i < pixelCount; ++i) {
-            const float d = depthMM[i];
-            if (d <= 0.0f) {
-                dst[i] = static_cast<uint16_t>(std::clamp(unknownDepth, 0.0f, 1.0f) * 65535.0f + 0.5f);
-            } else {
-                const float normalized = std::clamp((d - depthThreshMin) / denom, 0.0f, 1.0f);
-                dst[i] = static_cast<uint16_t>(normalized * 65535.0f + 0.5f);
-            }
-        }
-    } else {
-        float* dst = static_cast<float*>(buf->data);
-        const float scale = (depthOutput == depthOutputEnum::Meters) ? 0.001f : 1.0f;
-        for (size_t i = 0; i < pixelCount; ++i) {
-            dst[i] = (depthMM[i] > 0.0f) ? depthMM[i] * scale : unknownDepth;
-        }
-    }
-
+    packDepth(depthMM.data(), pixelCount, buf->data, depthOutput, depthThreshMin, depthThreshMax, unknownDepth);
     uploadBuffer(output, buf, 1, width, height, packed16 ? TD::OP_PixelFormat::Mono16Fixed : TD::OP_PixelFormat::Mono32Float);
 }
 

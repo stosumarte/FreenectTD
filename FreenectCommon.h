@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <dispatch/dispatch.h>
 
 // Which Kinect a device is
 enum class kinectVersionEnum {
@@ -34,13 +36,6 @@ enum class depthOutputEnum {
     // (clamped to 0..1 in Normalized)
 };
 
-// Which camera the v2 point cloud is expressed in; derived from the Depth Format menu
-// (Registered -> ColorCamera, Raw / Raw undistorted -> DepthCamera)
-enum class pcSpaceEnum {
-    DepthCamera,  // "Raw": 512x424, XYZ (m) relative to the depth/IR camera; aligned with Registered Color / UV outputs
-    ColorCamera   // "Registered": 1920x1080, XYZ (m) relative to the color camera, pixel-aligned to the RGB output
-};
-
 // True if a depth value (mm) is a real reading inside the inclusive [min, max] depth range.
 // 0, NaN and infinity are what the sensors report for "no reading".
 inline bool isDepthInRange(float depthMM, float depthThreshMin, float depthThreshMax)
@@ -56,7 +51,9 @@ template <typename TSrc, typename TDst>
 inline void resampleNearest(const TSrc* src, int srcWidth, int srcHeight, int channels,
                             TDst* dst, int dstWidth, int dstHeight, bool flipX)
 {
-    for (int y = 0; y < dstHeight; ++y) {
+    // Rows are independent, so spread them across cores (dispatch_apply returns when all are done)
+    dispatch_apply(dstHeight, DISPATCH_APPLY_AUTO, ^(size_t row) {
+        const int y = static_cast<int>(row);
         const int sy = (dstHeight == srcHeight) ? y : std::min(srcHeight - 1, static_cast<int>((y + 0.5f) * srcHeight / dstHeight));
         const TSrc* srcRow = src + static_cast<size_t>(sy) * srcWidth * channels;
         TDst* dstRow = dst + static_cast<size_t>(y) * dstWidth * channels;
@@ -70,6 +67,30 @@ inline void resampleNearest(const TSrc* src, int srcWidth, int srcHeight, int ch
             for (int c = 0; c < channels; ++c) {
                 dstPixel[c] = static_cast<TDst>(srcPixel[c]);
             }
+        }
+    });
+}
+
+// Packs a millimetre depth map (0 = invalid) for the depth output: Mono16Fixed (uint16) for Normalized,
+// Mono32Float otherwise. Invalid pixels get unknownDepth (clamped to 0..1 in Normalized).
+inline void packDepth(const float* depthMM, size_t pixelCount, void* dst, depthOutputEnum mode,
+                      float threshMin, float threshMax, float unknownDepth)
+{
+    if (mode == depthOutputEnum::Normalized) {
+        // Legacy behaviour: 0..1 across the threshold window
+        uint16_t* out = static_cast<uint16_t*>(dst);
+        const float denom = std::max(threshMax - threshMin, 1.0f);
+        const uint16_t unknown = static_cast<uint16_t>(std::clamp(unknownDepth, 0.0f, 1.0f) * 65535.0f + 0.5f);
+        for (size_t i = 0; i < pixelCount; ++i) {
+            const float d = depthMM[i];
+            out[i] = (d <= 0.0f) ? unknown
+                                 : static_cast<uint16_t>(std::clamp((d - threshMin) / denom, 0.0f, 1.0f) * 65535.0f + 0.5f);
+        }
+    } else {
+        float* out = static_cast<float*>(dst);
+        const float scale = (mode == depthOutputEnum::Meters) ? 0.001f : 1.0f;
+        for (size_t i = 0; i < pixelCount; ++i) {
+            out[i] = (depthMM[i] > 0.0f) ? depthMM[i] * scale : unknownDepth;
         }
     }
 }
