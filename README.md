@@ -31,6 +31,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 | Manual depth range                                   | ✅         | ✅         |
 | Depth output in millimeters / meters                 | ✅         | ✅         |
 | RGB-aligned point cloud, registered color and UV map | ❌         | ✅         |
+| Several Kinects at once, one per node                | ✅         | ✅         |
 
 \* On Kinect V1, IR turns RGB off: the V1 doesn't have the bandwidth to stream both at once.
 
