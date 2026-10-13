@@ -105,6 +105,14 @@ private:
     std::string warningString;
     void getErrorString(TD::OP_String* error, void* reserved1) override;
     void getWarningString(TD::OP_String* warning, void* reserved1) override;
+
+    // Info popup, Info DAT and Info CHOP: which Kinect the node is on (also the one Auto picked) and its status
+    int32_t getNumInfoCHOPChans(void* reserved1) override;
+    void getInfoCHOPChan(int32_t index, TD::OP_InfoCHOPChan* chan, void* reserved1) override;
+    bool getInfoDATSize(TD::OP_InfoDATSize* infoSize, void* reserved1) override;
+    void getInfoDATEntries(int32_t index, int32_t nEntries, TD::OP_InfoDATEntries* entries, void* reserved1) override;
+    void getInfoPopupString(TD::OP_String* info, void* reserved1) override;
+    std::string deviceStatus() const;
     
     // Current output pointer
     TD::TOP_Output* myCurrentOutput = nullptr;
@@ -128,6 +136,9 @@ private:
     float fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     uint64_t lastDepthSeq = 0;                             // v2 depthSeq seen at lastDepthTime
     std::chrono::steady_clock::time_point lastDepthTime;   // last cook a new depth frame had arrived (watchdog in deviceReady)
+    int depthFrames = 0;                                   // depth frames since fpsWindowStart, for depthFps
+    float depthFps = 0.0f;                                 // Info CHOP depth_fps, updated about once a second
+    std::chrono::steady_clock::time_point fpsWindowStart;
     
     // Output sizes, set each cook (see execute): RGB depends on the license, depth and point cloud on Format
     int fn2_colorW = 0, fn2_colorH = 0;

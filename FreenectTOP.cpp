@@ -288,6 +288,87 @@ static kinectVersionEnum versionOf(const std::string& id) {
                                  : kinectVersionEnum::None;
 }
 
+// A Kinect present in the shared USB scan, so a missing or unplugged one shows up right away without opening it
+static std::optional<KinectUSB> findKinect(const std::string& id) {
+    for (const KinectUSB& kinect : usbKinects()) {
+        if (kinect.id() == id && kinect.present) return kinect;
+    }
+    return std::nullopt;
+}
+
+// libfreenect2 crashes the process opening a Kinect v2 there.
+// LIBUSB_SPEED_UNKNOWN is let through so an unreported speed doesn't block a working setup.
+static bool onUSB2(const KinectUSB& kinect) {
+    return kinect.speed != LIBUSB_SPEED_UNKNOWN && kinect.speed < LIBUSB_SPEED_SUPER;
+}
+
+// Status shown in the info popup and Info DAT, as of the last cook
+std::string FreenectTOP::deviceStatus() const {
+    if (!wasActive) return "inactive";
+    if (deviceId.empty()) return "no Kinect";
+    if (initSuccess.load()) return "streaming";
+    return errorString.empty() ? "initializing" : "error";
+}
+
+// Info CHOP channels, numbers only: streaming and connected (0/1), version (0 = none, 1, 2), depth_fps
+int32_t FreenectTOP::getNumInfoCHOPChans(void*) {
+    return 4;
+}
+
+void FreenectTOP::getInfoCHOPChan(int32_t index, TD::OP_InfoCHOPChan* chan, void*) {
+    switch (index) {
+        case 0:
+            chan->name->setString("streaming");
+            chan->value = (wasActive && initSuccess.load()) ? 1.0f : 0.0f;
+            break;
+        case 1:
+            chan->name->setString("connected");
+            chan->value = findKinect(deviceId) ? 1.0f : 0.0f;
+            break;
+        case 2:
+            chan->name->setString("version");
+            switch (versionOf(deviceId)) {
+                case kinectVersionEnum::None: chan->value = 0.0f; break;
+                case kinectVersionEnum::V1:   chan->value = 1.0f; break;
+                case kinectVersionEnum::V2:   chan->value = 2.0f; break;
+            }
+            break;
+        case 3:
+            chan->name->setString("depth_fps");
+            chan->value = depthFps;
+            break;
+    }
+}
+
+// Info DAT rows. id is the Device menu value, so a script can pin the Kinect Auto picked:
+// op('freenect1').par.Device = op('info1')['id', 1]
+bool FreenectTOP::getInfoDATSize(TD::OP_InfoDATSize* infoSize, void*) {
+    infoSize->rows = 3;
+    infoSize->cols = 2;
+    infoSize->byColumn = false;
+    return true;
+}
+
+void FreenectTOP::getInfoDATEntries(int32_t index, int32_t nEntries, TD::OP_InfoDATEntries* entries, void*) {
+    const std::string rows[3][2] = {
+        {"kinect", deviceId.empty() ? "" : deviceLabel(deviceId)},
+        {"id", deviceId},
+        {"status", deviceStatus()},
+    };
+    if (index < 0 || index >= 3 || nEntries < 2) {
+        return;
+    }
+    entries->values[0]->setString(rows[index][0].c_str());
+    entries->values[1]->setString(rows[index][1].c_str());
+}
+
+// Middle-click popup on the node
+void FreenectTOP::getInfoPopupString(TD::OP_String* info, void*) {
+    const std::string text = "Kinect: " + (deviceId.empty() ? std::string("none") : deviceLabel(deviceId))
+                           + "\nStatus: " + deviceStatus();
+    info->setString(text.c_str());
+}
+
 // Device menu: Auto, then every Kinect in the shared USB scan (never scans here, TD calls this on the
 // main thread). A picked Kinect that's unplugged stays listed, so the menu still shows what the node uses.
 // Labels never say whether a Kinect is connected: TD rebuilds entries only when the menu opens, and the
@@ -381,20 +462,6 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
 {
     // Do not initialize device here, will be done in execute
     startUSBScan();
-}
-
-// A Kinect present in the shared USB scan, so a missing or unplugged one shows up right away without opening it
-static std::optional<KinectUSB> findKinect(const std::string& id) {
-    for (const KinectUSB& kinect : usbKinects()) {
-        if (kinect.id() == id && kinect.present) return kinect;
-    }
-    return std::nullopt;
-}
-
-// libfreenect2 crashes the process opening a Kinect v2 there.
-// LIBUSB_SPEED_UNKNOWN is let through so an unreported speed doesn't block a working setup.
-static bool onUSB2(const KinectUSB& kinect) {
-    return kinect.speed != LIBUSB_SPEED_UNKNOWN && kinect.speed < LIBUSB_SPEED_SUPER;
 }
 
 // Process-wide device ownership: only one FreenectTOP instance may open the Kinect
@@ -615,6 +682,10 @@ void FreenectTOP::cleanupDevice() {
     fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     fn2_lastPointCloudSeq = NO_POINT_CLOUD; // a new device starts counting depth frames from 0 again
     lastDepthTime = {};
+    lastDepthSeq = 0; // a new device starts counting depth frames from 0 again
+    depthFrames = 0;
+    depthFps = 0.0f;
+    fpsWindowStart = {};
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] cleanupDevice: start");
         initSuccess = false; // an init job queued before this one may have set it back to true
@@ -678,15 +749,28 @@ bool FreenectTOP::deviceReady(kinectVersionEnum version) {
     // An open Kinect can stop sending frames without an error (a stalled v1; a v2 once after a replug),
     // so treat 3 s without depth as a disconnect and reopen it. The depth stream always runs, even when
     // its output is off.
-    bool newDepth = false;
+    // A v2 counts its depth frames; a v1 only flags that one arrived since the last cook
+    int newFrames = 0;
     if (version == kinectVersionEnum::V2) {
         const uint64_t seq = fn2_device->getDepthSeq();
-        newDepth = (seq != lastDepthSeq);
+        newFrames = (seq > lastDepthSeq) ? static_cast<int>(seq - lastDepthSeq) : 0;
         lastDepthSeq = seq;
     } else {
-        newDepth = fn1_depthReady.exchange(false);
+        newFrames = fn1_depthReady.exchange(false) ? 1 : 0;
     }
+    const bool newDepth = (newFrames > 0);
     const auto now = std::chrono::steady_clock::now();
+
+    // Info CHOP depth_fps, over windows of about a second
+    depthFrames += newFrames;
+    if (fpsWindowStart == std::chrono::steady_clock::time_point{}) {
+        fpsWindowStart = now;
+    } else if (now - fpsWindowStart >= std::chrono::seconds(1)) {
+        depthFps = depthFrames / std::chrono::duration<float>(now - fpsWindowStart).count();
+        depthFrames = 0;
+        fpsWindowStart = now;
+    }
+
     if (newDepth || lastDepthTime == std::chrono::steady_clock::time_point{}) {
         lastDepthTime = now;
     } else if (now - lastDepthTime > std::chrono::seconds(3)) {
