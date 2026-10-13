@@ -464,9 +464,10 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     startUSBScan();
 }
 
-// Process-wide device ownership: only one FreenectTOP instance may open the Kinect
-std::mutex   FreenectTOP::deviceOwnerMutex;
-FreenectTOP* FreenectTOP::deviceOwner[2] = {};
+// Process-wide device ownership: each Kinect is open in one FreenectTOP at a time
+std::mutex FreenectTOP::deviceOwnerMutex;
+std::map<std::string, FreenectTOP*> FreenectTOP::deviceOwners;
+std::map<FreenectTOP*, std::string> FreenectTOP::pickedDevices;
 
 std::mutex FreenectTOP::deviceIOMutex;
 
@@ -486,23 +487,19 @@ void FreenectTOP::runOnDeviceThread(std::function<void()> job) {
     });
 }
 
-bool FreenectTOP::claimDevice(kinectVersionEnum version) {
-    const int slot = (version == kinectVersionEnum::V2) ? 1 : 0;
+// Claims a Kinect for this node. Returns the node that already has it open, or nullptr if this node has it now.
+FreenectTOP* FreenectTOP::claimDevice(const std::string& id) {
     std::lock_guard<std::mutex> lock(deviceOwnerMutex);
-    if (deviceOwner[slot] == nullptr) deviceOwner[slot] = this;
-    return deviceOwner[slot] == this;
+    FreenectTOP*& owner = deviceOwners[id];
+    if (owner == nullptr) owner = this;
+    return owner == this ? nullptr : owner;
 }
 
 void FreenectTOP::releaseDevice() {
     bool wasOwner = false;
     {
         std::lock_guard<std::mutex> lock(deviceOwnerMutex);
-        for (FreenectTOP*& owner : deviceOwner) {
-            if (owner == this) {
-                owner = nullptr;
-                wasOwner = true;
-            }
-        }
+        wasOwner = std::erase_if(deviceOwners, [this](const auto& owner) { return owner.second == this; }) > 0;
     }
     if (wasOwner) {
         // Close the device so the next node that becomes active can open it.
@@ -511,9 +508,25 @@ void FreenectTOP::releaseDevice() {
     }
 }
 
+// Whether Auto may use a Kinect: not open in another node, and not picked in the Device menu of another
+// active node (that node gets it; an Auto node already on it moves on). Caller holds deviceOwnerMutex.
+bool FreenectTOP::freeForAuto(const std::string& id) const {
+    const auto owner = deviceOwners.find(id);
+    if (owner != deviceOwners.end() && owner->second != this) {
+        return false;
+    }
+    return std::none_of(pickedDevices.begin(), pickedDevices.end(), [&](const auto& picked) {
+        return picked.first != this && picked.second == id;
+    });
+}
+
 // Destructor for FreenectTOP
 FreenectTOP::~FreenectTOP() {
     LOG("[FreenectTOP] Destructor called, cleaning up devices");
+    {
+        std::lock_guard<std::mutex> lock(deviceOwnerMutex);
+        pickedDevices.erase(this);
+    }
     releaseDevice(); // closes the device if this instance owns it
     if (deviceThread.joinable()) {
         deviceThread.join();
@@ -900,20 +913,30 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     // Get parameters
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
 
-    // The Kinect this node uses, which also sets the version: the picked one, or for Auto the one it's
-    // already on while that stays listed (also while a v2 reboots after a close), else the first one
-    // plugged in. Empty = none.
-    // TODO: Auto should skip Kinects other nodes use, once ownership is per device
+    // The Kinect this node uses, which also sets the version: the one picked in Device, or for Auto the one
+    // it's already on while that stays listed (also while a v2 reboots after a close) and free for it, else
+    // the first free one plugged in (see freeForAuto). Empty = none.
     const char* deviceCStr = inputs->getParString("Device");
-    deviceId = deviceCStr ? deviceCStr : "Auto";
-    if (deviceId == "Auto") {
-        const std::vector<KinectUSB> kinects = usbKinects();
-        if (std::none_of(kinects.begin(), kinects.end(), [&](const KinectUSB& k) { return k.id() == autoDevice; })) {
-            const auto first = std::find_if(kinects.begin(), kinects.end(), [](const KinectUSB& k) { return k.present; });
-            autoDevice = first != kinects.end() ? first->id() : "";
+    const std::string picked = deviceCStr ? deviceCStr : "Auto";
+    const std::vector<KinectUSB> kinects = usbKinects();
+    {
+        std::lock_guard<std::mutex> lock(deviceOwnerMutex);
+        if (isActive && picked != "Auto") {
+            pickedDevices[this] = picked;
+        } else {
+            pickedDevices.erase(this);
         }
-        deviceId = autoDevice;
+        if (picked == "Auto") {
+            const bool listed = std::any_of(kinects.begin(), kinects.end(), [&](const KinectUSB& k) { return k.id() == autoDevice; });
+            if (!listed || !freeForAuto(autoDevice)) {
+                const auto first = std::find_if(kinects.begin(), kinects.end(), [&](const KinectUSB& k) {
+                    return k.present && freeForAuto(k.id());
+                });
+                autoDevice = first != kinects.end() ? first->id() : "";
+            }
+        }
     }
+    deviceId = (picked == "Auto") ? autoDevice : picked;
     const kinectVersionEnum version = versionOf(deviceId);
 
     // Read the license whenever the TOP becomes active (including the first cook), so a key installed
@@ -1010,22 +1033,22 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
         warningString.clear();
     }
 
-    // Only one FreenectTOP per Kinect version may talk to that device. A second active node would
-    // fight the first for the USB device and both would stall, so it stays idle with an error.
-    // A v1 node and a v2 node can run together: they use different libraries and USB devices.
-    // When the Kinect changes (another one picked, or Auto's unplugged), give up (and close) the old one
-    // first, so its version is free for another node even if this one can't claim the new version.
+    // Each Kinect is open in one FreenectTOP at a time: a second node would fight the first for the USB
+    // device and both would stall, so it stays idle with an error. When the Kinect changes (another one
+    // picked, or Auto's unplugged or picked by another node), give up (and close) the old one first, so
+    // it's free for another node even if this one can't claim the new one.
     if (deviceId != lastDeviceId) {
         releaseDevice();
         lastDeviceId = deviceId;
     }
     if (version == kinectVersionEnum::None) {
-        errorString = "No Kinect found";
+        const bool anyPlugged = std::any_of(kinects.begin(), kinects.end(), [](const KinectUSB& k) { return k.present; });
+        errorString = anyPlugged ? "Every Kinect is in use by another Freenect TOP" : "No Kinect found";
         uploadFallbackBuffer();
         return;
     }
-    if (!claimDevice(version)) {
-        errorString = std::string("Another Freenect TOP is already using the Kinect ") + (version == kinectVersionEnum::V2 ? "v2" : "v1") + ". Only one node per Kinect version can be active; turn Active off on the other node first.";
+    if (const FreenectTOP* owner = claimDevice(deviceId)) {
+        errorString = kinectName(deviceId) + " is in use by " + owner->fntdNodeInfo->opPath;
         uploadFallbackBuffer();
         return;
     }

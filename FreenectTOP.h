@@ -31,6 +31,7 @@
 #include <limits>
 #include <functional>
 #include <chrono>
+#include <map>
 
 #include "FreenectCommon.h"
 #include "FreenectV1.h"
@@ -91,11 +92,13 @@ private:
     void uploadFallbackBuffer(int targetIndex = -1);
     void uploadDepthFrame(TD::TOP_Output* output, const std::vector<float>& depthMM, int width, int height);
     
-    // One active FreenectTOP per Kinect version (see claimDevice in FreenectTOP.cpp); index 0 = v1, 1 = v2
-    static std::mutex   deviceOwnerMutex;
-    static FreenectTOP* deviceOwner[2];
-    bool claimDevice(kinectVersionEnum version);
+    // Each Kinect is open in one FreenectTOP at a time (see claimDevice in FreenectTOP.cpp)
+    static std::mutex deviceOwnerMutex;                       // guards deviceOwners and pickedDevices
+    static std::map<std::string, FreenectTOP*> deviceOwners;  // Kinect id -> node that has it open
+    static std::map<FreenectTOP*, std::string> pickedDevices; // active nodes with a Kinect picked in Device, not Auto
+    FreenectTOP* claimDevice(const std::string& id);
     void releaseDevice();
+    bool freeForAuto(const std::string& id) const;
     
     // Error/warning string handling
     std::string errorString;
