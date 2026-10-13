@@ -134,6 +134,8 @@ private:
     int fn2_pcW = 0, fn2_pcH = 0;
     static constexpr uint64_t NO_POINT_CLOUD = std::numeric_limits<uint64_t>::max();
     uint64_t fn2_lastPointCloudSeq = NO_POINT_CLOUD; // depthSeq of the last uploaded point cloud
+    uint64_t fn2_lastDepthSeq = 0;                          // depthSeq seen at fn2_lastDepthTime
+    std::chrono::steady_clock::time_point fn2_lastDepthTime; // last cook a new depth frame had arrived
     
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;

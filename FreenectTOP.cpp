@@ -587,6 +587,7 @@ void FreenectTOP::fn2_startInitThread() {
 void FreenectTOP::fn2_cleanupDevice() {
     fn2_initSuccess = false;
     fn2_lastPointCloudSeq = NO_POINT_CLOUD; // a new device starts counting depth frames from 0 again
+    fn2_lastDepthTime = {};
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] fn2_cleanupDevice: start");
         fn2_initSuccess = false; // an init job queued before this one may have set it back to true
@@ -749,6 +750,20 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
 
     // Check if device was disconnected
     if (!kinectPlugged(true)) {
+        fn2_cleanupDevice();
+        uploadFallbackBuffer();
+        return;
+    }
+
+    // Like v1: a v2 can open fine and then never send a frame (seen once after a replug), so treat
+    // 3 s without depth as a disconnect and reopen it. The depth stream always runs, even when its output is off.
+    const auto now = std::chrono::steady_clock::now();
+    if (const uint64_t seq = fn2_device->getDepthSeq();
+        seq != fn2_lastDepthSeq || fn2_lastDepthTime == std::chrono::steady_clock::time_point{}) {
+        fn2_lastDepthSeq = seq;
+        fn2_lastDepthTime = now;
+    } else if (now - fn2_lastDepthTime > std::chrono::seconds(3)) {
+        LOG("[FreenectTOP] executeV2: no depth frames for 3 s, closing the device");
         fn2_cleanupDevice();
         uploadFallbackBuffer();
         return;
