@@ -36,6 +36,8 @@
 #include "FreenectV1.h"
 #include "FreenectV2.h"
 
+struct libusb_context;
+
 class FreenectTOP : public TD::TOP_CPlusPlusBase {
     
 public:
@@ -54,6 +56,7 @@ private:
     
     // V1 device members
     freenect_context*                       fn1_ctx = nullptr;
+    libusb_context*                         fn1_usb = nullptr; // libusb context fn1_ctx runs on, ours (see fn1_initDevice)
     MyFreenectDevice*                       fn1_device = nullptr;
     std::atomic<bool>                       fn1_rgbReady{false};
     std::atomic<bool>                       fn1_depthReady{false};
@@ -64,7 +67,6 @@ private:
     libfreenect2::Freenect2*                fn2_ctx = nullptr;
     MyFreenect2Device*                      fn2_device = nullptr;
     libfreenect2::PacketPipeline*           fn2_pipeline = nullptr;
-    std::string                             fn2_serial;
     std::atomic<bool>                       fn2_rgbReady{false};
     std::atomic<bool>                       fn2_depthReady{false};
     std::atomic<bool>                       fn2_irReady{false};
@@ -75,9 +77,10 @@ private:
     std::atomic<bool>                       fn2_initSuccess{false};
 
     // Device init/cleanup methods
-    bool fn1_initDevice(bool ir);
+    bool fn1_initDevice(bool ir, const std::string& id);
     void fn1_cleanupDevice();
-    bool fn2_initDevice();
+    void fn1_closeContext();
+    bool fn2_initDevice(const std::string& id);
     void fn2_cleanupDevice();
     void fn2_startInitThread();
     std::mutex freenectMutex;
@@ -141,8 +144,9 @@ private:
     bool manualDepthThresh;
     float depthThreshMin, depthThreshMax;
     depthFormatEnum depthFormat = depthFormatEnum::Raw;
-    std::string lastDeviceType = "Kinect v1"; // per instance; used to tear down devices when the Kinect version changes
-    std::string autoDevice; // Kinect id Device = Auto is on; kept while that Kinect stays plugged in
+    std::string deviceId;     // Kinect this node uses (KinectUSB::id), set each cook from Device; empty = none
+    std::string lastDeviceId; // used to tear down the device when deviceId changes
+    std::string autoDevice;   // Kinect id Device = Auto is on; kept while that Kinect stays plugged in
     depthOutputEnum depthOutput = depthOutputEnum::Normalized;
     pcSpaceEnum pcSpace = pcSpaceEnum::DepthCamera;
     bool pcFlipX = false, pcFlipY = false, pcFlipZ = false;

@@ -367,21 +367,18 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     startUSBScan();
 }
 
-// From the shared USB scan, so a missing or unplugged Kinect shows up right away without opening it.
-// NOTE: any Kinect of the version counts, not this node's own device; per device once each node picks one
-static bool kinectPlugged(bool v2) {
+// A Kinect in the shared USB scan, so a missing or unplugged one shows up right away without opening it
+static std::optional<KinectUSB> findKinect(const std::string& id) {
     for (const KinectUSB& kinect : usbKinects()) {
-        if (kinect.v2 == v2) return true;
+        if (kinect.id() == id) return kinect;
     }
-    return false;
+    return std::nullopt;
 }
 
-// LIBUSB_SPEED_UNKNOWN is let through so an unreported speed doesn't block a working setup
-static bool kinect2OnUSB2() {
-    for (const KinectUSB& kinect : usbKinects()) {
-        if (kinect.v2 && kinect.speed != LIBUSB_SPEED_UNKNOWN && kinect.speed < LIBUSB_SPEED_SUPER) return true;
-    }
-    return false;
+// libfreenect2 crashes the process opening a Kinect v2 there.
+// LIBUSB_SPEED_UNKNOWN is let through so an unreported speed doesn't block a working setup.
+static bool onUSB2(const KinectUSB& kinect) {
+    return kinect.speed != LIBUSB_SPEED_UNKNOWN && kinect.speed < LIBUSB_SPEED_SUPER;
 }
 
 // Process-wide device ownership: only one FreenectTOP instance may open the Kinect
@@ -427,7 +424,7 @@ void FreenectTOP::releaseDevice() {
         // Close the device so the next node that becomes active can open it.
         fn2_cleanupDevice();
         fn1_cleanupDevice();
-        lastDeviceType.clear();
+        lastDeviceId.clear();
     }
 }
 
@@ -441,21 +438,39 @@ FreenectTOP::~FreenectTOP() {
     stopUSBScan();
 }
 
+// Shuts libfreenect down, then the libusb context it ran on: freenect_shutdown leaves a context it was given open
+void FreenectTOP::fn1_closeContext() {
+    if (fn1_ctx) {
+        freenect_shutdown(fn1_ctx);
+        fn1_ctx = nullptr;
+    }
+    if (fn1_usb) {
+        libusb_exit(fn1_usb);
+        fn1_usb = nullptr;
+    }
+}
+
 // Init for Kinect v1 (libfreenect)
-bool FreenectTOP::fn1_initDevice(bool ir) {
+bool FreenectTOP::fn1_initDevice(bool ir, const std::string& id) {
     // Crucial: Device init start
     LOG("[FreenectTOP] fn1_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
     initError.clear(); // fn1_execute reports a missing device itself, from the USB scan
-    if (!kinectPlugged(false)) {
+    const std::optional<KinectUSB> kinect = findKinect(id);
+    if (!kinect) {
         LOG("[FreenectTOP] fn1_initDevice: no device available");
         return false;
     }
-    // freenect_init only calls libusb_init and returns its error code
-    int res = freenect_init(&fn1_ctx, nullptr);
+    // libfreenect runs on a libusb context of ours, so the camera's index is counted in the same
+    // device list libfreenect opens it from
+    int res = libusb_init(&fn1_usb);
+    if (res == 0) {
+        res = freenect_init(&fn1_ctx, fn1_usb);
+    }
     if (res < 0) {
         initError = "Couldn't initialize libfreenect (" + std::string(libusb_error_name(res)) + ")";
         LOG("[FreenectTOP] fn1_initDevice: " + initError);
+        fn1_closeContext();
         return false;
     }
     
@@ -470,19 +485,19 @@ bool FreenectTOP::fn1_initDevice(bool ir) {
     freenect_set_fw_address_k4w
         (fn1_ctx, ofxKinectExtras::getFWDatak4w(), ofxKinectExtras::getFWSizek4w());
 
-    int numDevices = freenect_num_devices(fn1_ctx);
-    
-    if (numDevices <= 0) {
+    const int index = kinect1Index(fn1_usb, *kinect);
+    if (index < 0) {
         initError = "No Kinect v1 devices found";
-        freenect_shutdown(fn1_ctx);
-        fn1_ctx = nullptr;
+        fn1_closeContext();
         return false;
     }
 
     try {
         fn1_rgbReady = false;
         fn1_depthReady = false;
-        fn1_device = new MyFreenectDevice(fn1_ctx, 0, fn1_rgbReady, fn1_depthReady, ir);
+        // By index, not freenect_open_device_by_camera_serial: that opens every Kinect v1 to read serials,
+        // including ones other nodes are streaming, and then opens by index anyway
+        fn1_device = new MyFreenectDevice(fn1_ctx, index, fn1_rgbReady, fn1_depthReady, ir);
         fn1_device->start();
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         fn1_runEvents = true;
@@ -509,8 +524,7 @@ bool FreenectTOP::fn1_initDevice(bool ir) {
         }
         delete fn1_device;
         fn1_device = nullptr;
-        freenect_shutdown(fn1_ctx);
-        fn1_ctx = nullptr;
+        fn1_closeContext();
         return false;
     }
     LOG("[FreenectTOP] fn1_initDevice: success");
@@ -536,26 +550,24 @@ void FreenectTOP::fn1_cleanupDevice() {
             fn1_device = nullptr;
             LOG("[FreenectTOP] device deleted (v1)");
         }
-        if (fn1_ctx) {
-            freenect_shutdown(fn1_ctx);
-            fn1_ctx = nullptr;
-            LOG("[FreenectTOP] fn1_ctx shutdown (v1)");
-        }
+        fn1_closeContext();
+        LOG("[FreenectTOP] fn1_ctx shutdown (v1)");
         initError.clear();
         LOG("[FreenectTOP] fn1_cleanupDevice: end");
     });
 }
 
 // Init for Kinect v2 (libfreenect2)
-bool FreenectTOP::fn2_initDevice() {
+bool FreenectTOP::fn2_initDevice(const std::string& id) {
     LOG("[FreenectTOP] fn2_initDevice: starting");
     std::lock_guard<std::mutex> lock(freenectMutex);
     initError.clear(); // fn2_execute reports a missing or USB 2 device itself, from the USB scan
-    if (kinect2OnUSB2()) {
+    const std::optional<KinectUSB> kinect = findKinect(id);
+    if (kinect && onUSB2(*kinect)) {
         LOG("[FreenectTOP] fn2_initDevice: (end) device on USB 2");
         return false;
     }
-    if (!kinectPlugged(true)) {
+    if (!kinect) {
         LOG("[FreenectTOP] fn2_initDevice: no device available");
         return false;
     }
@@ -575,17 +587,19 @@ bool FreenectTOP::fn2_initDevice() {
         fn2_ctx = nullptr;
         return false;
     };
+    if (kinect->serial.empty()) {
+        return fail("Couldn't read the serial number of this Kinect v2, unplug it and plug it back in");
+    }
     fn2_ctx = new libfreenect2::Freenect2();
     if (fn2_ctx->enumerateDevices() == 0) {
         return fail("No Kinect v2 devices found");
     }
-    fn2_serial = fn2_ctx->getDefaultDeviceSerialNumber();
     try {
         fn2_pipeline = new libfreenect2::CpuPacketPipeline();
     } catch (...) {
         return fail("Couldn't create CPU pipeline for Kinect v2");
     }
-    libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(fn2_serial, fn2_pipeline);
+    libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(kinect->serial, fn2_pipeline);
     if (!dev) {
         return fail("Failed to open Kinect v2 device, is it on a USB 3 port?");
     }
@@ -601,15 +615,15 @@ bool FreenectTOP::fn2_initDevice() {
 // Threaded initialization for Kinect v1
 void FreenectTOP::fn1_startInitThread() {
     const bool ir = streamEnabledIR; // open in the requested video mode
-    runOnDeviceThread([this, ir]() {
-        fn1_initSuccess = fn1_initDevice(ir);
+    runOnDeviceThread([this, ir, id = deviceId]() {
+        fn1_initSuccess = fn1_initDevice(ir, id);
     });
 }
 
 // Threaded initialization for Kinect v2
 void FreenectTOP::fn2_startInitThread() {
-    runOnDeviceThread([this]() {
-        fn2_initSuccess = fn2_initDevice();
+    runOnDeviceThread([this, id = deviceId]() {
+        fn2_initSuccess = fn2_initDevice(id);
     });
 }
 
@@ -648,8 +662,8 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             fn1_startInitThread();
         }
         // The USB scan says right away whether a Kinect is there; init results can lag behind a close
-        if (!kinectPlugged(false)) {
-            errorString = "No Kinect v1 devices found";
+        if (!findKinect(deviceId)) {
+            errorString = deviceLabel(deviceId) + " is not connected";
         } else if (!lastInitError.empty()) {
             errorString = lastInitError;
         } else {
@@ -660,7 +674,7 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
         return;
     }
 
-    if (!kinectPlugged(false)) {
+    if (!findKinect(deviceId)) {
         LOG("[FreenectTOP] executeV1: device unplugged, closing it");
         fn1_cleanupDevice();
         uploadFallbackBuffer();
@@ -764,10 +778,11 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             fn2_startInitThread();
         }
         // The USB scan says right away whether a Kinect is there; init results can lag behind a close (~4 s on macOS)
-        if (kinect2OnUSB2()) {
+        const std::optional<KinectUSB> kinect = findKinect(deviceId);
+        if (kinect && onUSB2(*kinect)) {
             errorString = "Kinect v2 is on a USB 2 port, connect it to USB 3";
-        } else if (!kinectPlugged(true)) {
-            errorString = "No Kinect v2 devices found";
+        } else if (!kinect) {
+            errorString = deviceLabel(deviceId) + " is not connected";
         } else if (!lastInitError.empty()) {
             errorString = lastInitError;
         } else {
@@ -779,7 +794,7 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     }
 
     // Check if device was disconnected
-    if (!kinectPlugged(true)) {
+    if (!findKinect(deviceId)) {
         fn2_cleanupDevice();
         uploadFallbackBuffer();
         return;
@@ -921,7 +936,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     myCurrentOutput = output;
     
     // If errorString is set, LOG it
-    if ( FNTD_DEBUG == 1 && !errorString.empty() && errorString != "No Kinect found" && errorString != "No Kinect v1 devices found" && errorString != "No Kinect v2 devices found") {
+    if ( FNTD_DEBUG == 1 && !errorString.empty() && errorString != "No Kinect found" && !errorString.ends_with(" is not connected")) {
         LOG("[FreenectTOP] ERROR: " + errorString);
     }
     
@@ -938,15 +953,15 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     // already on while that stays plugged in, else the first one plugged in. Empty = none.
     // TODO: Auto should skip Kinects other nodes use, once ownership is per device
     const char* deviceCStr = inputs->getParString("Device");
-    std::string device = deviceCStr ? deviceCStr : "Auto";
-    if (device == "Auto") {
+    deviceId = deviceCStr ? deviceCStr : "Auto";
+    if (deviceId == "Auto") {
         const std::vector<KinectUSB> kinects = usbKinects();
         if (std::none_of(kinects.begin(), kinects.end(), [&](const KinectUSB& k) { return k.id() == autoDevice; })) {
             autoDevice = kinects.empty() ? "" : kinects.front().id();
         }
-        device = autoDevice;
+        deviceId = autoDevice;
     }
-    const std::string devType = device.starts_with("v2:") ? "Kinect v2" : device.starts_with("v1:") ? "Kinect v1" : "";
+    const std::string devType = deviceId.starts_with("v2:") ? "Kinect v2" : deviceId.starts_with("v1:") ? "Kinect v1" : "";
 
     // Read the license whenever the TOP becomes active (including the first cook), so a key installed
     // while TD runs takes effect by toggling Active. If it can't be read, assume Non-Commercial:
@@ -1060,11 +1075,11 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     // Only one FreenectTOP per Kinect version may talk to that device. A second active node would
     // fight the first for the USB device and both would stall, so it stays idle with an error.
     // A v1 node and a v2 node can run together: they use different libraries and USB devices.
-    // When the version changes (another Kinect picked, or none left for Auto), give up (and close) the
-    // old version first, so it is free for another node even if this one can't claim the new version.
-    if (devType != lastDeviceType) {
+    // When the Kinect changes (another one picked, or Auto's unplugged), give up (and close) the old one
+    // first, so its version is free for another node even if this one can't claim the new version.
+    if (deviceId != lastDeviceId) {
         releaseDevice();
-        lastDeviceType = devType;
+        lastDeviceId = deviceId;
     }
     if (devType.empty()) {
         errorString = "No Kinect found";

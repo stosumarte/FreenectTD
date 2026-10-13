@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+struct libusb_context;
+
 // One Kinect camera in the USB device list
 struct KinectUSB {
     int bus = 0;
@@ -29,4 +31,8 @@ struct KinectUSB {
 // It runs while any Freenect TOP exists: each node calls startUSBScan once and stopUSBScan once.
 void startUSBScan();
 void stopUSBScan();
-std::vector<KinectUSB> usbKinects(); // result of the last successful scan
+std::vector<KinectUSB> usbKinects(); // result of the last successful scan, sorted by id (version, then serial)
+
+// Position of a Kinect v1 camera in usb's device list, counted like libfreenect's open by index; -1 if
+// it isn't there. Pass the context libfreenect runs on, so both count in the same list.
+int kinect1Index(libusb_context* usb, const KinectUSB& kinect);
