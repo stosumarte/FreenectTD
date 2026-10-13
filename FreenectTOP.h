@@ -127,6 +127,7 @@ private:
     void runOnDeviceThread(std::function<void()> job);
     std::string initError; // written by init jobs, read by the cook thread only while the device thread is idle
     std::string lastInitError; // cook thread's copy of initError from the last finished init attempt
+    int initFailures = 0;      // init attempts in a row that ended with an error; shown from the second one
     
     // Parameters variables
     float fn1_tilt = 0.0f;

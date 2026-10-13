@@ -667,13 +667,16 @@ void FreenectTOP::fn1_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     if (!fn1_initSuccess.load()) {
         if (deviceJobsPending.load() == 0) {
             lastInitError = initError; // result of the last attempt, empty before the first
+            initFailures = initError.empty() ? 0 : initFailures + 1;
             LOG("[FreenectTOP] executeV1: device not ready, queueing init");
             fn1_startInitThread();
         }
         // The USB scan says right away whether a Kinect is there; init results can lag behind a close
         if (!findKinect(deviceId)) {
             errorString = deviceLabel(deviceId) + " is not connected";
-        } else if (!lastInitError.empty()) {
+        } else if (initFailures >= 2) {
+            // A single failure is shown as still opening: right after one Kinect v2 closes, opening
+            // another one can fail once in libfreenect2 and work on the next try
             errorString = lastInitError;
         } else {
             errorString.clear();
@@ -783,6 +786,7 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
     if (!fn2_initSuccess.load()) {
         if (deviceJobsPending.load() == 0) {
             lastInitError = initError; // result of the last attempt, empty before the first
+            initFailures = initError.empty() ? 0 : initFailures + 1;
             LOG("[FreenectTOP] executeV2: device not ready, queueing init");
             fn2_startInitThread();
         }
@@ -792,7 +796,9 @@ void FreenectTOP::fn2_execute(TD::TOP_Output* output, const TD::OP_Inputs* input
             errorString = "Kinect v2 is on a USB 2 port, connect it to USB 3";
         } else if (!kinect) {
             errorString = deviceLabel(deviceId) + " is not connected";
-        } else if (!lastInitError.empty()) {
+        } else if (initFailures >= 2) {
+            // A single failure is shown as still opening: right after one Kinect v2 closes, opening
+            // another one can fail once in libfreenect2 and work on the next try
             errorString = lastInitError;
         } else {
             errorString.clear();
