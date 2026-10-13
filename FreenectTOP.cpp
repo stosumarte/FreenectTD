@@ -653,9 +653,10 @@ bool FreenectTOP::fn2_initDevice(const std::string& id) {
         return fail("libfreenect2 can't find it");
     }
     try {
-        fn2_pipeline = new libfreenect2::CpuPacketPipeline();
+        // Depth decoding on the GPU; libfreenect2 falls back to the CPU if Metal isn't usable
+        fn2_pipeline = new libfreenect2::MetalPacketPipeline();
     } catch (...) {
-        return fail("couldn't create the CPU pipeline");
+        return fail("couldn't create the depth pipeline");
     }
     libfreenect2::Freenect2Device* dev = fn2_ctx->openDevice(kinect->serial, fn2_pipeline);
     if (!dev) {

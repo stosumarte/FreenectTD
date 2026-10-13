@@ -10,6 +10,8 @@
 		7D67448F52BCE8D255D96294 /* UpdateCheck.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */; };
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
 		813994A12E74673B0073667B /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F92E3CC608007447B2 /* Accelerate.framework */; };
+		42498B7DA995E442EBC77F1B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 343EC4C8246ABA75EB17A49F /* Foundation.framework */; };
+		1BC989F0E9B8EEFBFDC19853 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49A63C15272F7CC60FB1496C /* Metal.framework */; };
 		813994A32E7468600073667B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994A22E7468600073667B /* CoreFoundation.framework */; };
 		813994A52E74686A0073667B /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994A42E74686A0073667B /* CoreMedia.framework */; };
 		813994A72E7468730073667B /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994A62E7468730073667B /* CoreVideo.framework */; };
@@ -57,6 +59,8 @@
 		81E200852E7428FF00CCB6AE /* postinstall */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = postinstall; sourceTree = "<group>"; };
 		81E200872E7428FF00CCB6AE /* post_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = post_build.sh; sourceTree = "<group>"; };
 		81FC70F92E3CC608007447B2 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		343EC4C8246ABA75EB17A49F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		49A63C15272F7CC60FB1496C /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
 		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
@@ -87,6 +91,8 @@
 				813994A52E74686A0073667B /* CoreMedia.framework in Frameworks */,
 				813994A32E7468600073667B /* CoreFoundation.framework in Frameworks */,
 				813994A12E74673B0073667B /* Accelerate.framework in Frameworks */,
+				42498B7DA995E442EBC77F1B /* Foundation.framework in Frameworks */,
+				1BC989F0E9B8EEFBFDC19853 /* Metal.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -105,6 +111,8 @@
 				813994A42E74686A0073667B /* CoreMedia.framework */,
 				813994A22E7468600073667B /* CoreFoundation.framework */,
 				81FC70F92E3CC608007447B2 /* Accelerate.framework */,
+				343EC4C8246ABA75EB17A49F /* Foundation.framework */,
+				49A63C15272F7CC60FB1496C /* Metal.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
