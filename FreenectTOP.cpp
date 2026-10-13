@@ -37,11 +37,7 @@ extern "C" {
     using namespace TD;
 
     DLLEXPORT void FillTOPPluginInfo(TOP_PluginInfo* info) {
-        #if TD_VERSION != 2025
-            info->apiVersion = TOPCPlusPlusAPIVersion;
-        #elif TD_VERSION == 2025
-            (void)info->setAPIVersion(TOPCPlusPlusAPIVersion);
-        #endif
+        (void)info->setAPIVersion(TOPCPlusPlusAPIVersion);
         info->executeMode = TOP_ExecuteMode::CPUMem;
         info->customOPInfo.opType->setString("Freenect");
         info->customOPInfo.opLabel->setString("Freenect");
@@ -52,9 +48,7 @@ extern "C" {
         info->customOPInfo.maxInputs = 0;
         info->customOPInfo.majorVersion = 1;
         info->customOPInfo.minorVersion = 2;
-        #if TD_VERSION == 2025
-            info->customOPInfo.opHelpURL->setString("https://github.com/stosumarte/FreenectTD");
-        #endif
+        info->customOPInfo.opHelpURL->setString("https://github.com/stosumarte/FreenectTD");
         
     }
 
@@ -71,14 +65,10 @@ extern "C" {
 void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     using namespace TD;
 
-    // Separator line above the parameter and Alt+hover help text (TouchDesigner 2025 API only)
+    // Separator line above the parameter and Alt+hover help text
     auto layout = [](auto& param, const char* help, bool section) {
-#if TD_VERSION == 2025
         param.help = help;
         param.section = section;
-#else
-        (void)param; (void)help; (void)section;
-#endif
     };
 
     // Small helpers so every parameter is declared the same way

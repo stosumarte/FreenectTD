@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7D67448F52BCE8D255D96294 /* UpdateCheck.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */; };
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
 		813994A12E74673B0073667B /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F92E3CC608007447B2 /* Accelerate.framework */; };
 		813994A32E7468600073667B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994A22E7468600073667B /* CoreFoundation.framework */; };
@@ -18,9 +19,8 @@
 		813994B12E7468D80073667B /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994B02E7468D80073667B /* OpenCL.framework */; };
 		81E200842E7428F300CCB6AE /* ofxKinectExtras.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */; };
 		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
-		AA296371F01EB92E7494C0C0 /* USBScan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6296D98E00C4EA4410C92459 /* USBScan.cpp */; };
-		7D67448F52BCE8D255D96294 /* UpdateCheck.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */; };
 		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
+		AA296371F01EB92E7494C0C0 /* USBScan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6296D98E00C4EA4410C92459 /* USBScan.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +37,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3D1EE710F3B9F6B26C0D7682 /* USBScan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = USBScan.h; sourceTree = "<group>"; };
+		6296D98E00C4EA4410C92459 /* USBScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = USBScan.cpp; sourceTree = "<group>"; };
 		811030EB2E36883D001975DE /* FreenectTOP.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTOP.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8120BA1B2E61E88100126067 /* logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logger.h; sourceTree = "<group>"; };
 		813994A22E7468600073667B /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -58,12 +60,10 @@
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
 		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
-		6296D98E00C4EA4410C92459 /* USBScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = USBScan.cpp; sourceTree = "<group>"; };
-		3D1EE710F3B9F6B26C0D7682 /* USBScan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = USBScan.h; sourceTree = "<group>"; };
-		FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateCheck.cpp; sourceTree = "<group>"; };
-		DE6E7013C314C645F18E34D3 /* UpdateCheck.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UpdateCheck.h; sourceTree = "<group>"; };
 		81FD1DEB2E36519700900396 /* FreenectV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV2.h; sourceTree = "<group>"; };
 		81FF21B52E99655C00DF4A33 /* notes.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = notes.txt; sourceTree = "<group>"; };
+		DE6E7013C314C645F18E34D3 /* UpdateCheck.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UpdateCheck.h; sourceTree = "<group>"; };
+		FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateCheck.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -131,8 +131,8 @@
 			children = (
 				81FF21B52E99655C00DF4A33 /* notes.txt */,
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
-				81C0FFEE2E9A000100C0FFEE /* FreenectCommon.h */,
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
+				81C0FFEE2E9A000100C0FFEE /* FreenectCommon.h */,
 				81FD1DEA2E36517700900396 /* FreenectV1.h */,
 				81FD1DE52E3630A700900396 /* FreenectV1.cpp */,
 				81FD1DEB2E36519700900396 /* FreenectV2.h */,
@@ -394,7 +394,6 @@
 					"FNTD_DEBUG=2",
 					"FNTD_PROFILE=0",
 					"$(inherited)",
-					"TD_VERSION=2025",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
@@ -439,7 +438,6 @@
 					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
 					"FNTD_PROFILE=0",
 					"FNTD_DEBUG=0",
-					"TD_VERSION=2025",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
