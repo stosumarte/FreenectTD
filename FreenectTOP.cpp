@@ -371,10 +371,10 @@ FreenectTOP::FreenectTOP(const TD::OP_NodeInfo* info, TD::TOP_Context* context)
     startUSBScan();
 }
 
-// A Kinect in the shared USB scan, so a missing or unplugged one shows up right away without opening it
+// A Kinect present in the shared USB scan, so a missing or unplugged one shows up right away without opening it
 static std::optional<KinectUSB> findKinect(const std::string& id) {
     for (const KinectUSB& kinect : usbKinects()) {
-        if (kinect.id() == id) return kinect;
+        if (kinect.id() == id && kinect.present) return kinect;
     }
     return std::nullopt;
 }
@@ -584,6 +584,9 @@ bool FreenectTOP::fn2_initDevice(const std::string& id) {
     auto fail = [this](const std::string& error) {
         initError = error;
         LOG("[FreenectTOP] fn2_initDevice: (end) " + error);
+        if (fn2_device) {
+            expectReboot(fn2_openedId); // closing it reboots it
+        }
         delete fn2_device;
         fn2_device = nullptr;
         fn2_pipeline = nullptr;
@@ -608,6 +611,7 @@ bool FreenectTOP::fn2_initDevice(const std::string& id) {
         return fail("Failed to open Kinect v2 device, is it on a USB 3 port?");
     }
     fn2_device = new MyFreenect2Device(dev, fn2_rgbReady, fn2_depthReady, fn2_irReady);
+    fn2_openedId = id;
     if (!fn2_device->start()) {
         return fail("Failed to start Kinect v2 device");
     }
@@ -641,6 +645,7 @@ void FreenectTOP::fn2_cleanupDevice() {
         fn2_initSuccess = false; // an init job queued before this one may have set it back to true
         std::lock_guard<std::mutex> lock(freenectMutex);
         if (fn2_device) {
+            expectReboot(fn2_openedId); // closing it reboots it
             delete fn2_device;
             fn2_device = nullptr;
             LOG("[FreenectTOP] fn2_device deleted");
@@ -954,14 +959,16 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     bool isActive = (inputs && inputs->getParInt("Active") != 0);
 
     // The Kinect this node uses, which also sets the version: the picked one, or for Auto the one it's
-    // already on while that stays plugged in, else the first one plugged in. Empty = none.
+    // already on while that stays listed (also while a v2 reboots after a close), else the first one
+    // plugged in. Empty = none.
     // TODO: Auto should skip Kinects other nodes use, once ownership is per device
     const char* deviceCStr = inputs->getParString("Device");
     deviceId = deviceCStr ? deviceCStr : "Auto";
     if (deviceId == "Auto") {
         const std::vector<KinectUSB> kinects = usbKinects();
         if (std::none_of(kinects.begin(), kinects.end(), [&](const KinectUSB& k) { return k.id() == autoDevice; })) {
-            autoDevice = kinects.empty() ? "" : kinects.front().id();
+            const auto first = std::find_if(kinects.begin(), kinects.end(), [](const KinectUSB& k) { return k.present; });
+            autoDevice = first != kinects.end() ? first->id() : "";
         }
         deviceId = autoDevice;
     }

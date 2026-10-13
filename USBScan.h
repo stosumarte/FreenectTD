@@ -20,6 +20,7 @@ struct KinectUSB {
     std::string model; // "1414", "1473" or "K4W" for v1; "K4W" or "One" for v2
     int speed = 0;    // libusb_speed; libfreenect2 crashes the process opening a Kinect v2 below LIBUSB_SPEED_SUPER
     std::string serial; // read once when the Kinect first shows up; empty if it couldn't be read or isn't unique
+    bool present = true; // false while it reboots after a close and is gone from USB (see expectReboot)
     bool operator==(const KinectUSB&) const = default;
     // Device menu value: version, model and serial, or bus+port without one, e.g. "v2-One:504521442542",
     // "v1-1473:usb0-1.1.2". The model is in it so the label of an unplugged picked Kinect stays the same.
@@ -34,6 +35,10 @@ struct KinectUSB {
 void startUSBScan();
 void stopUSBScan();
 std::vector<KinectUSB> usbKinects(); // result of the last successful scan, sorted by id (version, then serial)
+
+// Call right before libfreenect2 closes a Kinect v2: on macOS that reboots it and it's gone from USB for
+// a few seconds. Until it's back (or 10 s pass) it stays listed, not present, instead of looking unplugged.
+void expectReboot(const std::string& id);
 
 // Position of a Kinect v1 camera in usb's device list, counted like libfreenect's open by index; -1 if
 // it isn't there. Pass the context libfreenect runs on, so both count in the same list.

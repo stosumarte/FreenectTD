@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <map>
 #include <mutex>
 #include <thread>
 
@@ -21,8 +22,9 @@ struct Scanner {
     int                    users = 0;
     std::thread            thread;
     std::atomic<bool>      running{false};
-    std::mutex             listMutex;  // guards kinects
+    std::mutex             listMutex;  // guards kinects and rebooting
     std::vector<KinectUSB> kinects;
+    std::map<std::string, std::chrono::steady_clock::time_point> rebooting; // id -> when to stop waiting
 };
 // Never freed: if TouchDesigner quits without destroying a node, a static std::thread destroyed
 // while still running would abort the process on the way out
@@ -94,8 +96,9 @@ libusb_device* findAudio(libusb_device** list, ssize_t count, libusb_device* cam
     return nullptr;
 }
 
-// Fills kinects from the USB device list; false if libusb failed. A Kinect already in known
-// (same bus, port and version) keeps its serial; only new ones are opened to read it.
+// Fills kinects from the USB device list; false if libusb failed. A Kinect present in known
+// (same bus, port and version) keeps its serial; only new ones are opened to read it. One that just
+// left isn't trusted: another Kinect may have been plugged into its socket.
 bool scan(std::vector<KinectUSB>& kinects, const std::vector<KinectUSB>& known) {
     libusb_context* usb = nullptr;
     if (libusb_init(&usb) != 0) {
@@ -119,7 +122,7 @@ bool scan(std::vector<KinectUSB>& kinects, const std::vector<KinectUSB>& known) 
         kinect.model = modelName(desc);
         kinect.speed = libusb_get_device_speed(list[i]);
         const auto same = std::find_if(known.begin(), known.end(), [&](const KinectUSB& k) {
-            return k.bus == kinect.bus && k.port == kinect.port && k.v2 == kinect.v2;
+            return k.present && k.bus == kinect.bus && k.port == kinect.port && k.v2 == kinect.v2;
         });
         if (same != known.end()) {
             kinect.serial = same->serial;
@@ -145,17 +148,35 @@ bool scan(std::vector<KinectUSB>& kinects, const std::vector<KinectUSB>& known) 
 
 // Keeps the last list if libusb fails
 void scanOnce() {
+    const std::vector<KinectUSB> known = usbKinects(); // only this thread (or startUSBScan before it) writes the list
     std::vector<KinectUSB> kinects;
-    if (!scan(kinects, usbKinects())) { // only this thread (or startUSBScan before it) writes the list
+    if (!scan(kinects, known)) {
         return;
     }
-    std::sort(kinects.begin(), kinects.end(), [](const KinectUSB& a, const KinectUSB& b) { return a.id() < b.id(); });
+    const auto now = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(scanner.listMutex);
+    for (KinectUSB kinect : known) {
+        if (std::any_of(kinects.begin(), kinects.end(), [&](const KinectUSB& k) { return k.id() == kinect.id(); })) {
+            if (!kinect.present) {
+                scanner.rebooting.erase(kinect.id()); // back from its reboot
+            }
+            continue;
+        }
+        // Gone: a Kinect expected to reboot stays listed, anything else was unplugged
+        const auto reboot = scanner.rebooting.find(kinect.id());
+        if (reboot != scanner.rebooting.end() && now < reboot->second) {
+            kinect.present = false;
+            kinects.push_back(kinect);
+        }
+    }
+    std::erase_if(scanner.rebooting, [&](const auto& reboot) { return now >= reboot.second; });
+    std::sort(kinects.begin(), kinects.end(), [](const KinectUSB& a, const KinectUSB& b) { return a.id() < b.id(); });
     if (kinects != scanner.kinects) {
         LOG("[USBScan] " + std::to_string(kinects.size()) + " Kinect(s)");
         for ([[maybe_unused]] const KinectUSB& k : kinects) { // LOG is empty in Release
             LOG(std::string("[USBScan]   ") + k.id() + " bus " + std::to_string(k.bus)
-                + " port " + k.port + " speed " + std::to_string(k.speed) + " serial " + k.serial);
+                + " port " + k.port + " speed " + std::to_string(k.speed) + " serial " + k.serial
+                + (k.present ? "" : " (rebooting)"));
         }
     }
     scanner.kinects = std::move(kinects);
@@ -192,6 +213,11 @@ void stopUSBScan() {
 std::vector<KinectUSB> usbKinects() {
     std::lock_guard<std::mutex> lock(scanner.listMutex);
     return scanner.kinects;
+}
+
+void expectReboot(const std::string& id) {
+    std::lock_guard<std::mutex> lock(scanner.listMutex);
+    scanner.rebooting[id] = std::chrono::steady_clock::now() + std::chrono::seconds(10);
 }
 
 int kinect1Index(libusb_context* usb, const KinectUSB& kinect) {

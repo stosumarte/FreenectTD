@@ -67,6 +67,7 @@ private:
     libfreenect2::Freenect2*                fn2_ctx = nullptr;
     MyFreenect2Device*                      fn2_device = nullptr;
     libfreenect2::PacketPipeline*           fn2_pipeline = nullptr;
+    std::string                             fn2_openedId; // Kinect fn2_device is open on; device thread only
     std::atomic<bool>                       fn2_rgbReady{false};
     std::atomic<bool>                       fn2_depthReady{false};
     std::atomic<bool>                       fn2_irReady{false};
