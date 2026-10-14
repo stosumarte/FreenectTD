@@ -6,7 +6,7 @@
 
 FreenectTD is an open-source TouchDesigner plugin aimed at macOS users who don't have a way to use the official Kinect OPs in TouchDesigner.
 
-It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras.
+It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfreenect2](https://github.com/OpenKinect/libfreenect2) to implement support for Kinect cameras. Kinect V2 depth is decoded on the GPU with Metal.
 
 **[Website](https://marte.ee/freenecttd/) · [Docs](https://marte.ee/freenecttd/docs) · [Download](https://marte.ee/freenecttd/download) · [Changes](https://marte.ee/freenecttd/changes)**
 
@@ -23,6 +23,7 @@ It leverages [libfreenect](https://github.com/OpenKinect/libfreenect) and [libfr
 | ---------------------------------------------------- | --------- | --------- |
 | RGB streaming                                        | ✅         | ✅         |
 | Depth map streaming                                  | ✅         | ✅         |
+| 30 fps depth (V2 decoded on the GPU with Metal)      | ✅         | ✅         |
 | Point cloud map streaming                            | ❌         | ✅         |
 | IR streaming                                         | ✅*        | ✅         |
 | Tilt control                                         | ✅         | ❌         |
@@ -53,7 +54,11 @@ Thanks to everyone who contributed:
 - [@gcarizza](https://github.com/gcarizza): Kinect V1 depth stream fix ([#21](https://github.com/stosumarte/FreenectTD/pull/21))
 - [@fedevoxlive](https://github.com/Fedevoxlive): Kinect V1 IR streaming ([#22](https://github.com/stosumarte/FreenectTD/pull/22))
 
-A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible.
+A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible, and to Harold Martin ([@hbmartin](https://github.com/hbmartin)), whose Metal depth pipeline from [libfreenect2-metal](https://github.com/hbmartin/libfreenect2-metal) decodes Kinect V2 depth on the GPU.
+
+## Building
+
+Open `FreenectTD.xcodeproj` and build the `FreenectTOP` target. The libraries it links are prebuilt in `include/`. To rebuild them from the submodules in `external/` (libusb, libfreenect and [our libfreenect2 fork](https://github.com/stosumarte/libfreenect2/tree/metal)), run `git submodule update --init` and `utils/build_deps.sh`; it needs full Xcode and CMake.
 
 ## Licensing
 
@@ -65,7 +70,7 @@ This project also includes the following third-party libraries, each under their
 - **libfreenect** – Apache 2.0 License  
   [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect/master/APACHE20)
 
-- **libfreenect2** – Apache 2.0 License  
+- **libfreenect2** ([our fork](https://github.com/stosumarte/libfreenect2/tree/metal), with Harold Martin's Metal depth pipeline) – Apache 2.0 License  
   [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect2/master/APACHE20)
 
 - **libusb** – LGPL 2.1 License  
