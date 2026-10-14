@@ -54,10 +54,10 @@ cmake -S "$EXT/libfreenect" -B "$BUILD/libfreenect" "${COMMON[@]}" \
     -DBUILD_FAKENECT=OFF -DBUILD_C_SYNC=OFF -DBUILD_CPP=OFF -DBUILD_REDIST_PACKAGE=ON
 cmake --build "$BUILD/libfreenect" --target freenectstatic -j "$JOBS"
 
-# libfreenect2: Metal, OpenCL and CPU depth, VideoToolbox color (so no TurboJPEG), TinyThread threading
+# libfreenect2: Metal and CPU depth, VideoToolbox color (so no TurboJPEG), TinyThread threading
 # (FreenectV2.cpp relies on its waitForNewFrame behaviour)
 PKG_CONFIG_LIBDIR="$BUILD/pkgconfig" cmake -S "$EXT/libfreenect2" -B "$BUILD/libfreenect2" "${COMMON[@]}" \
-    -DENABLE_METAL=ON -DENABLE_OPENCL=ON -DENABLE_OPENGL=OFF -DENABLE_CUDA=OFF -DENABLE_VAAPI=OFF \
+    -DENABLE_METAL=ON -DENABLE_OPENCL=OFF -DENABLE_OPENGL=OFF -DENABLE_CUDA=OFF -DENABLE_VAAPI=OFF \
     -DENABLE_TEGRAJPEG=OFF -DENABLE_CXX11=OFF -DBUILD_OPENNI2_DRIVER=OFF \
     -DCMAKE_DISABLE_FIND_PACKAGE_TurboJPEG=ON \
     -DCMAKE_INSTALL_PREFIX="$BUILD/libfreenect2/install"
