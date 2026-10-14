@@ -1,0 +1,10 @@
+[submodule "external/libfreenect2"]
+	path = external/libfreenect2
+	url = https://github.com/stosumarte/libfreenect2.git
+	branch = metal
+[submodule "external/libfreenect"]
+	path = external/libfreenect
+	url = https://github.com/OpenKinect/libfreenect.git
+[submodule "external/libusb"]
+	path = external/libusb
+	url = https://github.com/libusb/libusb.git

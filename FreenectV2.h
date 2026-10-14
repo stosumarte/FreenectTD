@@ -45,7 +45,7 @@ struct V2Image {
     TD::OP_PixelFormat format = TD::OP_PixelFormat::RGBA8Fixed;
 };
 
-class MyFreenect2Device {
+class MyFreenect2Device : public libfreenect2::FrameListener {
 public:
     static constexpr int RGB_WIDTH = 1920;
     static constexpr int RGB_HEIGHT = 1080;
@@ -74,6 +74,12 @@ public:
     // Moves the images finished since the last call into `out`, by output index
     void takeImages(Images& out);
     uint64_t getDepthSeq();
+    // Color frames libfreenect2 delivered (for rgb_fps): below 30 fps the color camera holds depth back too,
+    // since each depth frame is paired with a color frame. It drops to 15 fps in low light.
+    uint64_t getColorFrames() const { return colorFrames.load(); }
+    // Worker time per frame set in ms, smoothed (for process_ms)
+    float getProcessMs() const { return processMs.load(); }
+    bool onNewFrame(libfreenect2::Frame::Type type, libfreenect2::Frame* frame) override;
     
     libfreenect2::Freenect2Device* getDevice() { return device; }
     
@@ -81,6 +87,8 @@ private:
     libfreenect2::Freenect2Device* device;
     TD::TOP_Context* context; // makes the output buffers, from the worker thread
     libfreenect2::SyncMultiFrameListener* listener;
+    std::atomic<uint64_t> colorFrames{0};
+    std::atomic<float> processMs{0.0f};
 
     // Guarded by mutex: shared with the cook thread
     std::mutex mutex;

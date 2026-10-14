@@ -301,9 +301,10 @@ std::string FreenectTOP::deviceStatus() const {
     return errorString.empty() ? "initializing" : "error";
 }
 
-// Info CHOP channels, numbers only: streaming and connected (0/1), version (0 = none, 1, 2), depth_fps
+// Info CHOP channels, numbers only: streaming and connected (0/1), version (0 = none, 1, 2), depth_fps,
+// and for a Kinect v2 (0 on v1) rgb_fps and process_ms (worker time per frame set)
 int32_t FreenectTOP::getNumInfoCHOPChans(void*) {
-    return 4;
+    return 6;
 }
 
 void FreenectTOP::getInfoCHOPChan(int32_t index, TD::OP_InfoCHOPChan* chan, void*) {
@@ -327,6 +328,14 @@ void FreenectTOP::getInfoCHOPChan(int32_t index, TD::OP_InfoCHOPChan* chan, void
         case 3:
             chan->name->setString("depth_fps");
             chan->value = depthFps;
+            break;
+        case 4:
+            chan->name->setString("rgb_fps");
+            chan->value = rgbFps;
+            break;
+        case 5:
+            chan->name->setString("process_ms");
+            chan->value = processMs;
             break;
     }
 }
@@ -717,6 +726,8 @@ void FreenectTOP::cleanupDevice() {
     lastDepthSeq = 0; // a new device starts counting depth frames from 0 again
     depthFrames = 0;
     depthFps = 0.0f;
+    rgbFps = 0.0f;
+    processMs = 0.0f;
     fpsWindowStart = {};
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] cleanupDevice: start");
@@ -795,11 +806,17 @@ bool FreenectTOP::deviceReady(kinectVersionEnum version) {
 
     // Info CHOP depth_fps, over windows of about a second
     depthFrames += newFrames;
+    const uint64_t colorFrames = (version == kinectVersionEnum::V2) ? fn2_device->getColorFrames() : 0;
     if (fpsWindowStart == std::chrono::steady_clock::time_point{}) {
         fpsWindowStart = now;
+        colorFramesAtWindow = colorFrames;
     } else if (now - fpsWindowStart >= std::chrono::seconds(1)) {
-        depthFps = depthFrames / std::chrono::duration<float>(now - fpsWindowStart).count();
+        const float seconds = std::chrono::duration<float>(now - fpsWindowStart).count();
+        depthFps = depthFrames / seconds;
+        rgbFps = (colorFrames - colorFramesAtWindow) / seconds;
+        processMs = (version == kinectVersionEnum::V2) ? fn2_device->getProcessMs() : 0.0f;
         depthFrames = 0;
+        colorFramesAtWindow = colorFrames;
         fpsWindowStart = now;
     }
 

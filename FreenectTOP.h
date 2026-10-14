@@ -133,6 +133,9 @@ private:
     int depthFrames = 0;                                   // depth frames since fpsWindowStart, for depthFps
     float depthFps = 0.0f;                                 // Info CHOP depth_fps, updated about once a second
     std::chrono::steady_clock::time_point fpsWindowStart;
+    uint64_t colorFramesAtWindow = 0;                      // v2 color frame count at fpsWindowStart
+    float rgbFps = 0.0f;                                   // Info CHOP rgb_fps (v2), updated with depthFps
+    float processMs = 0.0f;                                // Info CHOP process_ms (v2), updated with depthFps
     
     // Kinect v2 RGB output size, set each cook (see execute): depends on the license
     int fn2_colorW = 0, fn2_colorH = 0;

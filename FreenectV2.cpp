@@ -31,8 +31,8 @@ MyFreenect2Device::MyFreenect2Device(libfreenect2::Freenect2Device* dev, TD::TOP
         libfreenect2::Frame::Ir |
         libfreenect2::Frame::Depth
     );
-    device->setColorFrameListener(listener);
-    device->setIrAndDepthFrameListener(listener);
+    device->setColorFrameListener(this);
+    device->setIrAndDepthFrameListener(this);
 }
 
 // MyFreenect2Device class destructor
@@ -95,6 +95,14 @@ uint64_t MyFreenect2Device::getDepthSeq() {
     return depthSeq;
 }
 
+// libfreenect2 hands every frame here first (on its own threads), then on to the listener that pairs them
+bool MyFreenect2Device::onNewFrame(libfreenect2::Frame::Type type, libfreenect2::Frame* frame) {
+    if (type == libfreenect2::Frame::Color) {
+        ++colorFrames;
+    }
+    return listener->onNewFrame(type, frame);
+}
+
 void MyFreenect2Device::setSettings(const V2Settings& newSettings) {
     std::lock_guard<std::mutex> lock(mutex);
     settings = newSettings;
@@ -123,6 +131,7 @@ void MyFreenect2Device::processFrames() {
     }
     libfreenect2::FrameMap frames;
     listener->waitForNewFrame(frames);
+    const auto start = std::chrono::steady_clock::now();
     const libfreenect2::Frame* rgb = frames[libfreenect2::Frame::Color];
     libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
     const libfreenect2::Frame* ir = frames[libfreenect2::Frame::Ir];
@@ -196,6 +205,8 @@ void MyFreenect2Device::processFrames() {
     if (depthOK) {
         ++depthSeq;
     }
+    const float ms = std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count();
+    processMs = 0.9f * processMs.load() + 0.1f * ms;
 }
 
 void MyFreenect2Device::runWorker() {
