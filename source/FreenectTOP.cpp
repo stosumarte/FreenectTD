@@ -196,6 +196,12 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
     // Sentinels for invalid data. Alpha (point cloud) / 0-masking is still the authoritative validity
     // signal; these only decide what value lands in the dead pixels for pipelines that cannot read alpha.
     {
+        const char* names[]  = {"Zero", "Far", "Custom"};
+        const char* labels[] = {"Zero", "Far (end of depth range)", "Custom"};
+        menu("Unknowndepthmode", "Unknown Depth", "Zero", 3, names, labels, page0,
+             "Written to depth pixels with no reading or outside the depth range.");
+    }
+    {
         OP_NumericParameter unknownDepthParam;
         unknownDepthParam.name = "Unknowndepth";
         unknownDepthParam.label = "Unknown Depth Value";
@@ -203,7 +209,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         unknownDepthParam.defaultValues[0] = 0.0;
         unknownDepthParam.minSliders[0] = -1.0;
         unknownDepthParam.maxSliders[0] = 10000.0;
-        layout(unknownDepthParam, "Written to depth pixels with no reading or outside the depth range.", false);
+        layout(unknownDepthParam, "Custom value, in Depth Output units (clamped to 0-1 in Normalized).", false);
         manager->appendFloat(unknownDepthParam);
     }
 
@@ -1031,6 +1037,20 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     if (!manualDepthThresh && version != kinectVersionEnum::None) {
         depthThreshMin = (version == kinectVersionEnum::V1) ? 400.0f : 100.0f;
         depthThreshMax = 4500.0f;
+    }
+
+    // Unknown Depth: Zero, Far (end of the depth range, in output units) or the Custom value
+    {
+        const char* c = inputs->getParString("Unknowndepthmode");
+        const std::string mode = c ? c : "";
+        inputs->enablePar("Unknowndepth", mode == "Custom");
+        if (mode == "Far") {
+            unknownDepth = (depthOutput == depthOutputEnum::Normalized) ? 1.0f
+                         : (depthOutput == depthOutputEnum::Meters)     ? depthThreshMax * 0.001f
+                                                                        : depthThreshMax;
+        } else if (mode != "Custom") {
+            unknownDepth = 0.0f;
+        }
     }
 
     // Check if the plugin is active
