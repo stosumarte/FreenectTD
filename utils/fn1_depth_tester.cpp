@@ -16,6 +16,8 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <map>
+#include <unistd.h>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -40,6 +42,7 @@ struct Options {
     float thresholdMax = 4500.0f;
     bool withScan = false;      // run the plugin's USB scan thread alongside, as in TouchDesigner
     bool ownUsbContext = false; // give libfreenect a libusb context of our own, as the plugin does
+    bool measurePolls = false;  // only time libfreenect's "is the reply ready?" request, then exit
 };
 
 struct FrameStats {
@@ -116,6 +119,7 @@ void printUsage(const char* argv0) {
         << "  --threshold-max <mm>         Max depth threshold for plugin-path mode (default: 4500)\n"
         << "  --with-scan                  Run the plugin's USB scan alongside, as in TouchDesigner\n"
         << "  --own-usb-context            Give libfreenect our own libusb context, as the plugin does\n"
+        << "  --measure-polls              Time libfreenect's reply poll on the first Kinect v1 camera for 2 s\n"
         << "  --help                       Show this help\n";
 }
 
@@ -193,6 +197,11 @@ bool parseArgs(int argc, char** argv, Options& options) {
             continue;
         }
 
+        if (arg == "--measure-polls") {
+            options.measurePolls = true;
+            continue;
+        }
+
         if (arg == "--own-usb-context") {
             options.ownUsbContext = true;
             continue;
@@ -242,10 +251,66 @@ freenect_depth_format toFreenectDepthFormat(depthFormatEnum format) {
 
 } // namespace
 
+// How fast this Mac completes libfreenect's reply poll: send_cmd (flags.c) asks the camera for its reply with
+// this control request in a loop with usleep(1), so this rate is how hard it hits the camera while waiting.
+int measurePolls() {
+    libusb_context* usb = nullptr;
+    if (libusb_init(&usb) != 0) {
+        std::cerr << "libusb_init failed\n";
+        return 2;
+    }
+    libusb_device** list = nullptr;
+    const ssize_t count = libusb_get_device_list(usb, &list);
+    libusb_device_handle* camera = nullptr;
+    for (ssize_t i = 0; i < count && !camera; ++i) {
+        libusb_device_descriptor desc;
+        if (libusb_get_device_descriptor(list[i], &desc) == 0 && desc.idVendor == 0x045E
+            && (desc.idProduct == 0x02AE || desc.idProduct == 0x02BF)) {
+            if (libusb_open(list[i], &camera) != 0) {
+                camera = nullptr;
+            }
+        }
+    }
+    if (count >= 0) {
+        libusb_free_device_list(list, 1);
+    }
+    if (!camera) {
+        std::cerr << "No Kinect v1 camera found or it couldn't be opened\n";
+        libusb_exit(usb);
+        return 3;
+    }
+
+    unsigned char reply[0x200];
+    std::map<int, int> results; // control transfer result -> how often
+    int polls = 0;
+    const auto start = std::chrono::steady_clock::now();
+    const auto end = start + std::chrono::seconds(2);
+    while (std::chrono::steady_clock::now() < end) {
+        ++results[libusb_control_transfer(camera, 0xC0, 0, 0, 0, reply, sizeof(reply), 1000)];
+        ++polls;
+        usleep(1);
+    }
+    const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+    libusb_close(camera);
+    libusb_exit(usb);
+
+    std::cout << "polls=" << polls << " in " << std::fixed << std::setprecision(2) << seconds << " s = "
+              << std::setprecision(0) << polls / seconds << " per second ("
+              << std::setprecision(1) << 1000000.0 * seconds / polls << " us each)\n";
+    for (const auto& [result, n] : results) {
+        std::cout << "  result " << result << (result < 0 ? std::string(" ") + libusb_error_name(result) : "")
+                  << ": " << n << "\n";
+    }
+    return 0;
+}
+
 int main(int argc, char** argv) {
     Options options;
     if (!parseArgs(argc, argv, options)) {
         return 1;
+    }
+    if (options.measurePolls) {
+        return measurePolls();
     }
 
     std::cout << "Freenect V1 depth tester\n";
