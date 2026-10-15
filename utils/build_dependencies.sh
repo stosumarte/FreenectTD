@@ -3,7 +3,7 @@
 # Builds the libraries FreenectTD links statically from the submodules in external/, then copies them
 # and their headers into include/:
 #   libusb        USB access for both libraries below
-#   libfreenect   Kinect v1
+#   libfreenect   Kinect v1, our fork (stosumarte/libfreenect, branch freenecttd): 0.7.5 plus a fix for macOS 26
 #   libfreenect2  Kinect v2, our fork (stosumarte/libfreenect2, branch metal) with the Metal depth pipeline
 # All arm64, macOS 12.0+. Needs full Xcode (for the Metal compiler) and CMake.
 #
@@ -18,7 +18,7 @@ STAGE="$BUILD/stage" # libusb as the other two find it
 MACOS=12.0
 JOBS="$(sysctl -n hw.ncpu)"
 LIBUSB_VERSION="$(git -C "$EXT/libusb" describe --tags --exact-match | sed 's/^v//')"
-LIBFREENECT_VERSION="$(git -C "$EXT/libfreenect" describe --tags --exact-match | sed 's/^v//')"
+LIBFREENECT_VERSION="$(git -C "$EXT/libfreenect" describe --tags --abbrev=0 | sed 's/^v//')" # our fork: the tag it builds on
 
 rm -rf "$BUILD"
 mkdir -p "$STAGE/lib" "$STAGE/include/libusb-1.0" "$BUILD/pkgconfig"

@@ -58,7 +58,7 @@ A very big thank you goes to the OpenKinect project, who developed the libraries
 
 ## Building
 
-Open `FreenectTD.xcodeproj` and build the `FreenectTOP` target. The libraries it links are prebuilt in `include/`. To rebuild them from the submodules in `external/` (libusb, libfreenect and [our libfreenect2 fork](https://github.com/stosumarte/libfreenect2/tree/metal)), run `git submodule update --init` and `utils/build_dependencies.sh`; it needs full Xcode and CMake.
+Open `FreenectTD.xcodeproj` and build the `FreenectTOP` target. The libraries it links are prebuilt in `include/`. To rebuild them from the submodules in `external/` (libusb and our forks of [libfreenect](https://github.com/stosumarte/libfreenect/tree/freenecttd) and [libfreenect2](https://github.com/stosumarte/libfreenect2/tree/metal)), run `git submodule update --init` and `utils/build_dependencies.sh`; it needs full Xcode and CMake.
 
 ## Licensing
 
@@ -67,7 +67,7 @@ This means you are free to use, modify, and distribute this plugin, including in
 
 This project also includes the following third-party libraries, each under their respective licenses:
 
-- **libfreenect** – Apache 2.0 License  
+- **libfreenect** ([our fork](https://github.com/stosumarte/libfreenect/tree/freenecttd), with a fix for macOS 26) – Apache 2.0 License  
   [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect/master/APACHE20)
 
 - **libfreenect2** ([our fork](https://github.com/stosumarte/libfreenect2/tree/metal), with Harold Martin's Metal depth pipeline) – Apache 2.0 License  
