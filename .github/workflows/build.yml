@@ -2,18 +2,22 @@
 # shows up right away, and attaches the installer and the zipped plugin to the run for testing.
 # It builds against the libraries committed in include/; rebuilding those (utils/build_dependencies.sh)
 # isn't done here. The plugin is signed ad hoc, like a local build.
+#
+# On the release branch it also puts the build on the draft GitHub release for its version
+# (MARKETING_VERSION, e.g. v2.0.0), creating the draft if there isn't one, and points the draft at the
+# built commit so publishing tags exactly that. It never publishes: that stays a manual click on GitHub.
 name: Build
 
 on:
   push:
   pull_request:
-
-permissions:
-  contents: read
+  workflow_dispatch: # "Run workflow" button; GitHub only shows it once this file is on main
 
 jobs:
   build:
     runs-on: macos-15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
 
@@ -26,3 +30,56 @@ jobs:
           name: FreenectTD-${{ github.sha }}
           path: build/Release/FreenectTOP_v*/
           if-no-files-found: error
+
+  draft-release:
+    needs: build
+    # TODO: drop feature/metal once it's merged into main
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/metal'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: draft-release # one update at a time
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: FreenectTD-${{ github.sha }}
+          path: dist
+
+      - name: Put the build on the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          dir=$(ls -d dist/FreenectTOP_v*)
+          tag="v${dir##*/FreenectTOP_v}"
+          files=(FreenectTOP_Installer.pkg FreenectTOP.zip) # the website's Download page links to these names
+
+          # Look up by name too: editing a draft can reset its tag to untagged-...
+          release=$(gh api "repos/$REPO/releases" --paginate \
+            --jq ".[] | select(.tag_name == \"$tag\" or .name == \"FreenectTD $tag\") | {id, draft}" | head -1)
+          if [ -z "$release" ]; then
+            id=$(gh api "repos/$REPO/releases" -f tag_name="$tag" -f target_commitish="$SHA" \
+              -f name="FreenectTD $tag" -F draft=true -f body="Changelog to be written." --jq .id)
+            echo "Created the draft release FreenectTD $tag"
+          elif [ "$(jq -r .draft <<< "$release")" != "true" ]; then
+            echo "::notice::$tag is already published; bump MARKETING_VERSION for the next release"
+            exit 0
+          else
+            id=$(jq -r .id <<< "$release")
+            # Setting tag_name in the same edit keeps the tag from being reset
+            gh api -X PATCH "repos/$REPO/releases/$id" -f tag_name="$tag" -f target_commitish="$SHA" > /dev/null
+          fi
+
+          for f in "${files[@]}"; do
+            for old in $(gh api "repos/$REPO/releases/$id/assets" --jq ".[] | select(.name == \"$f\") | .id"); do
+              gh api -X DELETE "repos/$REPO/releases/assets/$old"
+            done
+            gh api -X POST -H "Content-Type: application/octet-stream" --input "$dir/$f" \
+              "https://uploads.github.com/repos/$REPO/releases/$id/assets?name=$f" > /dev/null
+          done
+          echo "::notice::Draft FreenectTD $tag now has the build of ${SHA:0:7}"
