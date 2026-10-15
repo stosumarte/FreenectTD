@@ -576,6 +576,13 @@ bool FreenectTOP::fn1_initDevice(bool ir, const std::string& id) {
     // libfreenect runs on a libusb context of ours, so the camera's index is counted in the same
     // device list libfreenect opens it from
     int res = libusb_init(&fn1_usb);
+    if (res == 0 && FNTD_DEBUG) {
+        // libusb's warnings and errors for this context, sent to our log (its DEBUG level logs every transfer)
+        libusb_set_log_cb(fn1_usb, [](libusb_context*, enum libusb_log_level, const char* message) {
+            LOG(std::string("[libusb] ") + message);
+        }, LIBUSB_LOG_CB_CONTEXT);
+        libusb_set_option(fn1_usb, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_WARNING);
+    }
     if (res == 0) {
         res = freenect_init(&fn1_ctx, fn1_usb);
     }
@@ -583,10 +590,12 @@ bool FreenectTOP::fn1_initDevice(bool ir, const std::string& id) {
         return fail(libusb_error_name(res));
     }
     
-    // Set libfreenect log level based on FNTD_DEBUG macro
-    if (FNTD_DEBUG == 1) {
-        freenect_set_log_level(fn1_ctx, FREENECT_LOG_WARNING);
-    }
+    // libfreenect's log, sent to ours (a Debug build writes it to /tmp/FreenectTOP_*.log). DEBUG covers
+    // opening the camera, motor and audio parts, without the per-packet messages of the levels above it.
+    freenect_set_log_level(fn1_ctx, FNTD_DEBUG ? FREENECT_LOG_DEBUG : FREENECT_LOG_WARNING);
+    freenect_set_log_callback(fn1_ctx, [](freenect_context*, freenect_loglevel, const char* message) {
+        LOG(std::string("[libfreenect] ") + message);
+    });
     
     // Upload firmware to Kinect v1 if needed (models 1473 and Kinect for Windows)
     freenect_set_fw_address_nui
