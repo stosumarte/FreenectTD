@@ -9,7 +9,7 @@ SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
 mkdir -p "${BUILD_DIR}"
 
 xcrun clang++ \
-  -std=c++17 \
+  -std=c++20 \
   -O2 \
   -Wall \
   -Wextra \
@@ -23,6 +23,7 @@ xcrun clang++ \
   -I"${ROOT_DIR}/include/headers" \
   "${ROOT_DIR}/utils/fn1_depth_tester.cpp" \
   "${ROOT_DIR}/source/FreenectV1.cpp" \
+  "${ROOT_DIR}/source/USBScan.cpp" \
   "${ROOT_DIR}/source/ofxKinectExtras/ofxKinectExtras.cpp" \
   "${ROOT_DIR}/include/libs/libfreenect_0.7.5.a" \
   "${ROOT_DIR}/include/libs/libusb_1.0.30.a" \

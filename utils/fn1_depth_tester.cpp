@@ -2,6 +2,9 @@
 #include "FreenectV1.h"
 #include "logger.h"
 #include "ofxKinectExtras/ofxKinectExtras.h"
+#include "USBScan.h"
+
+#include <libusb.h>
 
 #include <libfreenect/libfreenect.h>
 
@@ -35,6 +38,8 @@ struct Options {
     int printEveryFrames = 15;
     float thresholdMin = 400.0f;
     float thresholdMax = 4500.0f;
+    bool withScan = false;      // run the plugin's USB scan thread alongside, as in TouchDesigner
+    bool ownUsbContext = false; // give libfreenect a libusb context of our own, as the plugin does
 };
 
 struct FrameStats {
@@ -109,6 +114,8 @@ void printUsage(const char* argv0) {
         << "  --print-every <frames>       Print stats every N received frames (default: 15)\n"
         << "  --threshold-min <mm>         Min depth threshold for plugin-path mode (default: 400)\n"
         << "  --threshold-max <mm>         Max depth threshold for plugin-path mode (default: 4500)\n"
+        << "  --with-scan                  Run the plugin's USB scan alongside, as in TouchDesigner\n"
+        << "  --own-usb-context            Give libfreenect our own libusb context, as the plugin does\n"
         << "  --help                       Show this help\n";
 }
 
@@ -181,6 +188,16 @@ bool parseArgs(int argc, char** argv, Options& options) {
             continue;
         }
 
+        if (arg == "--with-scan") {
+            options.withScan = true;
+            continue;
+        }
+
+        if (arg == "--own-usb-context") {
+            options.ownUsbContext = true;
+            continue;
+        }
+
         if (arg == "--print-every" && i + 1 < argc) {
             if (!parseIntArg(argv[++i], options.printEveryFrames) || options.printEveryFrames <= 0) {
                 std::cerr << "Invalid print interval\n";
@@ -236,7 +253,18 @@ int main(int argc, char** argv) {
               << " format=" << toString(options.format)
               << " duration=" << options.durationSeconds << "s"
               << " toggleEvery=" << options.toggleEverySeconds << "s"
-              << " thresholds=[" << options.thresholdMin << ", " << options.thresholdMax << "]\n";
+              << " thresholds=[" << options.thresholdMin << ", " << options.thresholdMax << "]"
+              << " withScan=" << options.withScan << " ownUsbContext=" << options.ownUsbContext << "\n";
+
+    // Left running until the process exits
+    if (options.withScan) {
+        startUSBScan();
+    }
+    libusb_context* usb = nullptr;
+    if (options.ownUsbContext && libusb_init(&usb) != 0) {
+        std::cerr << "libusb_init failed\n";
+        return 2;
+    }
 
     freenect_context* ctx = nullptr;
     std::unique_ptr<MyFreenectDevice> device;
@@ -246,12 +274,12 @@ int main(int argc, char** argv) {
     std::thread eventThread;
 
     try {
-        if (freenect_init(&ctx, nullptr) < 0) {
+        if (freenect_init(&ctx, usb) < 0) {
             std::cerr << "freenect_init failed\n";
             return 2;
         }
 
-        freenect_set_log_level(ctx, FREENECT_LOG_WARNING);
+        freenect_set_log_level(ctx, FREENECT_LOG_DEBUG);
         freenect_select_subdevices(ctx, static_cast<freenect_device_flags>(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA));
 
         freenect_set_fw_address_nui(ctx, ofxKinectExtras::getFWData1473(), ofxKinectExtras::getFWSize1473());
