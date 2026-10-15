@@ -374,8 +374,12 @@ void FreenectTOP::getInfoDATEntries(int32_t index, int32_t nEntries, TD::OP_Info
 
 // Middle-click popup on the node
 void FreenectTOP::getInfoPopupString(TD::OP_String* info, void*) {
-    const std::string text = "Kinect: " + (deviceId.empty() ? std::string("none") : deviceLabel(deviceId))
-                           + "\nStatus: " + deviceStatus();
+    std::string text = "Kinect: " + (deviceId.empty() ? std::string("none") : deviceLabel(deviceId))
+                     + "\nStatus: " + deviceStatus();
+    // Expected and not fixable from the node, so it's info rather than a warning
+    if (versionOf(deviceId) == kinectVersionEnum::V2 && nonCommercial && licenseKnown) {
+        text += "\nRGB: 1280x720 (Non-Commercial license)";
+    }
     info->setString(text.c_str());
 }
 
@@ -1064,9 +1068,9 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
                version == kinectVersionEnum::V1 && format && std::string(format) == "Rawundistorted") {
         // A single menu entry can't be disabled, so say what happens instead
         warningString = "Raw undistorted is Kinect v2 only; Kinect v1 uses Raw";
-    } else if (version == kinectVersionEnum::V2 && nonCommercial) {
-        warningString = licenseKnown ? "Non-Commercial license: Kinect v2 RGB is limited to 1280x720"
-                                     : "Couldn't detect the TouchDesigner license: Kinect v2 RGB is limited to 1280x720";
+    } else if (version == kinectVersionEnum::V2 && !licenseKnown) {
+        // A known Non-Commercial license is in the info popup; an unknown one may be capping a Commercial license
+        warningString = "Couldn't detect the TouchDesigner license: Kinect v2 RGB is limited to 1280x720";
     } else {
         warningString.clear();
     }
