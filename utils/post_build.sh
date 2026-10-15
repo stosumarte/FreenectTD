@@ -47,7 +47,7 @@ pkgbuild \
     --identifier "$IDENTIFIER" \
     --version "$VERSION" \
     --install-location "/" \
-    --scripts "$SRCROOT/pkg_scripts" \
+    --scripts "$SRCROOT/pkg_resources" \
     "$COMPONENT_PKG"
 
 # Create distribution.xml

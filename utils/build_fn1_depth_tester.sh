@@ -18,11 +18,12 @@ xcrun clang++ \
   -isysroot "${SDK_PATH}" \
   -DFNTD_DEBUG=1 \
   -DFNTD_PROFILE=0 \
-  -I"${ROOT_DIR}" \
+  -I"${ROOT_DIR}/source" \
+  -I"${ROOT_DIR}/source/ofxKinectExtras" \
   -I"${ROOT_DIR}/include/headers" \
   "${ROOT_DIR}/utils/fn1_depth_tester.cpp" \
-  "${ROOT_DIR}/FreenectV1.cpp" \
-  "${ROOT_DIR}/ofxKinectExtras/ofxKinectExtras.cpp" \
+  "${ROOT_DIR}/source/FreenectV1.cpp" \
+  "${ROOT_DIR}/source/ofxKinectExtras/ofxKinectExtras.cpp" \
   "${ROOT_DIR}/include/libs/libfreenect_0.7.5.a" \
   "${ROOT_DIR}/include/libs/libusb_1.0.30.a" \
   -framework Accelerate \

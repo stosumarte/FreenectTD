@@ -38,7 +38,7 @@ jobs:
             # new URLs in code or installer files
             grep -E $'^[^\t]*\\.(cpp|h|sh|html)\t\\+.*https?://' lines.txt || true
             # files that hold the links, the installer scripts and this workflow
-            grep -E $'^(\\.github/|pkg_resources/|pkg_scripts/|post_build\\.sh\t|UpdateCheck\\.(cpp|h)\t)' lines.txt || true
+            grep -E $'^(\\.github/|pkg_resources/|utils/post_build\\.sh\t|source/UpdateCheck\\.(cpp|h)\t)' lines.txt || true
             # files too big for GitHub to show a diff, except .toe/.tox files and images
             grep -E $'\t\\(no diff shown\\)$' lines.txt | grep -v -i -E $'\\.(toe|tox|png|jpe?g|gif|webp)\t' || true
           } | sort -u)

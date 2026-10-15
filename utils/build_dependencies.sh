@@ -7,7 +7,7 @@
 #   libfreenect2  Kinect v2, our fork (stosumarte/libfreenect2, branch metal) with the Metal depth pipeline
 # All arm64, macOS 12.0+. Needs full Xcode (for the Metal compiler) and CMake.
 #
-# Usage: git submodule update --init && utils/build_deps.sh
+# Usage: git submodule update --init && utils/build_dependencies.sh
 
 set -euo pipefail
 
@@ -32,7 +32,7 @@ cp "$EXT/libusb/libusb/libusb.h" "$STAGE/include/libusb-1.0/"
 # libfreenect2 finds libusb through pkg-config
 cat > "$BUILD/pkgconfig/libusb-1.0.pc" <<EOF
 Name: libusb-1.0
-Description: libusb built by build_deps.sh
+Description: libusb built by build_dependencies.sh
 Version: $LIBUSB_VERSION
 Libs: -L$STAGE/lib -lusb-1.0
 Cflags: -I$STAGE/include/libusb-1.0

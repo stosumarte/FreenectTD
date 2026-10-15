@@ -58,7 +58,7 @@ A very big thank you goes to the OpenKinect project, who developed the libraries
 
 ## Building
 
-Open `FreenectTD.xcodeproj` and build the `FreenectTOP` target. The libraries it links are prebuilt in `include/`. To rebuild them from the submodules in `external/` (libusb, libfreenect and [our libfreenect2 fork](https://github.com/stosumarte/libfreenect2/tree/metal)), run `git submodule update --init` and `utils/build_deps.sh`; it needs full Xcode and CMake.
+Open `FreenectTD.xcodeproj` and build the `FreenectTOP` target. The libraries it links are prebuilt in `include/`. To rebuild them from the submodules in `external/` (libusb, libfreenect and [our libfreenect2 fork](https://github.com/stosumarte/libfreenect2/tree/metal)), run `git submodule update --init` and `utils/build_dependencies.sh`; it needs full Xcode and CMake.
 
 ## Licensing
 

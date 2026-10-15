@@ -40,7 +40,7 @@
 		81E200812E7428F300CCB6AE /* ofxKinectExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxKinectExtras.h; sourceTree = "<group>"; };
 		81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxKinectExtras.cpp; sourceTree = "<group>"; };
 		81E200852E7428FF00CCB6AE /* postinstall */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = postinstall; sourceTree = "<group>"; };
-		81E200872E7428FF00CCB6AE /* post_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = post_build.sh; sourceTree = "<group>"; };
+		81E200872E7428FF00CCB6AE /* post_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = post_build.sh; path = utils/post_build.sh; sourceTree = "<group>"; };
 		81FC70F92E3CC608007447B2 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		49A63C15272F7CC60FB1496C /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
@@ -103,18 +103,30 @@
 			path = ofxKinectExtras;
 			sourceTree = "<group>";
 		};
-		81E200862E7428FF00CCB6AE /* pkg_scripts */ = {
+		81E200862E7428FF00CCB6AE /* pkg_resources */ = {
 			isa = PBXGroup;
 			children = (
 				81E200852E7428FF00CCB6AE /* postinstall */,
 			);
-			path = pkg_scripts;
+			path = pkg_resources;
 			sourceTree = "<group>";
 		};
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
 				81FF21B52E99655C00DF4A33 /* notes.txt */,
+				B9A13ED4329136FEA48BB19B /* source */,
+				81483C022E70206B006EE51D /* include */,
+				8112B5972E23E1140089336F /* Frameworks */,
+				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
+				81E200862E7428FF00CCB6AE /* pkg_resources */,
+				81E200872E7428FF00CCB6AE /* post_build.sh */,
+			);
+			sourceTree = "<group>";
+		};
+		B9A13ED4329136FEA48BB19B /* source */ = {
+			isa = PBXGroup;
+			children = (
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
 				81C0FFEE2E9A000100C0FFEE /* FreenectCommon.h */,
@@ -128,12 +140,8 @@
 				FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */,
 				8120BA1B2E61E88100126067 /* logger.h */,
 				81E200832E7428F300CCB6AE /* ofxKinectExtras */,
-				81483C022E70206B006EE51D /* include */,
-				8112B5972E23E1140089336F /* Frameworks */,
-				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
-				81E200862E7428FF00CCB6AE /* pkg_scripts */,
-				81E200872E7428FF00CCB6AE /* post_build.sh */,
 			);
+			path = source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -212,7 +220,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/bash \"$PROJECT_DIR/post_build.sh\"\n";
+			shellScript = "/bin/bash \"$PROJECT_DIR/utils/post_build.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
