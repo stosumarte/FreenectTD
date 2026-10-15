@@ -1035,7 +1035,7 @@ void FreenectTOP::execute(TD::TOP_Output* output, const TD::OP_Inputs* inputs, v
     }
     
     if (!manualDepthThresh && version != kinectVersionEnum::None) {
-        depthThreshMin = (version == kinectVersionEnum::V1) ? 400.0f : 100.0f;
+        depthThreshMin = (version == kinectVersionEnum::V1) ? 400.0f : 500.0f;
         depthThreshMax = 4500.0f;
     }
 
