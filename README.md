@@ -10,7 +10,7 @@ It adds a Freenect TOP that streams RGB, depth, IR and point clouds from Kinect 
 
 <a href="https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP_Installer.pkg"><img height="48" alt="Download installer" src="https://img.shields.io/github/v/release/stosumarte/FreenectTD?style=for-the-badge&label=Download%20installer&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNiAxNiI%2BPHBhdGggZmlsbD0id2hpdGUiIGQ9Im04Ljg3OC4zOTIgNS4yNSAzLjA0NWMuNTQuMzE0Ljg3Mi44OS44NzIgMS41MTR2Ni4wOThhMS43NSAxLjc1IDAgMCAxLS44NzIgMS41MTRsLTUuMjUgMy4wNDVhMS43NSAxLjc1IDAgMCAxLTEuNzU2IDBsLTUuMjUtMy4wNDVBMS43NSAxLjc1IDAgMCAxIDEgMTEuMDQ5VjQuOTUxYzAtLjYyNC4zMzItMS4yMDEuODcyLTEuNTE0TDcuMTIyLjM5MmExLjc1IDEuNzUgMCAwIDEgMS43NTYgMFpNNy44NzUgMS42OWwtNC42MyAyLjY4NUw4IDcuMTMzbDQuNzU1LTIuNzU4LTQuNjMtMi42ODVhLjI0OC4yNDggMCAwIDAtLjI1IDBaTTIuNSA1LjY3N3Y1LjM3MmMwIC4wOS4wNDcuMTcxLjEyNS4yMTZsNC42MjUgMi42ODNWOC40MzJabTYuMjUgOC4yNzEgNC42MjUtMi42ODNhLjI1LjI1IDAgMCAwIC4xMjUtLjIxNlY1LjY3N0w4Ljc1IDguNDMyWiIvPjwvc3ZnPg%3D%3D&color=2ea043"></a>
 
-###**[Installing](#installing) · [Usage](#usage) · [Multiple Kinects](#multiple-kinects) · [FAQ](#faq) · [Releases](https://github.com/stosumarte/FreenectTD/releases)**
+### [Installing](#installing) · [Usage](#usage) · [Multiple Kinects](#multiple-kinects) · [FAQ](#faq) · [Releases](https://github.com/stosumarte/FreenectTD/releases)
 
 ![Freenect TOP outputs feeding Render Select TOPs and a TOP to POP colored point cloud](docs/network_overview.png)
 
