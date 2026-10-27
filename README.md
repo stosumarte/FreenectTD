@@ -186,7 +186,7 @@ The Device menu lists each Kinect as version, model and serial number, e.g. `v2 
 Freenect TOP talks to the Kinect over USB with open-source drivers: our forks of [libfreenect](https://github.com/stosumarte/libfreenect/tree/freenecttd) for V1 and [libfreenect2](https://github.com/stosumarte/libfreenect2/tree/metal) for V2. They're bundled in the plugin, so there's nothing else to install.
 
 **TouchDesigner asks "Allow this plugin to be loaded?"**  
-It does for every plugin it hasn't seen before: click OK. If it asks at every launch, it's a TouchDesigner issue: see [this forum thread](https://forum.derivative.ca/t/2025-32460-plugins-json-file-not-being-created/973428).
+It does for every plugin it hasn't seen before: click OK.
 
 **The Kinect OPs say "not supported on this operating system".**  
 FreenectTD doesn't make TouchDesigner's built-in Kinect OPs work on macOS, nor components built on them. It adds its own operator, Freenect TOP, in the Custom tab of the OP Create Dialog.
