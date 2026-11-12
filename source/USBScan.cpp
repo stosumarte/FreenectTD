@@ -25,6 +25,12 @@ struct Scanner {
     std::mutex             listMutex;  // guards kinects and rebooting
     std::vector<KinectUSB> kinects;
     std::map<std::string, std::chrono::steady_clock::time_point> rebooting; // id -> when to stop waiting
+    // One libusb context for as long as the scan runs: libusb keeps its device list up to date on its own
+    // thread. A context made for each scan is, while no Kinect is open, libusb's only one, and making
+    // it opens every USB device on the machine and asks for its descriptors, 10 times a second.
+    // Only used while scanning (startUSBScan before the thread starts, then the thread) and by
+    // stopUSBScan after the thread ended, so it needs no lock.
+    libusb_context*        usb = nullptr;
 };
 // Never freed: if TouchDesigner quits without destroying a node, a static std::thread destroyed
 // while still running would abort the process on the way out
@@ -100,10 +106,15 @@ libusb_device* findAudio(libusb_device** list, ssize_t count, libusb_device* cam
 // (same bus, port and version) keeps its serial; only new ones are opened to read it. One that just
 // left isn't trusted: another Kinect may have been plugged into its socket.
 bool scan(std::vector<KinectUSB>& kinects, const std::vector<KinectUSB>& known) {
-    libusb_context* usb = nullptr;
-    if (libusb_init(&usb) != 0) {
+    if (!scanner.usb && libusb_init(&scanner.usb) != 0) {
+        scanner.usb = nullptr; // tried again on the next scan
         return false;
     }
+    libusb_context* usb = scanner.usb;
+    // libusb queues a message for every USB device plugged in or unplugged, and keeps an unplugged
+    // device in memory until its message is handled: handle them, without waiting
+    timeval noWait = {0, 0};
+    libusb_handle_events_timeout_completed(usb, &noWait, nullptr);
     libusb_device** list = nullptr;
     ssize_t count = libusb_get_device_list(usb, &list);
     for (ssize_t i = 0; i < count; ++i) {
@@ -144,7 +155,6 @@ bool scan(std::vector<KinectUSB>& kinects, const std::vector<KinectUSB>& known) 
     if (count >= 0) {
         libusb_free_device_list(list, 1);
     }
-    libusb_exit(usb);
     return count >= 0;
 }
 
@@ -208,6 +218,10 @@ void stopUSBScan() {
     }
     scanner.running = false;
     scanner.thread.join();
+    if (scanner.usb) {
+        libusb_exit(scanner.usb);
+        scanner.usb = nullptr;
+    }
     std::lock_guard<std::mutex> listLock(scanner.listMutex);
     scanner.kinects.clear(); // a Kinect unplugged before the next startUSBScan must not linger
 }

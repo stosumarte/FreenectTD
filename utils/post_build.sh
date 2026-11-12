@@ -56,6 +56,7 @@ cat > "$DISTRIBUTION_XML" <<EOF
 <installer-gui-script minSpecVersion="1">
     <title>${PLUGIN_NAME} v${VERSION}</title>
     <options allow-external-scripts="no" hostArchitectures="arm64"/>
+    <domains enable_localSystem="true"/>
     <allowed-os-versions>
         <os-version min="12.4"/>
     </allowed-os-versions>
