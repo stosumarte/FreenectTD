@@ -34,10 +34,10 @@ jobs:
   draft-release:
     needs: build
     # TODO: drop feature/metal once it's merged into main
+    # Only the release branch: a manual run on another branch would replace the draft's files and commit
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' &&
-       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/metal'))
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/metal')
     runs-on: ubuntu-latest
     permissions:
       contents: write
