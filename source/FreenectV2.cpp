@@ -137,8 +137,12 @@ void MyFreenect2Device::processFrames() {
     libfreenect2::Frame* depth = frames[libfreenect2::Frame::Depth];
     const libfreenect2::Frame* ir = frames[libfreenect2::Frame::Ir];
     const bool rgbOK = rgb && rgb->data && rgb->width == RGB_WIDTH && rgb->height == RGB_HEIGHT;
-    const bool depthOK = depth && depth->data && depth->width == DEPTH_WIDTH && depth->height == DEPTH_HEIGHT;
-    const bool irOK = ir && ir->data && ir->width == IR_WIDTH && ir->height == IR_HEIGHT;
+    // A depth processor that fails on a frame (the Metal one, when the GPU run fails) still delivers it,
+    // with status != 0 and data that isn't valid: make nothing from it, so the outputs keep the last good
+    // image. It doesn't count as a depth frame either, so a GPU failing on every frame trips the 3 s
+    // watchdog and the Kinect is reopened.
+    const bool depthOK = depth && depth->data && depth->status == 0 && depth->width == DEPTH_WIDTH && depth->height == DEPTH_HEIGHT;
+    const bool irOK = ir && ir->data && ir->status == 0 && ir->width == IR_WIDTH && ir->height == IR_HEIGHT;
     if (!rgbOK || !depthOK || !irOK) {
         LOG("[FreenectV2.cpp] processFrames(): invalid frame - rgb=" + std::to_string(rgbOK) +
             " depth=" + std::to_string(depthOK) + " ir=" + std::to_string(irOK));
