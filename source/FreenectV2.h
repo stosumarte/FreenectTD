@@ -93,6 +93,7 @@ private:
     // Guarded by mutex: shared with the cook thread
     std::mutex mutex;
     V2Settings settings;
+    bool       haveSettings = false; // false until the first setSettings: no image is made from the defaults above
     Images     images;
     uint64_t   depthSeq = 0; // incremented for every new depth frame
 

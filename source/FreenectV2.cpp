@@ -106,6 +106,7 @@ bool MyFreenect2Device::onNewFrame(libfreenect2::Frame::Type type, libfreenect2:
 void MyFreenect2Device::setSettings(const V2Settings& newSettings) {
     std::lock_guard<std::mutex> lock(mutex);
     settings = newSettings;
+    haveSettings = true;
 }
 
 void MyFreenect2Device::takeImages(Images& out) {
@@ -146,6 +147,16 @@ void MyFreenect2Device::processFrames() {
     V2Settings s;
     {
         std::lock_guard<std::mutex> lock(mutex);
+        if (!haveSettings) {
+            // Frames arrive before the node's first cook on this device passes its settings in. An image
+            // made now would have the default size, depth format, range and flips, and the cook would
+            // upload it as the first frame, so drop the frame set. It still counts as a depth frame.
+            if (depthOK) {
+                ++depthSeq;
+            }
+            listener->release(frames);
+            return;
+        }
         s = settings;
     }
 
