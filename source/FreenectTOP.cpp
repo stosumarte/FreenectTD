@@ -731,15 +731,36 @@ bool FreenectTOP::fn2_initDevice(const std::string& id) {
 
 // Opens the node's Kinect on the device thread; a v1 opens in the requested video mode
 void FreenectTOP::startInit(kinectVersionEnum version) {
-    runOnDeviceThread([this, version, ir = streamEnabledIR, id = deviceId]() {
-        initSuccess = (version == kinectVersionEnum::V2) ? fn2_initDevice(id) : fn1_initDevice(ir, id);
+    uint64_t generation;
+    {
+        std::lock_guard<std::mutex> lock(initStateMutex);
+        generation = initGeneration;
+    }
+    runOnDeviceThread([this, version, generation, ir = streamEnabledIR, id = deviceId]() {
+        {
+            // A close was asked for since this was queued: the node may be on another Kinect by now,
+            // and this one may be another node's
+            std::lock_guard<std::mutex> lock(initStateMutex);
+            if (generation != initGeneration) {
+                return;
+            }
+        }
+        const bool opened = (version == kinectVersionEnum::V2) ? fn2_initDevice(id) : fn1_initDevice(ir, id);
+        // If the close was asked for while it opened, the cook must not use it: the close job queued
+        // behind this one closes it
+        std::lock_guard<std::mutex> lock(initStateMutex);
+        initSuccess = opened && generation == initGeneration;
     });
 }
 
 // Closes whichever Kinect is open. Called on the cook thread: execute stops using the device right away,
 // the close runs on the device thread.
 void FreenectTOP::cleanupDevice() {
-    initSuccess = false;
+    {
+        std::lock_guard<std::mutex> lock(initStateMutex);
+        ++initGeneration; // an init job queued or running now no longer counts (see startInit)
+        initSuccess = false;
+    }
     fn1_lastAppliedTilt = std::numeric_limits<float>::quiet_NaN();
     lastDepthTime = {};
     lastDepthSeq = 0; // a new device starts counting depth frames from 0 again

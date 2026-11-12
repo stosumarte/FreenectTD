@@ -66,6 +66,11 @@ private:
 
     // Device open/close, the same for both versions except the library calls in fn1_/fn2_initDevice
     std::atomic<bool> initSuccess{false}; // fn1_device / fn2_device belong to the device thread until it's true
+    // An init job only counts while no close was asked for after it was queued: cleanupDevice bumps
+    // initGeneration, and an init job from before that neither opens the Kinect nor sets initSuccess.
+    // initStateMutex makes "bump and clear" and "check and set" each one step.
+    std::mutex initStateMutex;
+    uint64_t initGeneration = 0; // guarded by initStateMutex
     bool fn1_initDevice(bool ir, const std::string& id);
     void fn1_closeContext();
     bool fn2_initDevice(const std::string& id);
