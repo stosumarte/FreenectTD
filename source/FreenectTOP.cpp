@@ -769,6 +769,7 @@ void FreenectTOP::cleanupDevice() {
     rgbFps = 0.0f;
     processMs = 0.0f;
     fpsWindowStart = {};
+    deviceJobUnread = true; // deviceReady reads the cleared initError once this is done, which also ends a retry wait
     runOnDeviceThread([this]() {
         LOG("[FreenectTOP] cleanupDevice: start");
         initSuccess = false; // an init job queued before this one may have set it back to true
@@ -799,10 +800,26 @@ bool FreenectTOP::deviceReady(kinectVersionEnum version) {
     const std::optional<KinectUSB> kinect = findKinect(deviceId);
     if (!initSuccess.load()) {
         if (deviceJobsPending.load() == 0) {
-            lastInitError = initError; // result of the last attempt, empty before the first
-            initFailures = initError.empty() ? 0 : initFailures + 1;
-            LOG("[FreenectTOP] deviceReady: device not ready, queueing init");
-            startInit(version);
+            const auto now = std::chrono::steady_clock::now();
+            if (deviceJobUnread) {
+                // Result of the last attempt (a close in between clears initError), counted once
+                deviceJobUnread = false;
+                lastInitError = initError;
+                initFailures = initError.empty() ? 0 : initFailures + 1;
+                // After a failed open, wait before the next one instead of retrying back to back
+                nextInitTime = initError.empty() ? std::chrono::steady_clock::time_point{} : now + std::chrono::milliseconds(500);
+            }
+            if (!kinect || (version == kinectVersionEnum::V2 && onUSB2(*kinect))) {
+                // fn1_/fn2_initDevice would return right away: don't start a thread every cook for that.
+                // Opened as soon as the Kinect is there (also back from a v2's reboot), on USB 3.
+                lastInitError.clear();
+                initFailures = 0;
+                nextInitTime = {};
+            } else if (now >= nextInitTime) {
+                LOG("[FreenectTOP] deviceReady: device not ready, queueing init");
+                startInit(version);
+                deviceJobUnread = true;
+            }
         }
         // The USB scan says right away whether the Kinect is there; init results can lag behind a close
         // (~4 s for a v2 on macOS)

@@ -129,6 +129,8 @@ private:
     std::string initError; // written by init jobs, read by the cook thread only while the device thread is idle
     std::string lastInitError; // cook thread's copy of initError from the last finished init attempt
     int initFailures = 0;      // init attempts in a row that ended with an error; shown from the second one
+    bool deviceJobUnread = false; // cook thread: an init or close was queued and deviceReady hasn't read its result yet
+    std::chrono::steady_clock::time_point nextInitTime; // cook thread: no new init before this, set after a failed open
     
     // Parameters variables
     float fn1_tilt = 0.0f;
