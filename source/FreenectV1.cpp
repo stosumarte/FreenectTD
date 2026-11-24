@@ -45,6 +45,10 @@ void MyFreenectDevice::VideoCallback(void* video, uint32_t) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!video) return;
     videoFrameSinceStart = true;
+    if (skipVideoFrames > 0) {
+        --skipVideoFrames;
+        return;
+    }
     if (streamingIR) {
         // IR_10BIT frames are 640x488 with values in 0..1023; keep the first 480 rows to match RGB and depth
         auto ptr = static_cast<uint16_t*>(video);
@@ -62,6 +66,11 @@ void MyFreenectDevice::VideoCallback(void* video, uint32_t) {
 void MyFreenectDevice::DepthCallback(void* depth, uint32_t) {
     std::lock_guard<std::mutex> lock(mutex);
     if (!depth) return;
+    if (skipDepthFrames > 0) {
+        --skipDepthFrames;
+        depthReady = true; // still a depth frame for the stall watchdog and depth_fps
+        return;
+    }
     auto ptr = static_cast<uint16_t*>(depth);
     std::copy(ptr, ptr + depthBuffer.size(), depthBuffer.begin());
     hasNewDepth = true;
@@ -71,6 +80,11 @@ void MyFreenectDevice::DepthCallback(void* depth, uint32_t) {
 // Start depth and video streams (using libfreenect.hpp API)
 // Depth goes first: starting it resets the IR camera, which would kill an IR video stream.
 bool MyFreenectDevice::start() {
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        skipVideoFrames = 1;
+        skipDepthFrames = 1;
+    }
     startDepth();
     startVideo();
     videoStartedAt = std::chrono::steady_clock::now();
@@ -98,6 +112,10 @@ void MyFreenectDevice::applyStreamModes() {
     const freenect_depth_format depthFormat = wantDepthFormat.load();
     const bool depthRestarted = depthFormat != getDepthFormat();
     if (depthRestarted) {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            skipDepthFrames = 1;
+        }
         try {
             setDepthFormat(depthFormat);
         } catch (const std::exception& e) {
@@ -121,6 +139,7 @@ void MyFreenectDevice::applyStreamModes() {
         streamingIR = ir;
         hasNewRGB = false;
         hasNewIR = false;
+        skipVideoFrames = 1;
     }
     try {
         // setVideoFormat only restarts a stream it managed to stop, so stop and start it explicitly

@@ -47,7 +47,7 @@ pkgbuild \
     --identifier "$IDENTIFIER" \
     --version "$VERSION" \
     --install-location "/" \
-    --scripts "$SRCROOT/pkg_scripts" \
+    --scripts "$SRCROOT/pkg_resources" \
     "$COMPONENT_PKG"
 
 # Create distribution.xml
@@ -56,13 +56,14 @@ cat > "$DISTRIBUTION_XML" <<EOF
 <installer-gui-script minSpecVersion="1">
     <title>${PLUGIN_NAME} v${VERSION}</title>
     <options allow-external-scripts="no" hostArchitectures="arm64"/>
+    <domains enable_localSystem="true"/>
     <allowed-os-versions>
         <os-version min="12.4"/>
     </allowed-os-versions>
     <allowed-architectures>
         <architecture>arm64</architecture>
     </allowed-architectures>
-    <readme file="readme.txt"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
     <choices-outline>
         <line choice="default"/>
     </choices-outline>
@@ -77,6 +78,7 @@ EOF
 productbuild \
     --distribution "$DISTRIBUTION_XML" \
     --package-path "$PKG_WORK_DIR" \
+    --resources "$SRCROOT/pkg_resources" \
     "$FINAL_PKG"
 
 # --------------------------------------------------------

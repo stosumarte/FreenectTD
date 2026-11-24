@@ -21,7 +21,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
  - macOS version: [e.g. 15.5]
- - TouchDesigner version [e.g. 2023.12370]
+ - TouchDesigner version [e.g. 2025.33230]
  - Plugin version [e.g. 0.2.3]
 
 

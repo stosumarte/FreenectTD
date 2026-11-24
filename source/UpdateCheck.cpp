@@ -74,6 +74,10 @@ void openReleasesPage() {
     std::system("open https://github.com/stosumarte/FreenectTD/releases/latest");
 }
 
+void openDonationPage() {
+    std::system("open https://github.com/stosumarte/FreenectTD#donations");
+}
+
 // NOTE: the thread is detached and waits for the dialog to be closed; if the plugin were unloaded
 // while a dialog is open, the thread would return into unloaded code.
 void checkForUpdates(const char* installedVersion) {

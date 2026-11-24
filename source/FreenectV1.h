@@ -58,4 +58,9 @@ private:
     // Video stream watchdog, event thread only (callbacks run inside freenect_process_events)
     std::chrono::steady_clock::time_point videoStartedAt;
     bool                  videoFrameSinceStart = false;
+    // Frames still to drop after a stream (re)start, guarded by mutex. The camera sends the first video
+    // frame after each start mirrored now and then (measured 2026-11-12: 3-5 starts in 10, always only
+    // frame 1), and the first depth frame after a format switch can still be in the old format.
+    int                   skipVideoFrames = 0;
+    int                   skipDepthFrames = 0;
 };

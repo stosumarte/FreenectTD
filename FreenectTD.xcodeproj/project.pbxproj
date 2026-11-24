@@ -7,36 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7D67448F52BCE8D255D96294 /* UpdateCheck.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */; };
 		8112B5AB2E2404260089336F /* FreenectTOP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */; };
 		813994A12E74673B0073667B /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81FC70F92E3CC608007447B2 /* Accelerate.framework */; };
+		1BC989F0E9B8EEFBFDC19853 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49A63C15272F7CC60FB1496C /* Metal.framework */; };
 		813994A32E7468600073667B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994A22E7468600073667B /* CoreFoundation.framework */; };
 		813994A52E74686A0073667B /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994A42E74686A0073667B /* CoreMedia.framework */; };
 		813994A72E7468730073667B /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994A62E7468730073667B /* CoreVideo.framework */; };
 		813994A92E7468830073667B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994A82E7468820073667B /* IOKit.framework */; };
 		813994AB2E74688B0073667B /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994AA2E74688B0073667B /* Security.framework */; };
 		813994AD2E7468930073667B /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994AC2E7468930073667B /* VideoToolbox.framework */; };
-		813994B12E7468D80073667B /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 813994B02E7468D80073667B /* OpenCL.framework */; };
 		81E200842E7428F300CCB6AE /* ofxKinectExtras.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */; };
 		81FD1DE82E3630A700900396 /* FreenectV1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE52E3630A700900396 /* FreenectV1.cpp */; };
-		AA296371F01EB92E7494C0C0 /* USBScan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6296D98E00C4EA4410C92459 /* USBScan.cpp */; };
-		7D67448F52BCE8D255D96294 /* UpdateCheck.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */; };
 		81FD1DE92E3630A700900396 /* FreenectV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81FD1DE72E3630A700900396 /* FreenectV2.cpp */; };
+		AA296371F01EB92E7494C0C0 /* USBScan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6296D98E00C4EA4410C92459 /* USBScan.cpp */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		8112B5A22E23E1140089336F /* Embed Libraries */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-			);
-			name = "Embed Libraries";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
+		3D1EE710F3B9F6B26C0D7682 /* USBScan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = USBScan.h; sourceTree = "<group>"; };
+		6296D98E00C4EA4410C92459 /* USBScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = USBScan.cpp; sourceTree = "<group>"; };
 		811030EB2E36883D001975DE /* FreenectTOP.plugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreenectTOP.plugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8120BA1B2E61E88100126067 /* logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = logger.h; sourceTree = "<group>"; };
 		813994A22E7468600073667B /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -45,25 +34,22 @@
 		813994A82E7468820073667B /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		813994AA2E74688B0073667B /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		813994AC2E7468930073667B /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
-		813994AE2E7468A00073667B /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
-		813994B02E7468D80073667B /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
 		818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectTOP.cpp; sourceTree = "<group>"; };
 		818A9C202DC36A4C000B85E5 /* FreenectTOP.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectTOP.h; sourceTree = "<group>"; };
 		81C0FFEE2E9A000100C0FFEE /* FreenectCommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectCommon.h; sourceTree = "<group>"; };
 		81E200812E7428F300CCB6AE /* ofxKinectExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxKinectExtras.h; sourceTree = "<group>"; };
 		81E200822E7428F300CCB6AE /* ofxKinectExtras.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ofxKinectExtras.cpp; sourceTree = "<group>"; };
 		81E200852E7428FF00CCB6AE /* postinstall */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = postinstall; sourceTree = "<group>"; };
-		81E200872E7428FF00CCB6AE /* post_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = post_build.sh; sourceTree = "<group>"; };
+		81E200872E7428FF00CCB6AE /* post_build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = post_build.sh; path = utils/post_build.sh; sourceTree = "<group>"; };
 		81FC70F92E3CC608007447B2 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		49A63C15272F7CC60FB1496C /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		81FD1DE52E3630A700900396 /* FreenectV1.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV1.cpp; sourceTree = "<group>"; };
 		81FD1DE72E3630A700900396 /* FreenectV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FreenectV2.cpp; sourceTree = "<group>"; };
 		81FD1DEA2E36517700900396 /* FreenectV1.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV1.h; sourceTree = "<group>"; };
-		6296D98E00C4EA4410C92459 /* USBScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = USBScan.cpp; sourceTree = "<group>"; };
-		3D1EE710F3B9F6B26C0D7682 /* USBScan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = USBScan.h; sourceTree = "<group>"; };
-		FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateCheck.cpp; sourceTree = "<group>"; };
-		DE6E7013C314C645F18E34D3 /* UpdateCheck.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UpdateCheck.h; sourceTree = "<group>"; };
 		81FD1DEB2E36519700900396 /* FreenectV2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FreenectV2.h; sourceTree = "<group>"; };
 		81FF21B52E99655C00DF4A33 /* notes.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = notes.txt; sourceTree = "<group>"; };
+		DE6E7013C314C645F18E34D3 /* UpdateCheck.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UpdateCheck.h; sourceTree = "<group>"; };
+		FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateCheck.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -79,7 +65,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				813994B12E7468D80073667B /* OpenCL.framework in Frameworks */,
 				813994AD2E7468930073667B /* VideoToolbox.framework in Frameworks */,
 				813994AB2E74688B0073667B /* Security.framework in Frameworks */,
 				813994A92E7468830073667B /* IOKit.framework in Frameworks */,
@@ -87,6 +72,7 @@
 				813994A52E74686A0073667B /* CoreMedia.framework in Frameworks */,
 				813994A32E7468600073667B /* CoreFoundation.framework in Frameworks */,
 				813994A12E74673B0073667B /* Accelerate.framework in Frameworks */,
+				1BC989F0E9B8EEFBFDC19853 /* Metal.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,8 +82,6 @@
 		8112B5972E23E1140089336F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				813994B02E7468D80073667B /* OpenCL.framework */,
-				813994AE2E7468A00073667B /* CoreImage.framework */,
 				813994AC2E7468930073667B /* VideoToolbox.framework */,
 				813994AA2E74688B0073667B /* Security.framework */,
 				813994A82E7468820073667B /* IOKit.framework */,
@@ -105,6 +89,7 @@
 				813994A42E74686A0073667B /* CoreMedia.framework */,
 				813994A22E7468600073667B /* CoreFoundation.framework */,
 				81FC70F92E3CC608007447B2 /* Accelerate.framework */,
+				49A63C15272F7CC60FB1496C /* Metal.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -118,21 +103,33 @@
 			path = ofxKinectExtras;
 			sourceTree = "<group>";
 		};
-		81E200862E7428FF00CCB6AE /* pkg_scripts */ = {
+		81E200862E7428FF00CCB6AE /* pkg_resources */ = {
 			isa = PBXGroup;
 			children = (
 				81E200852E7428FF00CCB6AE /* postinstall */,
 			);
-			path = pkg_scripts;
+			path = pkg_resources;
 			sourceTree = "<group>";
 		};
 		81E3B9592DC3687500B0413C = {
 			isa = PBXGroup;
 			children = (
 				81FF21B52E99655C00DF4A33 /* notes.txt */,
+				B9A13ED4329136FEA48BB19B /* source */,
+				81483C022E70206B006EE51D /* include */,
+				8112B5972E23E1140089336F /* Frameworks */,
+				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
+				81E200862E7428FF00CCB6AE /* pkg_resources */,
+				81E200872E7428FF00CCB6AE /* post_build.sh */,
+			);
+			sourceTree = "<group>";
+		};
+		B9A13ED4329136FEA48BB19B /* source */ = {
+			isa = PBXGroup;
+			children = (
 				818A9C202DC36A4C000B85E5 /* FreenectTOP.h */,
-				81C0FFEE2E9A000100C0FFEE /* FreenectCommon.h */,
 				818A9C1E2DC36A23000B85E5 /* FreenectTOP.cpp */,
+				81C0FFEE2E9A000100C0FFEE /* FreenectCommon.h */,
 				81FD1DEA2E36517700900396 /* FreenectV1.h */,
 				81FD1DE52E3630A700900396 /* FreenectV1.cpp */,
 				81FD1DEB2E36519700900396 /* FreenectV2.h */,
@@ -143,12 +140,8 @@
 				FA01518349120DF5B49D3FBF /* UpdateCheck.cpp */,
 				8120BA1B2E61E88100126067 /* logger.h */,
 				81E200832E7428F300CCB6AE /* ofxKinectExtras */,
-				81483C022E70206B006EE51D /* include */,
-				8112B5972E23E1140089336F /* Frameworks */,
-				811030EB2E36883D001975DE /* FreenectTOP.plugin */,
-				81E200862E7428FF00CCB6AE /* pkg_scripts */,
-				81E200872E7428FF00CCB6AE /* post_build.sh */,
 			);
+			path = source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -160,7 +153,6 @@
 			buildPhases = (
 				81E3B95E2DC3687500B0413C /* Sources */,
 				81E3B95F2DC3687500B0413C /* Frameworks */,
-				8112B5A22E23E1140089336F /* Embed Libraries */,
 				81E200882E74291100CCB6AE /* ShellScript */,
 			);
 			buildRules = (
@@ -228,7 +220,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/bash \"$PROJECT_DIR/post_build.sh\"\n";
+			shellScript = "/bin/bash \"$PROJECT_DIR/utils/post_build.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -302,10 +294,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "/opt/homebrew/include/libfreenect/**";
 				INSTALL_PATH = "@loader_path";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACH_O_TYPE = mh_bundle;
 				MACOSX_DEPLOYMENT_TARGET = 15.3;
@@ -364,10 +354,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "/opt/homebrew/include/libfreenect/**";
 				INSTALL_PATH = "@loader_path";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
-				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACH_O_TYPE = mh_bundle;
 				MACOSX_DEPLOYMENT_TARGET = 15.3;
@@ -394,12 +382,10 @@
 					"FNTD_DEBUG=2",
 					"FNTD_PROFILE=0",
 					"$(inherited)",
-					"TD_VERSION=2025",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/include/headers",
-					/usr/local/include,
 				);
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -412,7 +398,7 @@
 					"$(PROJECT_DIR)/include/libs",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 2.0.0;
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = ee.marte.FreenectTD.TOP;
@@ -439,12 +425,10 @@
 					"FREENECTTOP_VERSION=\"\\\"$(MARKETING_VERSION)\\\"\"",
 					"FNTD_PROFILE=0",
 					"FNTD_DEBUG=0",
-					"TD_VERSION=2025",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/include/headers",
-					/usr/local/include,
 				);
 				INFOPLIST_KEY_CFBundleDisplayName = FreenectTOP;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -457,7 +441,7 @@
 					"$(PROJECT_DIR)/include/libs",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 2.0.0;
 				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = ee.marte.FreenectTD.TOP;
