@@ -49,7 +49,10 @@ You should now find Freenect TOP in the "Custom" tab of the OP Create Dialog.
 > [!TIP]
 > If the installer gets blocked from running, go to `System Settings > Privacy & Security` and click on `Open Anyway`.
 
-### Manually
+### Installing manually
+
+<details>
+<summary>Show steps</summary>
 
 1. [Download the latest zip build](https://github.com/stosumarte/FreenectTD/releases/latest/download/FreenectTOP.zip) and unzip it.
 2. Copy `FreenectTOP.plugin` to:
@@ -57,6 +60,8 @@ You should now find Freenect TOP in the "Custom" tab of the OP Create Dialog.
    * **one project:** a folder named `Plugins` next to your .toe
 
 Older versions are on the [releases page](https://github.com/stosumarte/FreenectTD/releases).
+
+</details>
 
 ### Uninstalling
 
@@ -88,6 +93,9 @@ Sizes and formats are fixed: the Common page's Output Resolution and Pixel Forma
 Example .toe projects are in [`toe_examples`](toe_examples).
 
 ### Parameters
+
+<details>
+<summary>Show all parameters</summary>
 
 **Device**
 
@@ -127,7 +135,12 @@ Example .toe projects are in [`toe_examples`](toe_examples).
 | Open Releases Page | Opens the releases on GitHub. |
 | Support FreenectTD | Opens the donation page. |
 
+</details>
+
 ### Colored point cloud (Kinect V2)
+
+<details>
+<summary>Show how to color and render it</summary>
 
 | Depth Format | Point cloud (stream 2) is in | Color it with |
 | --- | --- | --- |
@@ -143,6 +156,8 @@ To render it as a POP:
 3. Render it with a Constant MAT with *Apply Point Color* on.
 
 [`toe_examples/FreenectTOP_PointCloud_Example.toe`](toe_examples/FreenectTOP_PointCloud_Example.toe) contains this network.
+
+</details>
 
 ### Status
 
@@ -188,6 +203,9 @@ It will be a separate component, not part of FreenectTD.
 
 ## FAQ
 
+<details>
+<summary>Show all questions</summary>
+
 **How does it work without Microsoft's Kinect SDK?**  
 Freenect TOP talks to the Kinect over USB with open-source drivers: our forks of [libfreenect](https://github.com/stosumarte/libfreenect/tree/freenecttd) for V1 and [libfreenect2](https://github.com/stosumarte/libfreenect2/tree/metal) for V2. They're bundled in the plugin, so there's nothing else to install.
 
@@ -218,6 +236,8 @@ It's the pattern the laser projector casts to measure depth. This is expected.
 **Why is Kinect V2 RGB 1280x720?**  
 TouchDesigner's Non-Commercial license caps textures at 1280x1280, so Kinect V2 RGB, and the outputs that follow it, are scaled down from 1920x1080.
 
+</details>
+
 ## Known limitations
 
 * Skeleton tracking is currently impossible to implement.
@@ -226,9 +246,14 @@ TouchDesigner's Non-Commercial license caps textures at 1280x1280, so Kinect V2 
 
 ## Building
 
+<details>
+<summary>Show build steps</summary>
+
 Open `FreenectTD.xcodeproj` and build the `FreenectTOP` target; the project also builds the installer. The libraries it links are prebuilt in `include/`. To rebuild them from the submodules in `external/` (libusb and our forks of [libfreenect](https://github.com/stosumarte/libfreenect/tree/freenecttd) and [libfreenect2](https://github.com/stosumarte/libfreenect2/tree/metal)), run `git submodule update --init` and `utils/build_dependencies.sh`; it needs full Xcode and CMake.
 
 Bugs and feature requests go in the [issue tracker](https://github.com/stosumarte/FreenectTD/issues). Pull requests are welcome.
+
+</details>
 
 ## Donations
 If you like FreenectTD, please consider donating to support further development!
