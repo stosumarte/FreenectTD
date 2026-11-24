@@ -273,7 +273,7 @@ Thanks to everyone who contributed:
 - [@gcarizza](https://github.com/gcarizza): Kinect V1 depth stream fix ([#21](https://github.com/stosumarte/FreenectTD/pull/21))
 - [@fedevoxlive](https://github.com/Fedevoxlive): Kinect V1 IR streaming ([#22](https://github.com/stosumarte/FreenectTD/pull/22))
 
-A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible, and to Harold Martin ([@hbmartin](https://github.com/hbmartin)), whose Metal depth pipeline from [libfreenect2-metal](https://github.com/hbmartin/libfreenect2-metal) decodes Kinect V2 depth on the GPU.
+A very big thank you goes to the OpenKinect project, who developed the libraries that made this plugin possible. Kinect V2 depth is decoded on the GPU by a Metal depth pipeline written by [@mcakyurek](https://github.com/mcakyurek) in [libfreenect2#1210](https://github.com/OpenKinect/libfreenect2/pull/1210) and refined by [@hbmartin](https://github.com/hbmartin) in [libfreenect2-metal](https://github.com/hbmartin/libfreenect2-metal).
 
 ## Licensing
 
@@ -285,7 +285,7 @@ This project also includes the following third-party libraries, each under their
 - **libfreenect** ([our fork](https://github.com/stosumarte/libfreenect/tree/freenecttd), with a fix for macOS 26) – Apache 2.0 License  
   [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect/master/APACHE20)
 
-- **libfreenect2** ([our fork](https://github.com/stosumarte/libfreenect2/tree/metal), with Harold Martin's Metal depth pipeline) – Apache 2.0 License  
+- **libfreenect2** ([our fork](https://github.com/stosumarte/libfreenect2/tree/metal), with the Metal depth pipeline by @mcakyurek and @hbmartin) – Apache 2.0 License  
   [Full License Text](https://raw.githubusercontent.com/OpenKinect/libfreenect2/master/APACHE20)
 
 - **libusb** – LGPL 2.1 License  
