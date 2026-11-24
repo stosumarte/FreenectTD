@@ -180,6 +180,12 @@ The Device menu lists each Kinect as version, model and serial number, e.g. `v2 
 * **Two Kinect V1:** on the same USB bus they don't stream reliably: the one opened last keeps dropping out. Plug each into its own port on the Mac.
 * **Hubs:** unplugging one Kinect can make some hubs drop the others for a moment; they reconnect by themselves. Use one port per Kinect, or a hub that doesn't reset its other ports.
 
+### Aligning Kinects: FreenectAlign (upcoming)
+
+FreenectAlign is an upcoming TouchDesigner component that aligns the point clouds of two or more Kinect V2 Freenect TOPs and merges them into one POP. Print a ChArUco board, show it to the Kinects and press *Calibrate*. Where Kinects see the same surface, their points are blended, and colors can be matched between Kinects.
+
+It will be a separate component, not part of FreenectTD.
+
 ## FAQ
 
 **How does it work without Microsoft's Kinect SDK?**  
