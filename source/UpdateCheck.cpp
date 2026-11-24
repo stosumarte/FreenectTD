@@ -75,7 +75,7 @@ void openReleasesPage() {
 }
 
 void openDonationPage() {
-    std::system("open https://marte.ee/freenecttd/donate");
+    std::system("open https://github.com/stosumarte/FreenectTD#donations");
 }
 
 // NOTE: the thread is detached and waits for the dialog to be closed; if the plugin were unloaded
