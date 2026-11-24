@@ -172,7 +172,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         depthThreshMinParam.name = "Depththreshmin";
         depthThreshMinParam.label = "Depth Range Min (mm)";
         depthThreshMinParam.page = page0;
-        depthThreshMinParam.defaultValues[0] = 0.0;
+        depthThreshMinParam.defaultValues[0] = 500.0;
         depthThreshMinParam.minValues[0] = 0.0;
         depthThreshMinParam.maxValues[0] = 8000.0;
         depthThreshMinParam.minSliders[0] = 0.0;
@@ -185,7 +185,7 @@ void FreenectTOP::setupParameters(TD::OP_ParameterManager* manager, void*) {
         depthThreshMaxParam.name = "Depththreshmax";
         depthThreshMaxParam.label = "Depth Range Max (mm)";
         depthThreshMaxParam.page = page0;
-        depthThreshMaxParam.defaultValues[0] = 5000.0;
+        depthThreshMaxParam.defaultValues[0] = 4500.0;
         depthThreshMaxParam.minValues[0] = 0.0;
         depthThreshMaxParam.maxValues[0] = 8000.0;
         depthThreshMaxParam.minSliders[0] = 0.0;
